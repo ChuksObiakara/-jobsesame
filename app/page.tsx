@@ -75,22 +75,9 @@ export default function Home() {
     transition: 'all 0.15s',
   } as React.CSSProperties);
 
-  const tabLabels = {
-    all: '🌍 All Jobs',
-    remote: '💻 Remote Jobs',
-    relocation: '✈️ Relocation Jobs',
-  };
-
-  const tabDescriptions = {
-    all: 'Browse millions of jobs worldwide',
-    remote: 'Work from anywhere — worldwide remote positions',
-    relocation: 'Jobs in London, Dubai, Toronto, Singapore and more',
-  };
-
   return (
     <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#fff",margin:0,padding:0}}>
 
-      {/* NAV */}
       <nav style={{background:"#052A14",padding:"0 24px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:11}}>
           <div style={{width:38,height:38,background:"#C8E600",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -107,15 +94,15 @@ export default function Home() {
             <span style={{color:"#C8E600"}}>sesame</span>
           </span>
         </div>
-        <div style={{display:"flex",gap:20,alignItems:"center"}}>
+        <div style={{display:"flex",gap:16,alignItems:"center"}}>
           <a href="#jobs" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Find jobs</a>
           <a href="#" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Recruiters</a>
           <a href="#pricing" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Pricing</a>
-          <button style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"9px 22px",borderRadius:99,border:"none",cursor:"pointer"}}>Start free</button>
+          <a href="/sign-in" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Sign in</a>
+          <a href="/sign-up" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"9px 22px",borderRadius:99,textDecoration:"none"}}>Start free</a>
         </div>
       </nav>
 
-      {/* HERO */}
       <section style={{background:"#052A14",padding:"64px 28px 56px",textAlign:"center"}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(200,230,0,0.12)",border:"1.5px solid #C8E600",borderRadius:99,padding:"6px 16px",fontSize:11,color:"#C8E600",fontWeight:700,marginBottom:24,letterSpacing:"0.8px"}}>
           <span style={{width:8,height:8,background:"#C8E600",borderRadius:"50%",display:"inline-block",flexShrink:0}}></span>
@@ -135,8 +122,8 @@ export default function Home() {
           Upload your CV once. AI opens <strong style={{color:"#FFFFFF"}}>{total > 0 ? total.toLocaleString() : '495,000+'} doors worldwide</strong> — matching jobs, rewriting your CV in 30 seconds, and applying automatically.
         </p>
         <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:40}}>
-          <button style={{background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:800,padding:"14px 32px",borderRadius:99,border:"none",cursor:"pointer"}}>Open your future — free</button>
-          <button style={{background:"transparent",color:"#C8E600",fontSize:15,fontWeight:500,padding:"14px 24px",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer"}}>See how it works</button>
+          <a href="/sign-up" style={{background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:800,padding:"14px 32px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Open your future — free</a>
+          <a href="#jobs" style={{background:"transparent",color:"#C8E600",fontSize:15,fontWeight:500,padding:"14px 24px",borderRadius:99,border:"1.5px solid #1A5A2A",textDecoration:"none",display:"inline-block"}}>Browse jobs now</a>
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",maxWidth:440,margin:"0 auto",border:"1px solid #1A5A2A",borderRadius:12,overflow:"hidden"}}>
           {[["2.4M+","LIVE JOBS"],["180+","COUNTRIES"],["30s","CV REWRITE"],["$20","PER MONTH"]].map(([val,label],i)=>(
@@ -148,7 +135,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* GOLD BAR */}
       <div style={{background:"#C8E600",padding:"13px 24px",display:"flex",alignItems:"center",justifyContent:"center",gap:24,flexWrap:"wrap"}}>
         {["2.4M+ live jobs worldwide","180+ countries","CV rewritten in 30 seconds","Auto-apply while you sleep","3 free rewrites — no card needed"].map(item=>(
           <div key={item} style={{display:"flex",alignItems:"center",gap:7,fontSize:12,color:"#052A14",fontWeight:700}}>
@@ -158,7 +144,6 @@ export default function Home() {
         ))}
       </div>
 
-      {/* HOW IT WORKS */}
       <section style={{background:"#052A14",padding:"44px 24px"}}>
         <p style={{fontSize:11,fontWeight:700,color:"#C8E600",letterSpacing:"2.5px",textTransform:"uppercase",textAlign:"center",marginBottom:10}}>How it works</p>
         <h2 style={{fontSize:28,fontWeight:800,color:"#FFFFFF",textAlign:"center",marginBottom:6}}>Three steps to <em style={{color:"#C8E600",fontStyle:"italic"}}>open every door</em></h2>
@@ -178,17 +163,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SEARCH + TABS */}
       <div style={{background:"#052A14",padding:"24px",borderBottom:"4px solid #C8E600"}} id="jobs">
         <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:18,flexWrap:"wrap"}}>
           {(['all','remote','relocation'] as const).map(tab=>(
             <button key={tab} style={tabStyle(tab)} onClick={()=>handleTabChange(tab)}>
-              {tabLabels[tab]}
+              {tab === 'all' ? '🌍 All Jobs' : tab === 'remote' ? '💻 Remote Jobs' : '✈️ Relocation Jobs'}
             </button>
           ))}
         </div>
         <p style={{textAlign:"center",fontSize:12,color:"#5A9A6A",marginBottom:14,fontStyle:"italic"}}>
-          {tabDescriptions[activeTab]}
+          {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
         </p>
         <form onSubmit={handleSearch} style={{display:"flex",gap:8,flexWrap:"wrap",maxWidth:720,margin:"0 auto"}}>
           <input
@@ -198,9 +182,7 @@ export default function Home() {
             style={{flex:1,minWidth:140,padding:"13px 18px",border:"2px solid #C8E600",borderRadius:11,fontSize:14,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}
           />
           {activeTab === 'all' && (
-            <select
-              value={location}
-              onChange={e=>setLocation(e.target.value)}
+            <select value={location} onChange={e=>setLocation(e.target.value)}
               style={{padding:"13px 14px",border:"2px solid #C8E600",borderRadius:11,fontSize:13,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}>
               <option value="">Worldwide</option>
               <option value="South Africa">South Africa</option>
@@ -216,9 +198,7 @@ export default function Home() {
             </select>
           )}
           {activeTab === 'relocation' && (
-            <select
-              value={location}
-              onChange={e=>setLocation(e.target.value)}
+            <select value={location} onChange={e=>setLocation(e.target.value)}
               style={{padding:"13px 14px",border:"2px solid #C8E600",borderRadius:11,fontSize:13,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}>
               <option value="">All countries</option>
               <option value="London">London, UK</option>
@@ -237,31 +217,23 @@ export default function Home() {
         </form>
       </div>
 
-      {/* JOBS LIST */}
       <section style={{background:"#F4FCF4",padding:24}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
           <div>
             <span style={{fontSize:15,fontWeight:800,color:"#052A14"}}>
               {activeTab === 'remote' ? 'Remote doors open worldwide' : activeTab === 'relocation' ? 'International doors open for you' : 'Doors open for your profile'}
             </span>
-            {activeTab === 'relocation' && (
-              <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>Jobs in London, Dubai, Toronto, Singapore and beyond</div>
-            )}
-            {activeTab === 'remote' && (
-              <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>Work from anywhere — earn in USD, GBP or EUR</div>
-            )}
+            {activeTab === 'relocation' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>Jobs in London, Dubai, Toronto, Singapore and beyond</div>}
+            {activeTab === 'remote' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>Work from anywhere — earn in USD, GBP or EUR</div>}
           </div>
           <span style={{fontSize:12,color:"#052A14",background:"#C8E600",padding:"3px 12px",borderRadius:99,fontWeight:800,whiteSpace:"nowrap"}}>
             {total > 0 ? total.toLocaleString() : '...'} matches
           </span>
         </div>
-
         {loading ? (
           <div style={{textAlign:"center",padding:"60px 0"}}>
             <div style={{fontSize:16,color:"#2A6A3A",fontWeight:700,marginBottom:8}}>Opening doors for you...</div>
-            <div style={{fontSize:13,color:"#4A8A5A"}}>
-              {activeTab === 'remote' ? 'Finding remote opportunities worldwide' : activeTab === 'relocation' ? 'Finding international opportunities' : 'Finding the best opportunities worldwide'}
-            </div>
+            <div style={{fontSize:13,color:"#4A8A5A"}}>Finding the best opportunities worldwide</div>
           </div>
         ) : jobs.length === 0 ? (
           <div style={{textAlign:"center",padding:"60px 0"}}>
@@ -292,14 +264,11 @@ export default function Home() {
                   {job.salary && <div style={{fontSize:12,color:"#1A6A2A",fontWeight:700,marginTop:6}}>{job.salary}</div>}
                 </div>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:7,flexShrink:0}}>
-                  <button
-                    onClick={e=>{e.stopPropagation();window.open(job.url,'_blank');}}
+                  <button onClick={e=>{e.stopPropagation();window.open(job.url,'_blank');}}
                     style={{background:"#052A14",color:"#C8E600",fontSize:11,fontWeight:800,padding:"6px 14px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
                     Unlock now
                   </button>
-                  {currency === 'ZAR' && activeTab === 'remote' && (
-                    <span style={{fontSize:10,color:"#4A8A5A",fontWeight:600,textAlign:"right"}}>Earn in USD/GBP/EUR</span>
-                  )}
+                  {currency === 'ZAR' && activeTab === 'remote' && <span style={{fontSize:10,color:"#4A8A5A",fontWeight:600,textAlign:"right"}}>Earn in USD/GBP/EUR</span>}
                 </div>
               </div>
             ))}
@@ -307,7 +276,6 @@ export default function Home() {
         )}
       </section>
 
-      {/* RELOCATION BANNER */}
       <section style={{background:"#052A14",padding:"32px 24px",textAlign:"center"}}>
         <p style={{fontSize:11,fontWeight:700,color:"#C8E600",letterSpacing:"2px",textTransform:"uppercase",marginBottom:10}}>RELOCATION JOBS</p>
         <h2 style={{fontSize:24,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Ready to move? <span style={{color:"#C8E600"}}>The world is hiring.</span></h2>
@@ -317,22 +285,45 @@ export default function Home() {
             <span key={city} style={{background:"#072E16",border:"1px solid #1A5A2A",borderRadius:99,padding:"6px 14px",fontSize:12,color:"#90C898",fontWeight:600}}>{city}</span>
           ))}
         </div>
-        <button
-          onClick={()=>handleTabChange('relocation')}
+        <button onClick={()=>handleTabChange('relocation')}
           style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px 28px",borderRadius:99,border:"none",cursor:"pointer"}}>
           Browse relocation jobs
         </button>
       </section>
 
-      {/* CTA */}
+      <section style={{background:"#F4FCF4",padding:"36px 24px"}}>
+        <p style={{fontSize:11,fontWeight:700,color:"#052A14",letterSpacing:"2px",textTransform:"uppercase",textAlign:"center",marginBottom:10}}>SUCCESS STORIES</p>
+        <h2 style={{fontSize:22,fontWeight:800,color:"#052A14",textAlign:"center",marginBottom:24}}>Real people. <span style={{color:"#1A7A3A"}}>Real doors opened.</span></h2>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,maxWidth:800,margin:"0 auto"}}>
+          {[
+            {name:"Thabo Nkosi",location:"Johannesburg → Standard Bank",quote:"4 months of silence. Jobsesame rewrote my CV and Standard Bank called me within 3 days. The door I thought was locked — was never locked at all.",initials:"TN"},
+            {name:"Chioma Okafor",location:"Lagos → Marketing Manager",quote:"The AI completely transformed my CV. I could see exactly which keywords were missing. Got my dream job within 6 weeks.",initials:"CO"},
+            {name:"Brian Otieno",location:"Nairobi → Software Developer",quote:"Auto-apply opened 47 doors while I slept. I woke up to 4 recruiter emails. Nothing has ever saved me this much time.",initials:"BO"},
+            {name:"Amara Diallo",location:"Dakar → London, UK",quote:"I never thought I could work in London. Jobsesame matched me to a relocation job, rewrote my CV, and I got the offer in 9 days.",initials:"AD"},
+          ].map(t=>(
+            <div key={t.name} style={{background:"#fff",border:"1.5px solid #D8EED8",borderRadius:14,padding:20}}>
+              <div style={{color:"#C8E600",fontSize:13,marginBottom:8,background:"#052A14",width:"fit-content",padding:"3px 10px",borderRadius:99,fontWeight:700}}>★★★★★</div>
+              <p style={{fontSize:13,color:"#333",lineHeight:1.7,fontStyle:"italic",marginBottom:14}}>&ldquo;{t.quote}&rdquo;</p>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:36,height:36,borderRadius:"50%",background:"#052A14",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#C8E600",flexShrink:0}}>{t.initials}</div>
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:"#052A14"}}>{t.name}</div>
+                  <div style={{fontSize:11,color:"#2A7A3A",fontWeight:600}}>{t.location}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <section style={{background:"#C8E600",padding:"44px 24px",textAlign:"center"}}>
         <p style={{fontSize:11,fontWeight:700,color:"#1A4A00",letterSpacing:"2px",textTransform:"uppercase",marginBottom:10}}>YOUR TURN</p>
         <h2 style={{fontSize:32,fontWeight:800,color:"#052A14",marginBottom:8,letterSpacing:-0.5}}>Open sesame —<br/><em style={{fontStyle:"italic"}}>your future is behind this door</em></h2>
-        <p style={{fontSize:14,color:"#2A5A14",marginBottom:24,lineHeight:1.6}}>3 free AI CV rewrites. No card needed. No risk. Just open the door.<br/>Join 50,000+ job seekers who unlocked their careers with Jobsesame.</p>
-        <button style={{background:"#052A14",color:"#C8E600",fontSize:15,fontWeight:800,padding:"15px 38px",borderRadius:99,border:"none",cursor:"pointer"}}>Open your future — free</button>
+        <p style={{fontSize:14,color:"#2A5A14",marginBottom:8,lineHeight:1.6}}>3 free AI CV rewrites. No card needed. No risk. Just open the door.</p>
+        <p style={{fontSize:13,color:"#3A6A1A",marginBottom:24}}>Join 50,000+ job seekers who unlocked their careers with Jobsesame.</p>
+        <a href="/sign-up" style={{background:"#052A14",color:"#C8E600",fontSize:15,fontWeight:800,padding:"15px 38px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Open your future — free</a>
       </section>
 
-      {/* PRICING */}
       <section id="pricing" style={{background:"#F4FCF4",padding:"32px 24px"}}>
         <div style={{textAlign:"center",marginBottom:22}}>
           <span style={{background:"#052A14",color:"#C8E600",fontSize:11,fontWeight:800,padding:"4px 14px",borderRadius:99,letterSpacing:"1.5px",textTransform:"uppercase"}}>PRICING</span>
@@ -350,13 +341,12 @@ export default function Home() {
               <div style={{fontSize:13,fontWeight:700,color:"#052A14",marginBottom:4}}>{p.name}</div>
               <div style={{fontSize:28,fontWeight:800,color:"#052A14",marginBottom:2}}>{p.price}<span style={{fontSize:13,fontWeight:500,color:"#888"}}>{p.per}</span></div>
               <div style={{fontSize:11,color:"#5A7A5A",marginBottom:14,lineHeight:1.7}}>{p.desc}</div>
-              <button style={{width:"100%",background:p.popular?"#C8E600":"#052A14",color:p.popular?"#052A14":"#C8E600",fontSize:12,fontWeight:800,padding:10,borderRadius:99,border:"none",cursor:"pointer"}}>{p.btn}</button>
+              <a href="/sign-up" style={{display:"block",background:p.popular?"#C8E600":"#052A14",color:p.popular?"#052A14":"#C8E600",fontSize:12,fontWeight:800,padding:"10px",borderRadius:99,textDecoration:"none",textAlign:"center"}}>{p.btn}</a>
             </div>
           ))}
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer style={{background:"#052A14",padding:"22px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,borderTop:"1px solid #0D4A20"}}>
         <span style={{fontSize:15,fontWeight:800}}>
           <span style={{color:"#FFFFFF"}}>job</span>

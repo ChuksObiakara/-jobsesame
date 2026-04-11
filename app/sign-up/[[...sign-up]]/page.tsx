@@ -19,6 +19,9 @@ export default function SignUpPage() {
         <p style={{color: '#90C898', fontSize: 14, fontStyle: 'italic'}}>
           &ldquo;Open sesame — and watch your future open.&rdquo;
         </p>
+        <p style={{color: '#5A9A6A', fontSize: 13, marginTop: 8}}>
+          3 free AI CV rewrites. No card needed. Cancel anytime.
+        </p>
       </div>
       <SignUp
         appearance={{

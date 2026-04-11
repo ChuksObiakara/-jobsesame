@@ -1,6 +1,18 @@
-import { SignIn } from '@clerk/nextjs';
+'use client';
+import { SignIn, useAuth } from '@clerk/nextjs';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function SignInPage() {
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isSignedIn) {
+      router.push('/dashboard');
+    }
+  }, [isSignedIn, router]);
+
   return (
     <main style={{
       minHeight: '100vh',
