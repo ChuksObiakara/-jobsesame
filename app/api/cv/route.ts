@@ -1,0 +1,66 @@
+import { NextRequest, NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
+
+export async function POST(request: NextRequest) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get('cv') as File;
+
+    if (!file) {
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    }
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64 = buffer.toString('base64');
+
+    const client = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+
+    const response = await client.messages.create({
+      model: 'claude-opus-4-5',
+      max_tokens: 1000,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'document',
+              source: {
+                type: 'base64',
+                media_type: 'application/pdf',
+                data: base64,
+              },
+            },
+            {
+              type: 'text',
+              text: 'Extract the following information from this CV and return ONLY valid JSON with no other text or markdown: {"name": "full name", "email": "email address", "phone": "phone number", "location": "city and country", "title": "current or most recent job title", "summary": "2 sentence professional summary", "skills": ["skill1", "skill2", "skill3"], "experience_years": 0, "education": "highest qualification", "languages": ["language1"], "job_search_keywords": ["keyword1", "keyword2", "keyword3"]}',
+            },
+          ],
+        },
+      ],
+    });
+
+    const content = response.content[0];
+    if (content.type !== 'text') {
+      throw new Error('Unexpected response type');
+    }
+
+    const cleanText = content.text.replace(/```json|```/g, '').trim();
+    const cvData = JSON.parse(cleanText);
+
+    return NextResponse.json({
+      success: true,
+      cvData,
+      message: 'CV uploaded and analysed successfully',
+    });
+
+  } catch (error) {
+    console.error('CV upload error:', error);
+    return NextResponse.json(
+      { error: 'Failed to process CV', details: String(error) },
+      { status: 500 }
+    );
+  }
+}
