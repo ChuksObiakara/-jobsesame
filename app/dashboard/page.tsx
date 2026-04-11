@@ -10,6 +10,13 @@ export default function Dashboard() {
   const [cvData, setCvData] = useState<any>(null);
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [showRewrite, setShowRewrite] = useState(false);
+  const [jobTitle, setJobTitle] = useState('');
+  const [jobCompany, setJobCompany] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
+  const [rewriting, setRewriting] = useState(false);
+  const [rewrittenCV, setRewrittenCV] = useState<any>(null);
+  const [rewriteError, setRewriteError] = useState('');
 
   useEffect(() => {
     if (isLoaded && !isSignedIn) {
@@ -71,6 +78,33 @@ export default function Dashboard() {
     if (file) handleFileUpload(file);
   };
 
+  const handleRewrite = async () => {
+    if (!jobTitle) {
+      setRewriteError('Please enter a job title');
+      return;
+    }
+    setRewriting(true);
+    setRewriteError('');
+    try {
+      const response = await fetch('/api/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cvData, jobTitle, jobCompany, jobDescription }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setRewrittenCV(data.rewrittenCV);
+        setShowRewrite(false);
+      } else {
+        setRewriteError(data.error || 'Failed to rewrite CV');
+      }
+    } catch (err) {
+      setRewriteError('Something went wrong. Please try again.');
+    } finally {
+      setRewriting(false);
+    }
+  };
+
   return (
     <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#052A14",minHeight:"100vh"}}>
       <nav style={{background:"#052A14",padding:"0 24px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #0D4A20"}}>
@@ -117,15 +151,7 @@ export default function Dashboard() {
                 onDrop={handleDrop}
                 onDragOver={e=>{e.preventDefault();setDragOver(true);}}
                 onDragLeave={()=>setDragOver(false)}
-                style={{
-                  border:`2px dashed ${dragOver ? '#C8E600' : '#1A5A2A'}`,
-                  borderRadius:14,
-                  padding:"40px 24px",
-                  marginBottom:16,
-                  background:dragOver ? 'rgba(200,230,0,0.05)' : 'transparent',
-                  transition:"all 0.2s",
-                  cursor:"pointer",
-                }}>
+                style={{border:`2px dashed ${dragOver ? '#C8E600' : '#1A5A2A'}`,borderRadius:14,padding:"40px 24px",marginBottom:16,background:dragOver ? 'rgba(200,230,0,0.05)' : 'transparent',transition:"all 0.2s",cursor:"pointer"}}>
                 <div style={{fontSize:13,color:"#5A9A6A",marginBottom:12}}>
                   {uploading ? 'Reading your CV...' : 'Drag and drop your CV here'}
                 </div>
@@ -154,8 +180,7 @@ export default function Dashboard() {
               )}
               <div style={{fontSize:11,color:"#3A7A4A"}}>PDF only · Maximum 10MB · Your CV is processed securely</div>
             </div>
-
-            <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:14,padding:20,marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+            <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
               <div>
                 <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>
                   You have <span style={{color:"#C8E600"}}>3 free AI CV rewrites</span>
@@ -164,6 +189,69 @@ export default function Dashboard() {
               </div>
               <button style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"8px 20px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
                 Share and unlock more
+              </button>
+            </div>
+          </div>
+        ) : rewrittenCV ? (
+          <div>
+            <div style={{background:"#C8E600",borderRadius:14,padding:16,marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+              <div>
+                <div style={{fontSize:15,fontWeight:800,color:"#052A14"}}>CV rewritten for {jobTitle} at {jobCompany || 'the company'}</div>
+                <div style={{fontSize:12,color:"#2A5A14"}}>Match score: {rewrittenCV.match_score}% · ATS score: {rewrittenCV.ats_score}%</div>
+              </div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button onClick={()=>setRewrittenCV(null)} style={{background:"#052A14",color:"#C8E600",fontSize:12,fontWeight:700,padding:"7px 16px",borderRadius:99,border:"none",cursor:"pointer"}}>
+                  Rewrite for another job
+                </button>
+              </div>
+            </div>
+
+            <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:16,padding:28,marginBottom:20}}>
+              <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>{rewrittenCV.name}</h2>
+              <div style={{fontSize:14,color:"#C8E600",fontWeight:600,marginBottom:2}}>{rewrittenCV.title}</div>
+              <div style={{fontSize:12,color:"#5A9A6A",marginBottom:16}}>{rewrittenCV.location}</div>
+              <p style={{fontSize:13,color:"#A8D8B0",lineHeight:1.7,marginBottom:20,fontStyle:"italic"}}>
+                &ldquo;{rewrittenCV.summary}&rdquo;
+              </p>
+              <div style={{marginBottom:20}}>
+                <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:8}}>Skills matched to this job</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                  {rewrittenCV.skills?.map((skill: string) => (
+                    <span key={skill} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{skill}</span>
+                  ))}
+                </div>
+              </div>
+              {rewrittenCV.keywords_added?.length > 0 && (
+                <div style={{marginBottom:20}}>
+                  <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:8}}>Keywords added for ATS</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    {rewrittenCV.keywords_added?.map((kw: string) => (
+                      <span key={kw} style={{background:"rgba(200,230,0,0.1)",color:"#C8E600",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600,border:"1px solid rgba(200,230,0,0.3)"}}>{kw}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {rewrittenCV.experience?.map((exp: any, i: number) => (
+                <div key={i} style={{marginBottom:16,padding:14,background:"#0D3A1A",borderRadius:10}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",marginBottom:2}}>{exp.title}</div>
+                  <div style={{fontSize:12,color:"#C8E600",marginBottom:8}}>{exp.company} · {exp.duration}</div>
+                  {exp.bullets?.map((bullet: string, j: number) => (
+                    <div key={j} style={{fontSize:12,color:"#90C898",lineHeight:1.7,paddingLeft:12,position:"relative"}}>
+                      <span style={{position:"absolute",left:0,color:"#C8E600"}}>·</span>
+                      {bullet}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+              <div>
+                <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Unlock Pro to download as PDF or Word</div>
+                <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Cover letters. Everything for $20/month.</div>
+              </div>
+              <button style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                Upgrade to Pro
               </button>
             </div>
           </div>
@@ -195,9 +283,7 @@ export default function Dashboard() {
                   <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:8}}>Skills</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                     {cvData.skills?.map((skill: string) => (
-                      <span key={skill} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>
-                        {skill}
-                      </span>
+                      <span key={skill} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{skill}</span>
                     ))}
                   </div>
                 </div>
@@ -212,15 +298,78 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div style={{background:"#C8E600",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16}}>
-              <div>
-                <div style={{fontSize:15,fontWeight:800,color:"#052A14",marginBottom:4}}>Ready to rewrite your CV for any job</div>
-                <div style={{fontSize:12,color:"#2A5A14"}}>AI rewrites your CV in 30 seconds. You have 3 free rewrites.</div>
+            {showRewrite ? (
+              <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:16,padding:28,marginBottom:20}}>
+                <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:20}}>
+                  Rewrite my CV for a specific job
+                </h3>
+                <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+                  <div>
+                    <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job title *</label>
+                    <input
+                      value={jobTitle}
+                      onChange={e=>setJobTitle(e.target.value)}
+                      placeholder="e.g. Senior Project Manager"
+                      style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit"}}
+                    />
+                  </div>
+                  <div>
+                    <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Company name</label>
+                    <input
+                      value={jobCompany}
+                      onChange={e=>setJobCompany(e.target.value)}
+                      placeholder="e.g. Standard Bank"
+                      style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit"}}
+                    />
+                  </div>
+                  <div>
+                    <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job description (paste it here for best results)</label>
+                    <textarea
+                      value={jobDescription}
+                      onChange={e=>setJobDescription(e.target.value)}
+                      placeholder="Paste the job description here..."
+                      rows={5}
+                      style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:13,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",resize:"vertical"}}
+                    />
+                  </div>
+                </div>
+                {rewriteError && (
+                  <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginBottom:16}}>
+                    {rewriteError}
+                  </div>
+                )}
+                <div style={{display:"flex",gap:10}}>
+                  <button
+                    onClick={handleRewrite}
+                    disabled={rewriting}
+                    style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px 28px",borderRadius:99,border:"none",cursor:rewriting ? "default" : "pointer",opacity:rewriting ? 0.7 : 1}}>
+                    {rewriting ? 'Rewriting your CV...' : 'Rewrite my CV now'}
+                  </button>
+                  <button
+                    onClick={()=>setShowRewrite(false)}
+                    style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"12px 20px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+                    Cancel
+                  </button>
+                </div>
+                {rewriting && (
+                  <div style={{marginTop:16,fontSize:13,color:"#5A9A6A",fontStyle:"italic"}}>
+                    AI is rewriting your CV for this specific role... this takes about 15 seconds.
+                  </div>
+                )}
               </div>
-              <button style={{background:"#052A14",color:"#C8E600",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
-                Rewrite my CV — free
-              </button>
-            </div>
+            ) : (
+              <div style={{background:"#C8E600",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16}}>
+                <div>
+                  <div style={{fontSize:15,fontWeight:800,color:"#052A14",marginBottom:4}}>Ready to rewrite your CV for any job</div>
+                  <div style={{fontSize:12,color:"#2A5A14"}}>AI rewrites your CV in 30 seconds. You have 3 free rewrites.</div>
+                </div>
+                <button
+                  onClick={()=>setShowRewrite(true)}
+                  style={{background:"#052A14",color:"#C8E600",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                  Rewrite my CV — free
+                </button>
+              </div>
+            )}
 
             <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
               <div>
