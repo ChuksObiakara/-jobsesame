@@ -24,6 +24,27 @@ export default function Home() {
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('USD');
   const [activeTab, setActiveTab] = useState<'all' | 'remote' | 'relocation'>('all');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [savedJobs, setSavedJobs] = useState<number[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('jobsesame_saved_jobs');
+      if (saved) return JSON.parse(saved).map((j: Job) => j.id);
+    }
+    return [];
+  });
+
+  const toggleSaveJob = (job: Job) => {
+    const saved = localStorage.getItem('jobsesame_saved_jobs');
+    const savedList: Job[] = saved ? JSON.parse(saved) : [];
+    const isAlreadySaved = savedList.some(j => j.id === job.id);
+    let updated: Job[];
+    if (isAlreadySaved) {
+      updated = savedList.filter(j => j.id !== job.id);
+    } else {
+      updated = [...savedList, job];
+    }
+    localStorage.setItem('jobsesame_saved_jobs', JSON.stringify(updated));
+    setSavedJobs(updated.map(j => j.id));
+  };
 
   useEffect(() => {
     fetch('https://ipapi.co/json/')
@@ -287,6 +308,11 @@ export default function Home() {
                     onClick={()=>window.open(job.url,'_blank')}
                     style={{background:"transparent",color:"#5A9A6A",fontSize:11,fontWeight:600,padding:"6px 14px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer",whiteSpace:"nowrap"}}>
                     View job
+                  </button>
+                  <button
+                    onClick={()=>toggleSaveJob(job)}
+                    style={{background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:11,fontWeight:600,padding:"6px 14px",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer",whiteSpace:"nowrap"}}>
+                    {savedJobs.includes(job.id) ? '🔖 Saved' : '🔖 Save'}
                   </button>
                 </div>
               </div>
