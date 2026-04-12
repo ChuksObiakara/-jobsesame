@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import QuickApply from './components/QuickApply';
 
 interface Job {
   id: number;
@@ -22,6 +23,7 @@ export default function Home() {
   const [total, setTotal] = useState(0);
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('USD');
   const [activeTab, setActiveTab] = useState<'all' | 'remote' | 'relocation'>('all');
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   useEffect(() => {
     fetch('https://ipapi.co/json/')
@@ -78,6 +80,15 @@ export default function Home() {
   return (
     <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#fff",margin:0,padding:0}}>
 
+      {/* QUICK APPLY MODAL */}
+      {selectedJob && (
+        <QuickApply
+          job={selectedJob}
+          onClose={() => setSelectedJob(null)}
+        />
+      )}
+
+      {/* NAV */}
       <nav style={{background:"#052A14",padding:"0 24px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:11}}>
           <div style={{width:38,height:38,background:"#C8E600",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -103,6 +114,7 @@ export default function Home() {
         </div>
       </nav>
 
+      {/* HERO */}
       <section style={{background:"#052A14",padding:"64px 28px 56px",textAlign:"center"}}>
         <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(200,230,0,0.12)",border:"1.5px solid #C8E600",borderRadius:99,padding:"6px 16px",fontSize:11,color:"#C8E600",fontWeight:700,marginBottom:24,letterSpacing:"0.8px"}}>
           <span style={{width:8,height:8,background:"#C8E600",borderRadius:"50%",display:"inline-block",flexShrink:0}}></span>
@@ -135,8 +147,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* GOLD BAR */}
       <div style={{background:"#C8E600",padding:"13px 24px",display:"flex",alignItems:"center",justifyContent:"center",gap:24,flexWrap:"wrap"}}>
-        {["2.4M+ live jobs worldwide","180+ countries","CV rewritten in 30 seconds","Auto-apply while you sleep","3 free rewrites — no card needed"].map(item=>(
+        {["2.4M+ live jobs worldwide","180+ countries","CV rewritten in 30 seconds","Quick Apply with AI","3 free applications — no card needed"].map(item=>(
           <div key={item} style={{display:"flex",alignItems:"center",gap:7,fontSize:12,color:"#052A14",fontWeight:700}}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="#052A14"/><path d="M4 7L6 9.5L10 4.5" stroke="#C8E600" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
             {item}
@@ -144,6 +157,7 @@ export default function Home() {
         ))}
       </div>
 
+      {/* HOW IT WORKS */}
       <section style={{background:"#052A14",padding:"44px 24px"}}>
         <p style={{fontSize:11,fontWeight:700,color:"#C8E600",letterSpacing:"2.5px",textTransform:"uppercase",textAlign:"center",marginBottom:10}}>How it works</p>
         <h2 style={{fontSize:28,fontWeight:800,color:"#FFFFFF",textAlign:"center",marginBottom:6}}>Three steps to <em style={{color:"#C8E600",fontStyle:"italic"}}>open every door</em></h2>
@@ -152,7 +166,7 @@ export default function Home() {
           {[
             ["1","Upload your CV once","AI reads everything instantly. Extracts your skills, experience and ambitions. Builds your complete global career profile. No forms to fill."],
             ["2","AI opens your matching doors","Platform unlocks millions of live jobs across 180 countries. Shows every role ranked by match percentage with full explanation of why each one fits."],
-            ["3","Walk through — apply in seconds","Click any job. AI rewrites your CV in 30 seconds. Download and apply — or let auto-apply send applications while you sleep."]
+            ["3","Quick Apply with AI","Click Quick Apply on any job. AI rewrites your CV in 30 seconds specifically for that role. Apply in one click — or let auto-apply do it while you sleep."]
           ].map(([num,title,desc])=>(
             <div key={num} style={{background:"#072E16",border:"1px solid #1A4A2A",borderRadius:14,padding:20}}>
               <div style={{width:32,height:32,background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:14}}>{num}</div>
@@ -163,6 +177,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* SEARCH + TABS */}
       <div style={{background:"#052A14",padding:"24px",borderBottom:"4px solid #C8E600"}} id="jobs">
         <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:18,flexWrap:"wrap"}}>
           {(['all','remote','relocation'] as const).map(tab=>(
@@ -217,6 +232,7 @@ export default function Home() {
         </form>
       </div>
 
+      {/* JOBS LIST */}
       <section style={{background:"#F4FCF4",padding:24}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
           <div>
@@ -244,8 +260,7 @@ export default function Home() {
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {jobs.map((job,i)=>(
               <div key={job.id}
-                style={{background:i===0?"#FDFFF5":"#fff",border:`1.5px solid ${i===0?"#C8E600":"#D8EED8"}`,borderRadius:14,padding:16,display:"flex",gap:12,cursor:"pointer"}}
-                onClick={()=>window.open(job.url,'_blank')}>
+                style={{background:i===0?"#FDFFF5":"#fff",border:`1.5px solid ${i===0?"#C8E600":"#D8EED8"}`,borderRadius:14,padding:16,display:"flex",gap:12}}>
                 <div style={{width:44,height:44,borderRadius:11,background:"#EAF5EA",color:"#1A5A2A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0}}>
                   {job.company.charAt(0).toUpperCase()}
                 </div>
@@ -261,14 +276,18 @@ export default function Home() {
                     {activeTab === 'all' && i===0 && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600"}}>Open the doors to your future</span>}
                   </div>
                   <p style={{fontSize:12,color:"#666",lineHeight:1.6,margin:0}}>{job.description}</p>
-                  {job.salary && <div style={{fontSize:12,color:"#1A6A2A",fontWeight:700,marginTop:6}}>{job.salary}</div>}
                 </div>
                 <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:7,flexShrink:0}}>
-                  <button onClick={e=>{e.stopPropagation();window.open(job.url,'_blank');}}
-                    style={{background:"#052A14",color:"#C8E600",fontSize:11,fontWeight:800,padding:"6px 14px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
-                    Unlock now
+                  <button
+                    onClick={()=>setSelectedJob(job)}
+                    style={{background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"8px 14px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                    ⚡ Quick Apply
                   </button>
-                  {currency === 'ZAR' && activeTab === 'remote' && <span style={{fontSize:10,color:"#4A8A5A",fontWeight:600,textAlign:"right"}}>Earn in USD/GBP/EUR</span>}
+                  <button
+                    onClick={()=>window.open(job.url,'_blank')}
+                    style={{background:"transparent",color:"#5A9A6A",fontSize:11,fontWeight:600,padding:"6px 14px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer",whiteSpace:"nowrap"}}>
+                    View job
+                  </button>
                 </div>
               </div>
             ))}
@@ -276,6 +295,7 @@ export default function Home() {
         )}
       </section>
 
+      {/* RELOCATION BANNER */}
       <section style={{background:"#052A14",padding:"32px 24px",textAlign:"center"}}>
         <p style={{fontSize:11,fontWeight:700,color:"#C8E600",letterSpacing:"2px",textTransform:"uppercase",marginBottom:10}}>RELOCATION JOBS</p>
         <h2 style={{fontSize:24,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Ready to move? <span style={{color:"#C8E600"}}>The world is hiring.</span></h2>
@@ -291,6 +311,7 @@ export default function Home() {
         </button>
       </section>
 
+      {/* TESTIMONIALS */}
       <section style={{background:"#F4FCF4",padding:"36px 24px"}}>
         <p style={{fontSize:11,fontWeight:700,color:"#052A14",letterSpacing:"2px",textTransform:"uppercase",textAlign:"center",marginBottom:10}}>SUCCESS STORIES</p>
         <h2 style={{fontSize:22,fontWeight:800,color:"#052A14",textAlign:"center",marginBottom:24}}>Real people. <span style={{color:"#1A7A3A"}}>Real doors opened.</span></h2>
@@ -298,7 +319,7 @@ export default function Home() {
           {[
             {name:"Thabo Nkosi",location:"Johannesburg → Standard Bank",quote:"4 months of silence. Jobsesame rewrote my CV and Standard Bank called me within 3 days. The door I thought was locked — was never locked at all.",initials:"TN"},
             {name:"Chioma Okafor",location:"Lagos → Marketing Manager",quote:"The AI completely transformed my CV. I could see exactly which keywords were missing. Got my dream job within 6 weeks.",initials:"CO"},
-            {name:"Brian Otieno",location:"Nairobi → Software Developer",quote:"Auto-apply opened 47 doors while I slept. I woke up to 4 recruiter emails. Nothing has ever saved me this much time.",initials:"BO"},
+            {name:"Brian Otieno",location:"Nairobi → Software Developer",quote:"Quick Apply sent my application in 10 seconds. Woke up to 4 recruiter emails. Nothing has ever saved me this much time.",initials:"BO"},
             {name:"Amara Diallo",location:"Dakar → London, UK",quote:"I never thought I could work in London. Jobsesame matched me to a relocation job, rewrote my CV, and I got the offer in 9 days.",initials:"AD"},
           ].map(t=>(
             <div key={t.name} style={{background:"#fff",border:"1.5px solid #D8EED8",borderRadius:14,padding:20}}>
@@ -316,14 +337,16 @@ export default function Home() {
         </div>
       </section>
 
+      {/* CTA */}
       <section style={{background:"#C8E600",padding:"44px 24px",textAlign:"center"}}>
         <p style={{fontSize:11,fontWeight:700,color:"#1A4A00",letterSpacing:"2px",textTransform:"uppercase",marginBottom:10}}>YOUR TURN</p>
         <h2 style={{fontSize:32,fontWeight:800,color:"#052A14",marginBottom:8,letterSpacing:-0.5}}>Open sesame —<br/><em style={{fontStyle:"italic"}}>your future is behind this door</em></h2>
-        <p style={{fontSize:14,color:"#2A5A14",marginBottom:8,lineHeight:1.6}}>3 free AI CV rewrites. No card needed. No risk. Just open the door.</p>
+        <p style={{fontSize:14,color:"#2A5A14",marginBottom:8,lineHeight:1.6}}>3 free Quick Apply credits. AI rewrites your CV. No card needed.</p>
         <p style={{fontSize:13,color:"#3A6A1A",marginBottom:24}}>Join 50,000+ job seekers who unlocked their careers with Jobsesame.</p>
         <a href="/sign-up" style={{background:"#052A14",color:"#C8E600",fontSize:15,fontWeight:800,padding:"15px 38px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Open your future — free</a>
       </section>
 
+      {/* PRICING */}
       <section id="pricing" style={{background:"#F4FCF4",padding:"32px 24px"}}>
         <div style={{textAlign:"center",marginBottom:22}}>
           <span style={{background:"#052A14",color:"#C8E600",fontSize:11,fontWeight:800,padding:"4px 14px",borderRadius:99,letterSpacing:"1.5px",textTransform:"uppercase"}}>PRICING</span>
@@ -332,9 +355,9 @@ export default function Home() {
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,maxWidth:800,margin:"0 auto"}}>
           {[
-            {name:"Free forever",price:currency==='ZAR'?"R0":"$0",per:"/always",desc:"Browse millions of jobs worldwide. 3 free AI CV rewrites after sharing. Salary data. Application tracker.",popular:false,btn:"Open free"},
-            {name:"Pro — All doors open",price:currency==='ZAR'?"R370":"$20",per:"/month",desc:"Unlimited AI CV rewrites. Auto-apply included. Cover letters. Market intelligence. Everything — one price.",popular:true,btn:"Unlock Pro"},
-            {name:"Credits pack",price:currency==='ZAR'?"R185":"$10",per:"/pack",desc:"10 AI CV rewrites and cover letters. No expiry. Perfect for occasional job seekers.",popular:false,btn:"Get credits"},
+            {name:"Free forever",price:currency==='ZAR'?"R0":"$0",per:"/always",desc:"Browse millions of jobs. 3 free Quick Apply credits. AI CV rewrite included. No card needed.",popular:false,btn:"Open free"},
+            {name:"Pro — All doors open",price:currency==='ZAR'?"R370":"$20",per:"/month",desc:"Unlimited Quick Apply. Unlimited CV rewrites. Auto-apply. Cover letters. Everything — one price.",popular:true,btn:"Unlock Pro"},
+            {name:"Credits pack",price:currency==='ZAR'?"R185":"$10",per:"/pack",desc:"10 Quick Apply credits. No expiry. Perfect for occasional job seekers.",popular:false,btn:"Get credits"},
           ].map((p)=>(
             <div key={p.name} style={{background:p.popular?"#FDFFF5":"#fff",border:`1.5px solid ${p.popular?"#C8E600":"#D8EED8"}`,borderRadius:14,padding:20,textAlign:"center"}}>
               {p.popular&&<div style={{background:"#C8E600",color:"#052A14",fontSize:10,fontWeight:800,padding:"3px 12px",borderRadius:99,display:"inline-block",marginBottom:10}}>Most popular</div>}
@@ -347,6 +370,7 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FOOTER */}
       <footer style={{background:"#052A14",padding:"22px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,borderTop:"1px solid #0D4A20"}}>
         <span style={{fontSize:15,fontWeight:800}}>
           <span style={{color:"#FFFFFF"}}>job</span>
