@@ -54,27 +54,31 @@ export default function PrivacyPage() {
             body: "We use cookies and similar technologies to maintain your session, remember your preferences, and analyse how our platform is used. You can control cookie settings in your browser, though disabling them may affect platform functionality.",
           },
           {
-            title: "6. Third-Party Services",
-            body: "We use Clerk for authentication, and AI APIs for CV processing. These third-party providers have their own privacy policies. Job listings are sourced from public job boards and partner APIs. We are not responsible for the privacy practices of external employer websites.",
+            title: "6. Payment Processing",
+            body: "Payments are processed by Paystack, a PCI-DSS compliant payment provider. Jobsesame does not store your card details. When you purchase a Pro subscription or credits pack, your payment information is handled entirely by Paystack and subject to their privacy policy. We receive only a transaction confirmation and your email address to activate your subscription. Subscription billing is processed monthly and you may cancel at any time from your account settings.",
           },
           {
-            title: "7. Your Rights",
-            body: "You have the right to access, correct, or delete your personal information at any time. You may also request a copy of the data we hold about you. To exercise these rights, contact us at privacy@jobsesame.co.za. We will respond to requests within 30 days.",
+            title: "7. Third-Party Services",
+            body: "We use Clerk for authentication, Paystack for payment processing, and AI APIs for CV processing. These third-party providers have their own privacy policies. Job listings are sourced from public job boards and partner APIs. We are not responsible for the privacy practices of external employer websites or payment providers.",
           },
           {
-            title: "8. Data Retention",
+            title: "8. Your Rights",
+            body: "You have the right to: access the personal data we hold about you; correct inaccurate data; request deletion of your account and associated data; withdraw consent for data processing at any time; request a portable copy of your data; lodge a complaint with a data protection authority. To exercise any of these rights, contact us at privacy@jobsesame.co.za. We will respond within 30 days.",
+          },
+          {
+            title: "9. Data Retention",
             body: "We retain your data for as long as your account is active or as needed to provide our services. If you delete your account, we will delete your personal data within 30 days, except where we are required by law to retain it.",
           },
           {
-            title: "9. Children's Privacy",
+            title: "10. Children's Privacy",
             body: "Jobsesame is not intended for users under the age of 16. We do not knowingly collect personal information from children under 16. If you believe a child has provided us with personal information, please contact us and we will delete it.",
           },
           {
-            title: "10. Changes to This Policy",
+            title: "11. Changes to This Policy",
             body: "We may update this Privacy Policy from time to time. We will notify you of significant changes by email or by posting a notice on our platform. Your continued use of Jobsesame after changes constitutes acceptance of the updated policy.",
           },
           {
-            title: "11. Contact Us",
+            title: "12. Contact Us",
             body: "If you have questions about this Privacy Policy or how we handle your data, please contact us at privacy@jobsesame.co.za or write to us at Jobsesame, South Africa.",
           },
         ].map(section => (

@@ -59,38 +59,42 @@ export default function TermsPage() {
           },
           {
             title: "7. Subscription and Payments",
-            body: "Some features require a paid subscription. Subscription fees are billed in advance on a monthly basis. You may cancel at any time and your access will continue until the end of the current billing period. We do not offer refunds for partial billing periods. Prices may change with 30 days notice.",
+            body: "Some features require a paid subscription or credits purchase. Subscription fees are billed in advance on a monthly basis via Paystack. You may cancel at any time and your access will continue until the end of the current billing period. Credits packs are a one-time purchase with no expiry. Prices are displayed in ZAR for South African users and USD for all others, and may change with 30 days notice.",
           },
           {
-            title: "8. Free Credits",
-            body: "Free users receive a limited number of Quick Apply credits. These credits are non-transferable and may not be redeemed for cash. Jobsesame reserves the right to modify the number of free credits available at any time.",
+            title: "8. Refund Policy",
+            body: "We do not offer refunds for partial subscription billing periods. If you cancel a Pro subscription, you retain access until the end of the paid period and will not be charged again. Credits packs are non-refundable once purchased, as the AI processing capacity is consumed at point of use. If you experience a technical failure that prevents you from using credits you purchased, contact us at support@jobsesame.co.za within 7 days and we will assess the issue and issue replacement credits at our discretion. Fraudulent or disputed charges should be reported to us before initiating a chargeback.",
           },
           {
-            title: "9. Intellectual Property",
+            title: "9. Free Credits",
+            body: "Free users receive a limited number of Quick Apply credits. These credits are non-transferable and may not be redeemed for cash. Jobsesame reserves the right to modify the number of free credits available at any time with or without notice.",
+          },
+          {
+            title: "10. Intellectual Property",
             body: "The Jobsesame platform, including its design, branding, and technology, is owned by Jobsesame and protected by intellectual property laws. You may not copy, reproduce, or distribute any part of our platform without written permission.",
           },
           {
-            title: "10. Disclaimer of Warranties",
-            body: "Jobsesame is provided on an 'as is' basis without warranties of any kind. We do not guarantee that job listings are accurate, current, or complete. We do not guarantee employment outcomes. Your use of the platform is at your own risk.",
+            title: "11. Disclaimer of Warranties",
+            body: "Jobsesame is provided on an 'as is' and 'as available' basis without warranties of any kind, either express or implied. We do not warrant that the platform will be uninterrupted, error-free, or free of viruses. We do not guarantee that job listings are accurate, current, or complete, as they are sourced from third parties. We do not guarantee employment outcomes from using our CV rewriting or Quick Apply features. Your use of the platform is entirely at your own risk.",
           },
           {
-            title: "11. Limitation of Liability",
+            title: "12. Limitation of Liability",
             body: "To the maximum extent permitted by law, Jobsesame shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the platform. Our total liability to you shall not exceed the amount you paid us in the 12 months preceding the claim.",
           },
           {
-            title: "12. Termination",
+            title: "13. Termination",
             body: "We reserve the right to suspend or terminate your account at any time if you breach these Terms of Service. You may also delete your account at any time. Upon termination, your right to use the platform ceases immediately.",
           },
           {
-            title: "13. Governing Law",
+            title: "14. Governing Law",
             body: "These Terms are governed by the laws of South Africa. Any disputes arising from these Terms or your use of Jobsesame shall be subject to the exclusive jurisdiction of the courts of South Africa.",
           },
           {
-            title: "14. Changes to Terms",
+            title: "15. Changes to Terms",
             body: "We may update these Terms of Service from time to time. We will notify you of significant changes by email or by posting a notice on the platform. Continued use of Jobsesame after changes constitutes acceptance of the updated Terms.",
           },
           {
-            title: "15. Contact",
+            title: "16. Contact",
             body: "For questions about these Terms of Service, please contact us at legal@jobsesame.co.za.",
           },
         ].map(section => (

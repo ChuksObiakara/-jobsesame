@@ -32,6 +32,9 @@ export default function Dashboard() {
   const [activeSection, setActiveSection] = useState<'cv' | 'referral' | 'applications'>('cv');
   const [referralsCount] = useState(0);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [currency, setCurrency] = useState<'ZAR' | 'USD'>('USD');
+  const [paying, setPaying] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
   const freeRewrites = 3;
 
   useEffect(() => {
@@ -43,6 +46,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (isSignedIn && user) {
       generateReferralLink();
+      sendWelcomeEmailOnce();
     }
   }, [isSignedIn, user]);
 
@@ -51,10 +55,35 @@ export default function Dashboard() {
     if (stored) setApplications(JSON.parse(stored));
   }, []);
 
+  useEffect(() => {
+    fetch('https://ipapi.co/json/')
+      .then(r => r.json())
+      .then(data => { if (data.country_code === 'ZA') setCurrency('ZAR'); })
+      .catch(() => setCurrency('USD'));
+  }, []);
+
   const updateApplicationStatus = (id: string, status: Application['status']) => {
     const updated = applications.map(a => a.id === id ? { ...a, status } : a);
     setApplications(updated);
     localStorage.setItem('jobsesame_applications', JSON.stringify(updated));
+  };
+
+  const sendWelcomeEmailOnce = async () => {
+    if (localStorage.getItem('jobsesame_welcome_sent')) return;
+    const email = user?.emailAddresses[0]?.emailAddress;
+    const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || '';
+    const userId = user?.id;
+    if (!email || !userId) return;
+    try {
+      await fetch('/api/welcome-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, userId }),
+      });
+    } catch {
+      // Non-critical — do not surface errors to the user
+    }
+    localStorage.setItem('jobsesame_welcome_sent', 'true');
   };
 
   const generateReferralLink = async () => {
@@ -141,6 +170,30 @@ export default function Dashboard() {
     const subject = 'You need to try Jobsesame — free AI CV rewriter';
     const body = `Hi!\n\nI have been using Jobsesame to find jobs and it is incredible. AI rewrites your CV for any job in 30 seconds.\n\nSign up free here: ${referralLink}\n\nYou get 3 free CV rewrites — no card needed.`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  };
+
+  const handlePayment = async (plan: 'credits' | 'pro') => {
+    const email = user?.emailAddresses[0]?.emailAddress;
+    if (!email) { router.push('/sign-in'); return; }
+    setPaying(true);
+    setPaymentError('');
+    try {
+      const res = await fetch('/api/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, plan, currency }),
+      });
+      const data = await res.json();
+      if (data.authorizationUrl) {
+        window.location.href = data.authorizationUrl;
+      } else {
+        setPaymentError(data.error || 'Payment failed. Please try again.');
+        setPaying(false);
+      }
+    } catch {
+      setPaymentError('Something went wrong. Please try again.');
+      setPaying(false);
+    }
   };
 
   const navBtnStyle = (section: string) => ({
@@ -247,10 +300,13 @@ export default function Dashboard() {
             <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
               <div>
                 <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Want unlimited rewrites now?</div>
-                <div style={{fontSize:12,color:"#5A9A6A"}}>Upgrade to Pro for $20/month — unlimited everything.</div>
+                <div style={{fontSize:12,color:"#5A9A6A"}}>Upgrade to Pro for {currency === 'ZAR' ? 'R370' : '$20'}/month — unlimited everything.</div>
               </div>
-              <button style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:"pointer"}}>
-                Upgrade to Pro
+              <button
+                onClick={() => handlePayment('pro')}
+                disabled={paying}
+                style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                {paying ? 'Loading...' : 'Upgrade to Pro'}
               </button>
             </div>
           </div>
@@ -418,9 +474,14 @@ export default function Dashboard() {
                 <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
                   <div>
                     <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Unlock Pro to download as PDF or Word</div>
-                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Everything for $20/month.</div>
+                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Everything for {currency === 'ZAR' ? 'R370' : '$20'}/month.</div>
                   </div>
-                  <button style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:"pointer"}}>Upgrade to Pro</button>
+                  <button
+                    onClick={() => handlePayment('pro')}
+                    disabled={paying}
+                    style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                    {paying ? 'Loading...' : 'Upgrade to Pro'}
+                  </button>
                 </div>
               </div>
             ) : (
@@ -499,10 +560,20 @@ export default function Dashboard() {
                 <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
                   <div>
                     <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Unlock Pro — all doors open</div>
-                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Cover letters. $20/month.</div>
+                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Cover letters. {currency === 'ZAR' ? 'R370' : '$20'}/month.</div>
                   </div>
-                  <button style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:"pointer"}}>Upgrade to Pro</button>
+                  <button
+                    onClick={() => handlePayment('pro')}
+                    disabled={paying}
+                    style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                    {paying ? 'Loading...' : 'Upgrade to Pro'}
+                  </button>
                 </div>
+                {paymentError && (
+                  <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginTop:12}}>
+                    {paymentError}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -1,62 +1,72 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 
+const RELOCATION_LOCATIONS = [
+  'London, United Kingdom',
+  'Dubai, United Arab Emirates',
+  'Toronto, Ontario',
+  'Singapore',
+  'Berlin, Germany',
+  'Amsterdam, Netherlands',
+  'Sydney, New South Wales',
+];
+
+async function fetchMuseByLocation(location: string, query: string): Promise<any[]> {
+  const params = new URLSearchParams({ location, page: '1' });
+  const res = await fetch(
+    `https://www.themuse.com/api/public/jobs?${params.toString()}`,
+    { headers: { Accept: 'application/json' } }
+  );
+  const data = await res.json();
+  const results = data.results || [];
+
+  // Filter by query keywords if provided (beyond default)
+  const filtered = query
+    ? results.filter((job: any) =>
+        job.name?.toLowerCase().includes(query.toLowerCase()) ||
+        job.categories?.[0]?.name?.toLowerCase().includes(query.toLowerCase())
+      )
+    : results;
+
+  console.log(`[Relocation] ${location}: ${results.length} raw → ${filtered.length} matching`);
+
+  return filtered.map((job: any) => ({
+    id: job.id,
+    title: job.name,
+    company: job.company?.name || 'Company',
+    location: job.locations?.[0]?.name || location,
+    description: (job.contents || '').replace(/<[^>]*>/g, '').substring(0, 200) + '...',
+    url: job.refs?.landing_page || '#',
+    salary: '',
+    category: job.categories?.[0]?.name || 'General',
+    level: job.levels?.[0]?.name || 'All levels',
+    type: 'relocation',
+  }));
+}
+
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const query = searchParams.get('query') || 'engineer';
-  const page = searchParams.get('page') || '1';
+  const query = request.nextUrl.searchParams.get('query') || '';
 
   try {
-    const res = await fetch(
-      `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
-      { headers: { 'Accept': 'application/json' } }
+    const allResults = await Promise.all(
+      RELOCATION_LOCATIONS.map(loc => fetchMuseByLocation(loc, query))
     );
-    const data = await res.json();
 
-    // Filter for international/relocation jobs
-    const jobs = data.results
-      ?.filter((job: any) => {
-        const loc = job.locations?.[0]?.name || '';
-        const isInternational = 
-          loc.includes('UK') ||
-          loc.includes('London') ||
-          loc.includes('Canada') ||
-          loc.includes('Toronto') ||
-          loc.includes('Australia') ||
-          loc.includes('Sydney') ||
-          loc.includes('Germany') ||
-          loc.includes('Berlin') ||
-          loc.includes('Netherlands') ||
-          loc.includes('Amsterdam') ||
-          loc.includes('Singapore') ||
-          loc.includes('Dubai') ||
-          loc.includes('Remote') ||
-          loc.includes('Flexible') ||
-          loc.includes('Worldwide') ||
-          loc.includes('Europe') ||
-          loc.includes('India');
-        return isInternational;
-      })
-      ?.map((job: any) => ({
-        id: job.id,
-        title: job.name,
-        company: job.company?.name || 'Company',
-        location: job.locations?.[0]?.name || 'Worldwide',
-        description: job.contents?.replace(/<[^>]*>/g, '').substring(0, 200) + '...' || '',
-        url: job.refs?.landing_page || '#',
-        created: job.publication_date,
-        category: job.categories?.[0]?.name || 'General',
-        level: job.levels?.[0]?.name || 'All levels',
-        type: 'relocation',
-      })) || [];
+    const combined = allResults.flat();
 
-    return NextResponse.json({ 
-      jobs, 
-      total: data.total || 0, 
-      source: 'Worldwide Opportunities' 
+    // Deduplicate by title + company
+    const seen = new Set<string>();
+    const jobs = combined.filter(job => {
+      const key = `${job.title?.toLowerCase().trim()}|${job.company?.toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
     });
 
+    console.log(`[Relocation] Total unique jobs: ${jobs.length}`);
+    return NextResponse.json({ jobs, total: jobs.length, source: 'The Muse' });
   } catch (error) {
-    console.error('Relocation jobs error:', error);
+    console.error('[Relocation] Error:', error);
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch relocation jobs' });
   }
 }

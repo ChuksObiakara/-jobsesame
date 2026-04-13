@@ -24,8 +24,9 @@ export default function Home() {
   const [location, setLocation] = useState('');
   const [total, setTotal] = useState(0);
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('USD');
-  const [activeTab, setActiveTab] = useState<'all' | 'remote' | 'relocation' | 'teaching'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'remote' | 'relocation' | 'teaching' | 'south-africa'>('all');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const [savedJobs, setSavedJobs] = useState<number[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('jobsesame_saved_jobs');
@@ -55,6 +56,13 @@ export default function Home() {
       .catch(() => setCurrency('USD'));
   }, []);
 
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   const fetchJobs = async (tab = 'all', searchQuery = '', loc = '') => {
     setLoading(true);
     try {
@@ -65,6 +73,8 @@ export default function Home() {
         url = `/api/relocation?query=${encodeURIComponent(searchQuery || 'engineer')}`;
       } else if (tab === 'teaching') {
         url = `/api/relocation?query=${encodeURIComponent(searchQuery || 'english teacher OR ESL OR TEFL OR teaching')}`;
+      } else if (tab === 'south-africa') {
+        url = `/api/south-africa?query=${encodeURIComponent(searchQuery || 'software engineer')}`;
       } else {
         url = `/api/jobs?query=${encodeURIComponent(searchQuery || 'software engineer')}&location=${encodeURIComponent(loc)}`;
       }
@@ -80,7 +90,7 @@ export default function Home() {
 
   useEffect(() => { fetchJobs('all'); }, []);
 
-  const handleTabChange = (tab: 'all' | 'remote' | 'relocation' | 'teaching') => {
+  const handleTabChange = (tab: 'all' | 'remote' | 'relocation' | 'teaching' | 'south-africa') => {
     setActiveTab(tab);
     fetchJobs(tab, query, location);
   };
@@ -110,6 +120,7 @@ export default function Home() {
         <QuickApply
           job={selectedJob}
           onClose={() => setSelectedJob(null)}
+          currency={currency}
         />
       )}
 
@@ -131,17 +142,21 @@ export default function Home() {
           </span>
         </div>
         <div style={{display:"flex",gap:16,alignItems:"center"}}>
-          <a href="#jobs" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Find jobs</a>
-          <a href="#" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Recruiters</a>
-          <a href="#pricing" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Pricing</a>
+          {!isMobile && (
+            <>
+              <a href="#jobs" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Find jobs</a>
+              <a href="#" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Recruiters</a>
+              <a href="#pricing" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Pricing</a>
+            </>
+          )}
           {isSignedIn ? (
             <>
-              <a href="/dashboard" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Dashboard</a>
+              {!isMobile && <a href="/dashboard" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Dashboard</a>}
               <UserButton afterSignOutUrl="/" />
             </>
           ) : (
             <>
-              <a href="/sign-in" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Sign in</a>
+              {!isMobile && <a href="/sign-in" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Sign in</a>}
               <a href="/sign-up" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"9px 22px",borderRadius:99,textDecoration:"none"}}>Start free</a>
             </>
           )}
@@ -154,7 +169,7 @@ export default function Home() {
           <span style={{width:8,height:8,background:"#C8E600",borderRadius:"50%",display:"inline-block",flexShrink:0}}></span>
           OPEN THE DOORS TO YOUR FUTURE — UNLOCKED BY AI
         </div>
-        <h1 style={{fontSize:42,fontWeight:800,color:"#FFFFFF",lineHeight:1.1,letterSpacing:-1,marginBottom:10,maxWidth:600,margin:"0 auto 10px"}}>
+        <h1 style={{fontSize:isMobile?26:42,fontWeight:800,color:"#FFFFFF",lineHeight:1.1,letterSpacing:-1,marginBottom:10,maxWidth:600,margin:"0 auto 10px"}}>
           Every door. Every <span style={{color:"#C8E600"}}>opportunity.</span> Unlocked.
         </h1>
         <p style={{fontSize:16,color:"#90C898",fontStyle:"italic",marginTop:12,marginBottom:8}}>
@@ -171,9 +186,11 @@ export default function Home() {
           <a href="/sign-up" style={{background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:800,padding:"14px 32px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Open your future — free</a>
           <a href="#jobs" style={{background:"transparent",color:"#C8E600",fontSize:15,fontWeight:500,padding:"14px 24px",borderRadius:99,border:"1.5px solid #1A5A2A",textDecoration:"none",display:"inline-block"}}>Browse jobs now</a>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",maxWidth:440,margin:"0 auto",border:"1px solid #1A5A2A",borderRadius:12,overflow:"hidden"}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",maxWidth:440,margin:"0 auto",border:"1px solid #1A5A2A",borderRadius:12,overflow:"hidden"}}>
           {[["2.4M+","LIVE JOBS"],["180+","COUNTRIES"],["30s","CV REWRITE"],["$20","PER MONTH"]].map(([val,label],i)=>(
-            <div key={label} style={{padding:"14px 10px",textAlign:"center",borderRight:i<3?"1px solid #1A5A2A":"none"}}>
+            <div key={label} style={{padding:"14px 10px",textAlign:"center",
+              borderRight:isMobile?(i%2===0?"1px solid #1A5A2A":"none"):(i<3?"1px solid #1A5A2A":"none"),
+              borderBottom:isMobile&&i<2?"1px solid #1A5A2A":"none"}}>
               <div style={{fontSize:20,fontWeight:800,color:"#C8E600"}}>{val}</div>
               <div style={{fontSize:9,color:"#4A8A5A",letterSpacing:"0.8px",marginTop:2}}>{label}</div>
             </div>
@@ -182,7 +199,10 @@ export default function Home() {
       </section>
 
       {/* GOLD BAR */}
-      <div style={{background:"#C8E600",padding:"13px 24px",display:"flex",alignItems:"center",justifyContent:"center",gap:24,flexWrap:"wrap"}}>
+      <div style={{background:"#C8E600",padding:"13px 24px",
+        display:isMobile?"grid":"flex",
+        gridTemplateColumns:isMobile?"1fr 1fr":undefined,
+        alignItems:"center",justifyContent:"center",gap:isMobile?"10px 16px":24,flexWrap:"wrap"}}>
         {["2.4M+ live jobs worldwide","180+ countries","CV rewritten in 30 seconds","Quick Apply with AI","3 free applications — no card needed"].map(item=>(
           <div key={item} style={{display:"flex",alignItems:"center",gap:7,fontSize:12,color:"#052A14",fontWeight:700}}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="#052A14"/><path d="M4 7L6 9.5L10 4.5" stroke="#C8E600" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -196,7 +216,7 @@ export default function Home() {
         <p style={{fontSize:11,fontWeight:700,color:"#C8E600",letterSpacing:"2.5px",textTransform:"uppercase",textAlign:"center",marginBottom:10}}>How it works</p>
         <h2 style={{fontSize:28,fontWeight:800,color:"#FFFFFF",textAlign:"center",marginBottom:6}}>Three steps to <em style={{color:"#C8E600",fontStyle:"italic"}}>open every door</em></h2>
         <p style={{fontSize:13,color:"#4A8A5A",textAlign:"center",marginBottom:32,fontStyle:"italic"}}>&ldquo;The right key opens any door — we give you that key.&rdquo;</p>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,maxWidth:900,margin:"0 auto"}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:12,maxWidth:900,margin:"0 auto"}}>
           {[
             ["1","Upload your CV once","AI reads everything instantly. Extracts your skills, experience and ambitions. Builds your complete global career profile. No forms to fill."],
             ["2","AI opens your matching doors","Platform unlocks millions of live jobs across 180 countries. Shows every role ranked by match percentage with full explanation of why each one fits."],
@@ -214,14 +234,14 @@ export default function Home() {
       {/* SEARCH + TABS */}
       <div style={{background:"#052A14",padding:"24px",borderBottom:"4px solid #C8E600"}} id="jobs">
         <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:18,flexWrap:"wrap"}}>
-          {(['all','remote','relocation','teaching'] as const).map(tab=>(
+          {(['all','remote','relocation','teaching','south-africa'] as const).map(tab=>(
             <button key={tab} style={tabStyle(tab)} onClick={()=>handleTabChange(tab)}>
-              {tab === 'all' ? '🌍 All Jobs' : tab === 'remote' ? '💻 Remote Jobs' : tab === 'teaching' ? '🎓 Teaching Jobs' : '✈️ Relocation Jobs'}
+              {tab === 'all' ? '🌍 All Jobs' : tab === 'remote' ? '💻 Remote Jobs' : tab === 'teaching' ? '🎓 Teaching Jobs' : tab === 'south-africa' ? '🌍 African Jobs' : '✈️ Relocation Jobs'}
             </button>
           ))}
         </div>
         <p style={{textAlign:"center",fontSize:12,color:"#5A9A6A",marginBottom:14,fontStyle:"italic"}}>
-          {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : activeTab === 'teaching' ? 'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
+          {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : activeTab === 'teaching' ? 'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free' : activeTab === 'south-africa' ? 'Live jobs across South Africa, Nigeria, Kenya and beyond' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
         </p>
         <form onSubmit={handleSearch} style={{display:"flex",gap:8,flexWrap:"wrap",maxWidth:720,margin:"0 auto"}}>
           <input
@@ -271,16 +291,28 @@ export default function Home() {
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
           <div>
             <span style={{fontSize:15,fontWeight:800,color:"#052A14"}}>
-              {activeTab === 'remote' ? 'Remote doors open worldwide' : activeTab === 'relocation' ? 'International doors open for you' : activeTab === 'teaching' ? 'Teaching jobs open worldwide' : 'Doors open for your profile'}
+              {activeTab === 'remote' ? 'Remote doors open worldwide' : activeTab === 'relocation' ? 'International doors open for you' : activeTab === 'teaching' ? 'Teaching jobs open worldwide' : activeTab === 'south-africa' ? 'African jobs open now' : 'Doors open for your profile'}
             </span>
             {activeTab === 'relocation' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>Jobs in London, Dubai, Toronto, Singapore and beyond</div>}
             {activeTab === 'remote' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>Work from anywhere — earn in USD, GBP or EUR</div>}
             {activeTab === 'teaching' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>Teach abroad — free housing, flights and $2,000–$3,500/month</div>}
+            {activeTab === 'south-africa' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>South Africa, Nigeria, Kenya and across Africa</div>}
           </div>
           <span style={{fontSize:12,color:"#052A14",background:"#C8E600",padding:"3px 12px",borderRadius:99,fontWeight:800,whiteSpace:"nowrap"}}>
             {total > 0 ? total.toLocaleString() : '...'} matches
           </span>
         </div>
+        {activeTab === 'south-africa' && !loading && (
+          <div style={{background:"#052A14",border:"1.5px solid #C8E600",borderRadius:14,padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:18}}>🌍</span>
+              <span style={{fontSize:13,color:"#A8D8B0",fontWeight:600}}>
+                Jobs in <strong style={{color:"#FFFFFF"}}>South Africa, Nigeria, Kenya</strong> and across Africa — powered by Careerjet
+              </span>
+            </div>
+            <span style={{fontSize:11,color:"#3A7A4A",fontWeight:600,whiteSpace:"nowrap"}}>3 countries · live results</span>
+          </div>
+        )}
         {activeTab === 'teaching' && !loading && (
           <div style={{background:"#052A14",border:"1.5px solid #C8E600",borderRadius:14,padding:20,marginBottom:16}}>
             <div style={{fontSize:11,color:"#C8E600",fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",marginBottom:8}}>🎓 TEACHING ABROAD OPPORTUNITY</div>
@@ -331,25 +363,28 @@ export default function Home() {
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {jobs.map((job,i)=>(
               <div key={job.id}
-                style={{background:i===0?"#FDFFF5":"#fff",border:`1.5px solid ${i===0?"#C8E600":"#D8EED8"}`,borderRadius:14,padding:16,display:"flex",gap:12}}>
-                <div style={{width:44,height:44,borderRadius:11,background:"#EAF5EA",color:"#1A5A2A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0}}>
-                  {job.company.charAt(0).toUpperCase()}
-                </div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:14,fontWeight:700,color:"#052A14",marginBottom:2}}>{job.title}</div>
-                  <div style={{fontSize:12,color:"#555",marginBottom:8}}>{job.company} · {job.location}</div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8}}>
-                    <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#EAF5EA",color:"#1A5A2A"}}>{job.location}</span>
-                    <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#FDFFF5",color:"#5A7A00",border:"1px solid #C8E600"}}>{job.level}</span>
-                    <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#FFF8EC",color:"#7A5000"}}>{job.category}</span>
-                    {activeTab === 'remote' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600"}}>Remote — work from anywhere</span>}
-                    {activeTab === 'relocation' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600"}}>Relocation opportunity</span>}
-                    {activeTab === 'teaching' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600"}}>🎓 Teaching abroad</span>}
-                    {activeTab === 'all' && i===0 && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600"}}>Open the doors to your future</span>}
+                style={{background:i===0?"#FDFFF5":"#fff",border:`1.5px solid ${i===0?"#C8E600":"#D8EED8"}`,borderRadius:14,padding:16,display:"flex",flexDirection:isMobile?"column":"row",gap:12}}>
+                <div style={{display:"flex",gap:12,minWidth:0}}>
+                  <div style={{width:44,height:44,borderRadius:11,background:"#EAF5EA",color:"#1A5A2A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0}}>
+                    {job.company.charAt(0).toUpperCase()}
                   </div>
-                  <p style={{fontSize:12,color:"#666",lineHeight:1.6,margin:0}}>{job.description}</p>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#052A14",marginBottom:2}}>{job.title}</div>
+                    <div style={{fontSize:12,color:"#555",marginBottom:8}}>{job.company} · {job.location}</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:5,marginBottom:8}}>
+                      <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#EAF5EA",color:"#1A5A2A"}}>{job.location}</span>
+                      <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#FDFFF5",color:"#5A7A00",border:"1px solid #C8E600"}}>{job.level}</span>
+                      <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#FFF8EC",color:"#7A5000"}}>{job.category}</span>
+                      {activeTab === 'remote' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600"}}>Remote — work from anywhere</span>}
+                      {activeTab === 'relocation' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600"}}>Relocation opportunity</span>}
+                      {activeTab === 'teaching' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600"}}>🎓 Teaching abroad</span>}
+                      {activeTab === 'south-africa' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600"}}>🌍 Africa</span>}
+                      {activeTab === 'all' && i===0 && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600"}}>Open the doors to your future</span>}
+                    </div>
+                    <p style={{fontSize:12,color:"#666",lineHeight:1.6,margin:0}}>{job.description}</p>
+                  </div>
                 </div>
-                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:7,flexShrink:0}}>
+                <div style={{display:"flex",flexDirection:isMobile?"row":"column",alignItems:isMobile?"center":"flex-end",justifyContent:isMobile?"flex-start":"flex-start",gap:7,flexShrink:0,flexWrap:"wrap"}}>
                   <button
                     onClick={()=>setSelectedJob(job)}
                     style={{background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"8px 14px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
@@ -392,7 +427,7 @@ export default function Home() {
       <section style={{background:"#F4FCF4",padding:"36px 24px"}}>
         <p style={{fontSize:11,fontWeight:700,color:"#052A14",letterSpacing:"2px",textTransform:"uppercase",textAlign:"center",marginBottom:10}}>SUCCESS STORIES</p>
         <h2 style={{fontSize:22,fontWeight:800,color:"#052A14",textAlign:"center",marginBottom:24}}>Real people. <span style={{color:"#1A7A3A"}}>Real doors opened.</span></h2>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:12,maxWidth:800,margin:"0 auto"}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,1fr)",gap:12,maxWidth:800,margin:"0 auto"}}>
           {[
             {name:"Thabo Nkosi",location:"Johannesburg → Standard Bank",quote:"4 months of silence. Jobsesame rewrote my CV and Standard Bank called me within 3 days. The door I thought was locked — was never locked at all.",initials:"TN"},
             {name:"Chioma Okafor",location:"Lagos → Marketing Manager",quote:"The AI completely transformed my CV. I could see exactly which keywords were missing. Got my dream job within 6 weeks.",initials:"CO"},
@@ -430,7 +465,7 @@ export default function Home() {
           <h2 style={{fontSize:22,fontWeight:800,color:"#052A14",marginTop:10}}>One price. Every door unlocked. No surprises.</h2>
           <p style={{fontSize:13,color:"#4A7A4A",marginTop:4,fontStyle:"italic"}}>&ldquo;The key to your future should not cost a fortune.&rdquo;</p>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,maxWidth:800,margin:"0 auto"}}>
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10,maxWidth:800,margin:"0 auto"}}>
           {[
             {name:"Free forever",price:currency==='ZAR'?"R0":"$0",per:"/always",desc:"Browse millions of jobs. 3 free Quick Apply credits. AI CV rewrite included. No card needed.",popular:false,btn:"Open free"},
             {name:"Pro — All doors open",price:currency==='ZAR'?"R370":"$20",per:"/month",desc:"Unlimited Quick Apply. Unlimited CV rewrites. Auto-apply. Cover letters. Everything — one price.",popular:true,btn:"Unlock Pro"},

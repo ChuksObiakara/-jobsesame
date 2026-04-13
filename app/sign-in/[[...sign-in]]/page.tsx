@@ -33,6 +33,7 @@ export default function SignInPage() {
         </p>
       </div>
       <SignIn
+        forceRedirectUrl="/dashboard"
         appearance={{
           elements: {
             rootBox: {width: '100%', maxWidth: 480},

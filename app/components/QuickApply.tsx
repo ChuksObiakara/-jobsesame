@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
 
 interface Job {
   id: number;
@@ -17,6 +18,7 @@ interface Job {
 interface QuickApplyProps {
   job: Job;
   onClose: () => void;
+  currency?: 'ZAR' | 'USD';
 }
 
 export function isAutoApply(url: string): boolean {
@@ -27,8 +29,9 @@ export function isAutoApply(url: string): boolean {
   return !complexPortals.some(portal => url.toLowerCase().includes(portal));
 }
 
-export default function QuickApply({ job, onClose }: QuickApplyProps) {
-  const [savedCvData] = useState<any>(() => {
+export default function QuickApply({ job, onClose, currency = 'USD' }: QuickApplyProps) {
+  const { user } = useUser();
+  const [savedCvData, setSavedCvData] = useState<any>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('jobsesame_cv_data');
       return saved ? JSON.parse(saved) : null;
@@ -48,8 +51,35 @@ export default function QuickApply({ job, onClose }: QuickApplyProps) {
     return 0;
   });
 
+  const [paying, setPaying] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
+
   const FREE_LIMIT = 3;
   const autoApply = isAutoApply(job.url);
+
+  const handlePayment = async (plan: 'credits' | 'pro') => {
+    const email = user?.emailAddresses[0]?.emailAddress;
+    if (!email) { window.location.href = '/sign-in'; return; }
+    setPaying(true);
+    setPaymentError('');
+    try {
+      const res = await fetch('/api/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, plan, currency }),
+      });
+      const data = await res.json();
+      if (data.authorizationUrl) {
+        window.location.href = data.authorizationUrl;
+      } else {
+        setPaymentError(data.error || 'Payment failed. Please try again.');
+        setPaying(false);
+      }
+    } catch {
+      setPaymentError('Something went wrong. Please try again.');
+      setPaying(false);
+    }
+  };
 
   useEffect(() => {
     if (savedCvData) {
@@ -80,6 +110,12 @@ export default function QuickApply({ job, onClose }: QuickApplyProps) {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleUseDifferentCV = () => {
+    localStorage.removeItem('jobsesame_cv_data');
+    setSavedCvData(null);
+    setStep('profile');
   };
 
   const handleRewrite = async (cv: any) => {
@@ -290,10 +326,21 @@ export default function QuickApply({ job, onClose }: QuickApplyProps) {
 
         {step === 'profile' && (
           <div>
-            <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV once</h3>
-            <p style={{fontSize:13,color:"#5A9A6A",marginBottom:16,lineHeight:1.7}}>
-              AI reads your CV and rewrites it specifically for <strong style={{color:"#FFFFFF"}}>{job.title}</strong> at {job.company}.
-            </p>
+            {savedCvData ? (
+              <div style={{background:"rgba(200,230,0,0.08)",border:"1.5px solid rgba(200,230,0,0.3)",borderRadius:12,padding:"14px 18px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                <div style={{fontSize:13,color:"#C8E600",fontWeight:700}}>✓ Using your saved CV</div>
+                <button onClick={handleUseDifferentCV} style={{background:"transparent",border:"1px solid #3A7A4A",borderRadius:99,color:"#5A9A6A",fontSize:12,fontWeight:600,padding:"5px 14px",cursor:"pointer",whiteSpace:"nowrap"}}>
+                  Use different CV
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV once</h3>
+                <p style={{fontSize:13,color:"#5A9A6A",marginBottom:16,lineHeight:1.7}}>
+                  AI reads your CV and rewrites it specifically for <strong style={{color:"#FFFFFF"}}>{job.title}</strong> at {job.company}.
+                </p>
+              </>
+            )}
 
             <div style={{marginBottom:16}}>
               <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>
@@ -309,25 +356,27 @@ export default function QuickApply({ job, onClose }: QuickApplyProps) {
               <div style={{fontSize:10,color:"#3A7A4A"}}>Tell the AI exactly how you want your CV to be rewritten</div>
             </div>
 
-            <div style={{background:"#0D3A1A",borderRadius:12,padding:24,textAlign:"center",marginBottom:16,border:"2px dashed #1A5A2A"}}>
-              <div style={{fontSize:32,marginBottom:12}}>📄</div>
-              {uploading ? (
-                <div>
-                  <div style={{fontSize:14,color:"#C8E600",fontWeight:700,marginBottom:6}}>Reading your CV...</div>
-                  <div style={{fontSize:12,color:"#5A9A6A"}}>AI is extracting your details</div>
-                </div>
-              ) : (
-                <div>
-                  <div style={{fontSize:13,color:"#5A9A6A",marginBottom:12}}>Upload your CV — PDF only</div>
-                  <label style={{cursor:"pointer"}}>
-                    <input type="file" accept=".pdf" onChange={handleFileUpload} style={{display:"none"}}/>
-                    <span style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,cursor:"pointer"}}>
-                      Choose PDF file
-                    </span>
-                  </label>
-                </div>
-              )}
-            </div>
+            {!savedCvData && (
+              <div style={{background:"#0D3A1A",borderRadius:12,padding:24,textAlign:"center",marginBottom:16,border:"2px dashed #1A5A2A"}}>
+                <div style={{fontSize:32,marginBottom:12}}>📄</div>
+                {uploading ? (
+                  <div>
+                    <div style={{fontSize:14,color:"#C8E600",fontWeight:700,marginBottom:6}}>Reading your CV...</div>
+                    <div style={{fontSize:12,color:"#5A9A6A"}}>AI is extracting your details</div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{fontSize:13,color:"#5A9A6A",marginBottom:12}}>Upload your CV — PDF only</div>
+                    <label style={{cursor:"pointer"}}>
+                      <input type="file" accept=".pdf" onChange={handleFileUpload} style={{display:"none"}}/>
+                      <span style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,cursor:"pointer"}}>
+                        Choose PDF file
+                      </span>
+                    </label>
+                  </div>
+                )}
+              </div>
+            )}
             {error && <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginBottom:16}}>{error}</div>}
             <div style={{fontSize:11,color:"#3A7A4A",textAlign:"center"}}>
               Free applications remaining: <strong style={{color:"#C8E600"}}>{FREE_LIMIT - applyCount}</strong> of {FREE_LIMIT}
@@ -337,6 +386,14 @@ export default function QuickApply({ job, onClose }: QuickApplyProps) {
 
         {step === 'rewrite' && (
           <div style={{textAlign:"center",padding:"32px 0"}}>
+            {savedCvData && (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:20}}>
+                <span style={{fontSize:13,color:"#C8E600",fontWeight:700}}>✓ Using your saved CV</span>
+                <button onClick={handleUseDifferentCV} style={{background:"transparent",border:"1px solid #3A7A4A",borderRadius:99,color:"#5A9A6A",fontSize:12,fontWeight:600,padding:"4px 12px",cursor:"pointer"}}>
+                  Use different CV
+                </button>
+              </div>
+            )}
             <div style={{fontSize:40,marginBottom:16}}>✨</div>
             <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>AI is rewriting your CV...</h3>
             <p style={{fontSize:13,color:"#5A9A6A",marginBottom:16}}>
@@ -436,17 +493,36 @@ export default function QuickApply({ job, onClose }: QuickApplyProps) {
             <p style={{fontSize:14,color:"#5A9A6A",marginBottom:20,lineHeight:1.7}}>Unlock more to keep applying.</p>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
               <div style={{background:"#0D3A1A",border:"1.5px solid #1A5A2A",borderRadius:14,padding:16,textAlign:"center"}}>
-                <div style={{fontSize:22,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>R185<span style={{fontSize:12,color:"#888"}}>/pack</span></div>
+                <div style={{fontSize:22,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>
+                  {currency === 'ZAR' ? 'R185' : '$10'}<span style={{fontSize:12,color:"#888"}}>/pack</span>
+                </div>
                 <div style={{fontSize:12,color:"#5A9A6A",marginBottom:12}}>10 applications. No expiry.</div>
-                <a href="/sign-up" style={{display:"block",background:"#052A14",color:"#C8E600",fontSize:12,fontWeight:800,padding:"9px",borderRadius:99,border:"1px solid #C8E600",textDecoration:"none"}}>Get credits</a>
+                <button
+                  onClick={() => handlePayment('credits')}
+                  disabled={paying}
+                  style={{display:"block",width:"100%",background:"#052A14",color:"#C8E600",fontSize:12,fontWeight:800,padding:"9px",borderRadius:99,border:"1px solid #C8E600",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                  {paying ? 'Loading...' : 'Get credits'}
+                </button>
               </div>
               <div style={{background:"#0D3A1A",border:"1.5px solid #C8E600",borderRadius:14,padding:16,textAlign:"center"}}>
                 <div style={{background:"#C8E600",color:"#052A14",fontSize:10,fontWeight:800,padding:"2px 10px",borderRadius:99,display:"inline-block",marginBottom:6}}>Best value</div>
-                <div style={{fontSize:22,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>R370<span style={{fontSize:12,color:"#888"}}>/month</span></div>
+                <div style={{fontSize:22,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>
+                  {currency === 'ZAR' ? 'R370' : '$20'}<span style={{fontSize:12,color:"#888"}}>/month</span>
+                </div>
                 <div style={{fontSize:12,color:"#5A9A6A",marginBottom:12}}>Unlimited. Everything.</div>
-                <a href="/sign-up" style={{display:"block",background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"9px",borderRadius:99,textDecoration:"none"}}>Go Pro</a>
+                <button
+                  onClick={() => handlePayment('pro')}
+                  disabled={paying}
+                  style={{display:"block",width:"100%",background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"9px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                  {paying ? 'Loading...' : 'Go Pro'}
+                </button>
               </div>
             </div>
+            {paymentError && (
+              <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginBottom:12}}>
+                {paymentError}
+              </div>
+            )}
             <button onClick={onClose} style={{background:"transparent",color:"#5A9A6A",fontSize:13,cursor:"pointer",border:"none"}}>Maybe later</button>
           </div>
         )}
