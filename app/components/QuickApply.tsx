@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Job {
   id: number;
@@ -28,6 +28,13 @@ export function isAutoApply(url: string): boolean {
 }
 
 export default function QuickApply({ job, onClose }: QuickApplyProps) {
+  const [savedCvData] = useState<any>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('jobsesame_cv_data');
+      return saved ? JSON.parse(saved) : null;
+    }
+    return null;
+  });
   const [step, setStep] = useState<'profile' | 'rewrite' | 'apply' | 'done' | 'paywall'>('profile');
   const [uploading, setUploading] = useState(false);
   const [rewrittenCV, setRewrittenCV] = useState<any>(null);
@@ -44,6 +51,13 @@ export default function QuickApply({ job, onClose }: QuickApplyProps) {
   const FREE_LIMIT = 3;
   const autoApply = isAutoApply(job.url);
 
+  useEffect(() => {
+    if (savedCvData) {
+      handleRewrite(savedCvData);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -56,6 +70,7 @@ export default function QuickApply({ job, onClose }: QuickApplyProps) {
       const response = await fetch('/api/cv', { method: 'POST', body: formData });
       const data = await response.json();
       if (data.success) {
+        localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.cvData));
         handleRewrite(data.cvData);
       } else {
         setError(data.error || 'Failed to read CV');
@@ -219,9 +234,18 @@ export default function QuickApply({ job, onClose }: QuickApplyProps) {
     await new Promise(resolve => setTimeout(resolve, 800));
     window.open(job.url, '_blank');
     const newCount = applyCount + 1;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('jobsesame_apply_count', String(newCount));
-    }
+    localStorage.setItem('jobsesame_apply_count', String(newCount));
+    const applications = JSON.parse(localStorage.getItem('jobsesame_applications') || '[]');
+    applications.push({
+      id: Date.now().toString(),
+      jobTitle: job.title,
+      company: job.company,
+      location: job.location,
+      dateApplied: new Date().toISOString(),
+      status: 'Applied',
+      jobUrl: job.url,
+    });
+    localStorage.setItem('jobsesame_applications', JSON.stringify(applications));
     setApplying(false);
     setStep('done');
   };

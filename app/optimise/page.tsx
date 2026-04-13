@@ -277,7 +277,17 @@ export default function OptimisePage() {
               <div style={{fontSize:28,marginBottom:10}}>📄</div>
               <div style={{fontSize:14,fontWeight:700,color:"#FFFFFF",marginBottom:4}}>Upload your CV</div>
               <div style={{fontSize:12,color:"#5A9A6A",marginBottom:16}}>PDF only — AI reads it and rewrites it for this job</div>
-              <label style={{cursor:"pointer"}}>
+              <label
+                style={{cursor:"pointer"}}
+                onClick={e => {
+                  if (!jobTitle || !jobDescription) {
+                    e.preventDefault();
+                    setError('Please fill in the job title and job description above before uploading your CV.');
+                  } else {
+                    setError('');
+                  }
+                }}
+              >
                 <input type="file" accept=".pdf" onChange={handleFileUpload} style={{display:"none"}}/>
                 <span style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px 32px",borderRadius:99,cursor:"pointer",display:"inline-block"}}>
                   Choose CV and optimise now

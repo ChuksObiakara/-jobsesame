@@ -3,6 +3,16 @@ import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+interface Application {
+  id: string;
+  jobTitle: string;
+  company: string;
+  location: string;
+  dateApplied: string;
+  status: 'Applied' | 'Interview' | 'Offer' | 'Rejected';
+  jobUrl?: string;
+}
+
 export default function Dashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
@@ -19,8 +29,9 @@ export default function Dashboard() {
   const [rewriteError, setRewriteError] = useState('');
   const [referralLink, setReferralLink] = useState('');
   const [copied, setCopied] = useState(false);
-  const [activeSection, setActiveSection] = useState<'cv' | 'referral'>('cv');
+  const [activeSection, setActiveSection] = useState<'cv' | 'referral' | 'applications'>('cv');
   const [referralsCount] = useState(0);
+  const [applications, setApplications] = useState<Application[]>([]);
   const freeRewrites = 3;
 
   useEffect(() => {
@@ -34,6 +45,17 @@ export default function Dashboard() {
       generateReferralLink();
     }
   }, [isSignedIn, user]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('jobsesame_applications');
+    if (stored) setApplications(JSON.parse(stored));
+  }, []);
+
+  const updateApplicationStatus = (id: string, status: Application['status']) => {
+    const updated = applications.map(a => a.id === id ? { ...a, status } : a);
+    setApplications(updated);
+    localStorage.setItem('jobsesame_applications', JSON.stringify(updated));
+  };
 
   const generateReferralLink = async () => {
     try {
@@ -153,6 +175,7 @@ export default function Dashboard() {
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <button style={navBtnStyle('cv')} onClick={()=>setActiveSection('cv')}>My CV</button>
           <button style={navBtnStyle('referral')} onClick={()=>setActiveSection('referral')}>Free rewrites</button>
+          <button style={navBtnStyle('applications')} onClick={()=>setActiveSection('applications')}>My Applications</button>
           <a href="/" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",marginLeft:6}}>Jobs</a>
           <UserButton afterSignOutUrl="/" />
         </div>
@@ -229,6 +252,79 @@ export default function Dashboard() {
               <button style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:"pointer"}}>
                 Upgrade to Pro
               </button>
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'applications' && (
+          <div>
+            <div style={{marginBottom:20}}>
+              <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>My Applications</h2>
+              <p style={{fontSize:13,color:"#5A9A6A"}}>Every job you applied to with Quick Apply — tracked automatically.</p>
+            </div>
+            {applications.length === 0 ? (
+              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:48,textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:16}}>📋</div>
+                <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>No applications yet</h3>
+                <p style={{fontSize:13,color:"#5A9A6A",marginBottom:24}}>Use Quick Apply on any job and it will appear here automatically.</p>
+                <a href="/" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Browse jobs</a>
+              </div>
+            ) : (
+              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,overflow:"hidden"}}>
+                <div style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"12px 20px",borderBottom:"1px solid #1A4A2A",background:"#0D3A1A"}}>
+                  {["Job","Company","Location","Date","Status"].map(h=>(
+                    <div key={h} style={{fontSize:10,color:"#5A9A6A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase"}}>{h}</div>
+                  ))}
+                </div>
+                {applications.map((app, i) => (
+                  <div key={app.id} style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"14px 20px",borderBottom:i<applications.length-1?"1px solid #0D3A1A":"none",alignItems:"center"}}>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",marginBottom:2}}>{app.jobTitle}</div>
+                      {app.jobUrl && (
+                        <a href={app.jobUrl} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#3A7A4A",textDecoration:"none"}}>View posting ↗</a>
+                      )}
+                    </div>
+                    <div style={{fontSize:12,color:"#90C898"}}>{app.company}</div>
+                    <div style={{fontSize:12,color:"#5A9A6A"}}>{app.location}</div>
+                    <div style={{fontSize:11,color:"#3A7A4A"}}>{new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
+                    <div>
+                      <select
+                        value={app.status}
+                        onChange={e => updateApplicationStatus(app.id, e.target.value as Application['status'])}
+                        style={{
+                          padding:"5px 10px",
+                          borderRadius:99,
+                          border:"1.5px solid",
+                          fontSize:11,
+                          fontWeight:700,
+                          cursor:"pointer",
+                          outline:"none",
+                          background:"#0D3A1A",
+                          borderColor: app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#A32D2D':'#1A5A2A',
+                          color: app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#F09595':'#90C898',
+                        }}
+                      >
+                        <option value="Applied">Applied</option>
+                        <option value="Interview">Interview</option>
+                        <option value="Offer">Offer</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{display:"flex",gap:12,marginTop:16,flexWrap:"wrap"}}>
+              {[
+                {label:"Total applied",value:applications.length,color:"#90C898"},
+                {label:"Interviews",value:applications.filter(a=>a.status==='Interview').length,color:"#FFA500"},
+                {label:"Offers",value:applications.filter(a=>a.status==='Offer').length,color:"#C8E600"},
+              ].map(stat=>(
+                <div key={stat.label} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 20px",flex:1,minWidth:120}}>
+                  <div style={{fontSize:22,fontWeight:800,color:stat.color,marginBottom:2}}>{stat.value}</div>
+                  <div style={{fontSize:11,color:"#5A9A6A",fontWeight:600}}>{stat.label}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}
