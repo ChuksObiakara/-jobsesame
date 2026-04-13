@@ -22,6 +22,7 @@ export default function SignInPage() {
       </div>
       <SignIn
         forceRedirectUrl="/onboarding"
+        fallbackRedirectUrl="/onboarding"
         appearance={{
           elements: {
             rootBox: {width: '100%', maxWidth: 480},

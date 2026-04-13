@@ -5,6 +5,8 @@ const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/onboarding(.*)',
+  '/sso-callback(.*)',
   '/api/jobs(.*)',
   '/api/remote(.*)',
   '/api/relocation(.*)',
@@ -21,13 +23,19 @@ export default clerkMiddleware(async (auth, request) => {
   const url = request.nextUrl.clone();
   const path = url.pathname;
 
-  // If signed in and on sign-in or sign-up page — redirect to dashboard
-  if (userId && (path === '/sign-in' || path.startsWith('/sign-in/') || path === '/sign-up' || path.startsWith('/sign-up/'))) {
-    url.pathname = '/dashboard';
+  // Signed-in users on sign-in, sign-up, or homepage → send to onboarding.
+  // The onboarding page itself checks localStorage and skips to /dashboard
+  // for users who already completed it.
+  if (userId && (
+    path === '/' ||
+    path === '/sign-in' || path.startsWith('/sign-in/') ||
+    path === '/sign-up' || path.startsWith('/sign-up/')
+  )) {
+    url.pathname = '/onboarding';
     return NextResponse.redirect(url);
   }
 
-  // If not signed in and trying to access protected routes — redirect to sign-in
+  // Unauthenticated users accessing protected routes → sign-in
   if (!userId && !isPublicRoute(request)) {
     url.pathname = '/sign-in';
     return NextResponse.redirect(url);
