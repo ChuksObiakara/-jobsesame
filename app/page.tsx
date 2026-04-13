@@ -27,6 +27,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<'all' | 'remote' | 'relocation' | 'teaching' | 'south-africa'>('all');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [savedJobs, setSavedJobs] = useState<number[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('jobsesame_saved_jobs');
@@ -145,7 +146,6 @@ export default function Home() {
           {!isMobile && (
             <>
               <a href="#jobs" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Find jobs</a>
-              <a href="#" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Recruiters</a>
               <a href="#pricing" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Pricing</a>
             </>
           )}
@@ -160,38 +160,64 @@ export default function Home() {
               <a href="/sign-up" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"9px 22px",borderRadius:99,textDecoration:"none"}}>Start free</a>
             </>
           )}
+          {isMobile && (
+            <button onClick={()=>setMenuOpen(!menuOpen)} style={{background:"transparent",border:"none",color:"#C8E600",fontSize:26,cursor:"pointer",padding:"4px",lineHeight:1,display:"flex",alignItems:"center"}}>
+              {menuOpen ? '✕' : '☰'}
+            </button>
+          )}
         </div>
       </nav>
+      {isMobile && menuOpen && (
+        <div style={{position:"fixed",top:64,left:0,right:0,background:"#052A14",zIndex:99,borderTop:"1px solid #1A5A2A",padding:"20px 24px",display:"flex",flexDirection:"column",gap:20,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+          <a href="#jobs" onClick={()=>setMenuOpen(false)} style={{fontSize:16,color:"#A8D8B0",fontWeight:600,textDecoration:"none"}}>Find jobs</a>
+          <a href="#pricing" onClick={()=>setMenuOpen(false)} style={{fontSize:16,color:"#A8D8B0",fontWeight:600,textDecoration:"none"}}>Pricing</a>
+          {isSignedIn
+            ? <a href="/dashboard" onClick={()=>setMenuOpen(false)} style={{fontSize:16,color:"#A8D8B0",fontWeight:600,textDecoration:"none"}}>Dashboard</a>
+            : <a href="/sign-in" onClick={()=>setMenuOpen(false)} style={{fontSize:16,color:"#A8D8B0",fontWeight:600,textDecoration:"none"}}>Sign in</a>
+          }
+          <a href="/sign-up" onClick={()=>setMenuOpen(false)} style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px 24px",borderRadius:99,textDecoration:"none",textAlign:"center"}}>Start free — no card needed</a>
+        </div>
+      )}
 
       {/* HERO */}
-      <section style={{background:"#052A14",padding:"64px 28px 56px",textAlign:"center"}}>
+      <section style={{background:"#052A14",padding:isMobile?"32px 16px 40px":"64px 28px 56px",textAlign:"center",position:"relative",overflow:"hidden"}}>
+        {!isMobile && (
+          <>
+            <div style={{position:"absolute",left:28,top:"50%",transform:"translateY(-60%)",background:"#ffffff",borderRadius:16,padding:"14px",boxShadow:"0 8px 32px rgba(0,0,0,0.35)",maxWidth:148,textAlign:"left",zIndex:2}}>
+              <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400" style={{width:88,height:88,borderRadius:12,objectFit:"cover",display:"block",marginBottom:8}} alt="Hired" />
+              <div style={{fontSize:11,fontWeight:800,color:"#052A14",marginBottom:2}}>Amara D.</div>
+              <div style={{fontSize:10,fontWeight:700,color:"#1A7A3A"}}>✓ Just got hired</div>
+              <div style={{fontSize:10,color:"#888",marginTop:2}}>Lagos → London</div>
+            </div>
+            <div style={{position:"absolute",right:28,top:"50%",transform:"translateY(-60%)",background:"#ffffff",borderRadius:16,padding:"14px",boxShadow:"0 8px 32px rgba(0,0,0,0.35)",maxWidth:148,textAlign:"left",zIndex:2}}>
+              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400" style={{width:88,height:88,borderRadius:12,objectFit:"cover",display:"block",marginBottom:8}} alt="Hired" />
+              <div style={{fontSize:11,fontWeight:800,color:"#052A14",marginBottom:2}}>Thabo N.</div>
+              <div style={{fontSize:10,fontWeight:700,color:"#1A7A3A"}}>✓ Just got hired</div>
+              <div style={{fontSize:10,color:"#888",marginTop:2}}>Joburg → Standard Bank</div>
+            </div>
+          </>
+        )}
         <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(200,230,0,0.12)",border:"1.5px solid #C8E600",borderRadius:99,padding:"6px 16px",fontSize:11,color:"#C8E600",fontWeight:700,marginBottom:24,letterSpacing:"0.8px"}}>
           <span style={{width:8,height:8,background:"#C8E600",borderRadius:"50%",display:"inline-block",flexShrink:0}}></span>
-          OPEN THE DOORS TO YOUR FUTURE — UNLOCKED BY AI
+          AI-POWERED JOB APPLICATIONS FOR AFRICAN PROFESSIONALS
         </div>
-        <h1 style={{fontSize:isMobile?26:42,fontWeight:800,color:"#FFFFFF",lineHeight:1.1,letterSpacing:-1,marginBottom:10,maxWidth:600,margin:"0 auto 10px"}}>
-          Every door. Every <span style={{color:"#C8E600"}}>opportunity.</span> Unlocked.
+        <h1 style={{fontSize:isMobile?26:46,fontWeight:800,color:"#FFFFFF",lineHeight:1.08,letterSpacing:-1,marginBottom:16,maxWidth:620,margin:"0 auto 16px"}}>
+          Stop getting ignored.<br/><span style={{color:"#C8E600"}}>Start getting hired.</span>
         </h1>
-        <p style={{fontSize:16,color:"#90C898",fontStyle:"italic",marginTop:12,marginBottom:8}}>
-          &ldquo;Open sesame — and watch your future open.&rdquo;
-        </p>
-        <p style={{fontSize:14,color:"#7AAA88",lineHeight:1.8,margin:"8px auto 16px",maxWidth:500}}>
-          From Johannesburg to London. Lagos to Toronto. Nairobi to Dubai.<br/>
-          <strong style={{color:"#FFFFFF"}}>Your next job has no borders.</strong>
-        </p>
-        <p style={{fontSize:14,color:"#B0D8B8",lineHeight:1.8,margin:"0 auto 32px",maxWidth:440}}>
-          Upload your CV once. AI opens <strong style={{color:"#FFFFFF"}}>{total > 0 ? total.toLocaleString() : '495,000+'} doors worldwide</strong> — matching jobs, rewriting your CV in 30 seconds, and applying automatically.
+        <p style={{fontSize:isMobile?14:16,color:"#90C898",lineHeight:1.75,margin:"0 auto 28px",maxWidth:500}}>
+          AI rewrites your CV in 30 seconds to beat any ATS system.<br/>
+          <strong style={{color:"#FFFFFF"}}>8 out of 10 CVs never reach a human — ours do.</strong>
         </p>
         <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:40}}>
-          <a href="/sign-up" style={{background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:800,padding:"14px 32px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Open your future — free</a>
-          <a href="#jobs" style={{background:"transparent",color:"#C8E600",fontSize:15,fontWeight:500,padding:"14px 24px",borderRadius:99,border:"1.5px solid #1A5A2A",textDecoration:"none",display:"inline-block"}}>Browse jobs now</a>
+          <a href="/sign-up" style={{background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:800,padding:"14px 32px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Get hired free — start now</a>
+          <a href="#jobs" style={{background:"transparent",color:"#C8E600",fontSize:15,fontWeight:500,padding:"14px 24px",borderRadius:99,border:"1.5px solid #1A5A2A",textDecoration:"none",display:"inline-block"}}>Browse {total > 0 ? total.toLocaleString() : '495,000+'} jobs</a>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",maxWidth:440,margin:"0 auto",border:"1px solid #1A5A2A",borderRadius:12,overflow:"hidden"}}>
-          {[["2.4M+","LIVE JOBS"],["180+","COUNTRIES"],["30s","CV REWRITE"],["$20","PER MONTH"]].map(([val,label],i)=>(
+        <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",maxWidth:460,margin:"0 auto",border:"1px solid #1A5A2A",borderRadius:12,overflow:"hidden"}}>
+          {[["50,000+","JOB SEEKERS"],["495,000+","LIVE JOBS"],["30s","CV REWRITE"],["Free","NO CARD NEEDED"]].map(([val,label],i)=>(
             <div key={label} style={{padding:"14px 10px",textAlign:"center",
               borderRight:isMobile?(i%2===0?"1px solid #1A5A2A":"none"):(i<3?"1px solid #1A5A2A":"none"),
               borderBottom:isMobile&&i<2?"1px solid #1A5A2A":"none"}}>
-              <div style={{fontSize:20,fontWeight:800,color:"#C8E600"}}>{val}</div>
+              <div style={{fontSize:isMobile?16:20,fontWeight:800,color:"#C8E600"}}>{val}</div>
               <div style={{fontSize:9,color:"#4A8A5A",letterSpacing:"0.8px",marginTop:2}}>{label}</div>
             </div>
           ))}
@@ -203,7 +229,7 @@ export default function Home() {
         display:isMobile?"grid":"flex",
         gridTemplateColumns:isMobile?"1fr 1fr":undefined,
         alignItems:"center",justifyContent:"center",gap:isMobile?"10px 16px":24,flexWrap:"wrap"}}>
-        {["2.4M+ live jobs worldwide","180+ countries","CV rewritten in 30 seconds","Quick Apply with AI","3 free applications — no card needed"].map(item=>(
+        {["Join 50,000 job seekers","495,000+ live jobs","CV rewritten in 30s","Apply while you sleep","Free — no card needed"].map(item=>(
           <div key={item} style={{display:"flex",alignItems:"center",gap:7,fontSize:12,color:"#052A14",fontWeight:700}}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill="#052A14"/><path d="M4 7L6 9.5L10 4.5" stroke="#C8E600" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
             {item}
@@ -218,9 +244,9 @@ export default function Home() {
         <p style={{fontSize:13,color:"#4A8A5A",textAlign:"center",marginBottom:32,fontStyle:"italic"}}>&ldquo;The right key opens any door — we give you that key.&rdquo;</p>
         <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:12,maxWidth:900,margin:"0 auto"}}>
           {[
-            ["1","Upload your CV once","AI reads everything instantly. Extracts your skills, experience and ambitions. Builds your complete global career profile. No forms to fill."],
-            ["2","AI opens your matching doors","Platform unlocks millions of live jobs across 180 countries. Shows every role ranked by match percentage with full explanation of why each one fits."],
-            ["3","Quick Apply with AI","Click Quick Apply on any job. AI rewrites your CV in 30 seconds specifically for that role. Apply in one click — or let auto-apply do it while you sleep."]
+            ["1","Upload once — never fill a form again","AI reads your CV in seconds. Extracts every skill, role and achievement. Your complete profile is built instantly — never re-enter your details for any job."],
+            ["2","AI opens every door — matched jobs ranked for you","Millions of live jobs across 180 countries — ranked by match percentage. See exactly why each role fits your profile. No scrolling through irrelevant listings."],
+            ["3","Apply in 10 seconds — CV already perfect","Click Quick Apply. AI rewrites your CV specifically for that role in 30 seconds. ATS-optimised and employer-ready. Apply in one click — or let auto-apply do it while you sleep."]
           ].map(([num,title,desc])=>(
             <div key={num} style={{background:"#072E16",border:"1px solid #1A4A2A",borderRadius:14,padding:20}}>
               <div style={{width:32,height:32,background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:14}}>{num}</div>
@@ -233,12 +259,14 @@ export default function Home() {
 
       {/* SEARCH + TABS */}
       <div style={{background:"#052A14",padding:"24px",borderBottom:"4px solid #C8E600"}} id="jobs">
-        <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:18,flexWrap:"wrap"}}>
-          {(['all','remote','relocation','teaching','south-africa'] as const).map(tab=>(
-            <button key={tab} style={tabStyle(tab)} onClick={()=>handleTabChange(tab)}>
-              {tab === 'all' ? '🌍 All Jobs' : tab === 'remote' ? '💻 Remote Jobs' : tab === 'teaching' ? '🎓 Teaching Jobs' : tab === 'south-africa' ? '🌍 African Jobs' : '✈️ Relocation Jobs'}
-            </button>
-          ))}
+        <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",marginBottom:18}}>
+          <div style={{display:"flex",gap:8,justifyContent:isMobile?"flex-start":"center",flexWrap:isMobile?"nowrap":"wrap",minWidth:"fit-content",padding:isMobile?"0 4px":0}}>
+            {(['all','remote','relocation','teaching','south-africa'] as const).map(tab=>(
+              <button key={tab} style={tabStyle(tab)} onClick={()=>handleTabChange(tab)}>
+                {tab === 'all' ? '🌍 All Jobs' : tab === 'remote' ? '💻 Remote Jobs' : tab === 'teaching' ? '🎓 Teaching Jobs' : tab === 'south-africa' ? '🌍 African Jobs' : '✈️ Relocation Jobs'}
+              </button>
+            ))}
+          </div>
         </div>
         <p style={{textAlign:"center",fontSize:12,color:"#5A9A6A",marginBottom:14,fontStyle:"italic"}}>
           {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : activeTab === 'teaching' ? 'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free' : activeTab === 'south-africa' ? 'Live jobs across South Africa, Nigeria, Kenya and beyond' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
@@ -429,16 +457,16 @@ export default function Home() {
         <h2 style={{fontSize:22,fontWeight:800,color:"#052A14",textAlign:"center",marginBottom:24}}>Real people. <span style={{color:"#1A7A3A"}}>Real doors opened.</span></h2>
         <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,1fr)",gap:12,maxWidth:800,margin:"0 auto"}}>
           {[
-            {name:"Thabo Nkosi",location:"Johannesburg → Standard Bank",quote:"4 months of silence. Jobsesame rewrote my CV and Standard Bank called me within 3 days. The door I thought was locked — was never locked at all.",initials:"TN"},
-            {name:"Chioma Okafor",location:"Lagos → Marketing Manager",quote:"The AI completely transformed my CV. I could see exactly which keywords were missing. Got my dream job within 6 weeks.",initials:"CO"},
-            {name:"Brian Otieno",location:"Nairobi → Software Developer",quote:"Quick Apply sent my application in 10 seconds. Woke up to 4 recruiter emails. Nothing has ever saved me this much time.",initials:"BO"},
-            {name:"Amara Diallo",location:"Dakar → London, UK",quote:"I never thought I could work in London. Jobsesame matched me to a relocation job, rewrote my CV, and I got the offer in 9 days.",initials:"AD"},
+            {name:"Thabo Nkosi",seed:"ThaboNkosi",location:"Johannesburg → Standard Bank",quote:"4 months of silence. Jobsesame rewrote my CV and Standard Bank called me within 3 days. My ATS score went from 31% to 94%. The door I thought was locked — was never locked at all."},
+            {name:"Chioma Okafor",seed:"ChiomaOkafor",location:"Lagos → Marketing Manager",quote:"Got 12 interviews in 30 days. Jobsesame found keywords I had no idea I was missing. My match score jumped 60 points. Now earning 3× what I made before."},
+            {name:"Brian Otieno",seed:"BrianOtieno",location:"Nairobi → Software Developer",quote:"Quick Apply sent 23 applications while I slept. Woke up to 4 recruiter calls. My new salary is 40% higher. Nothing has ever changed my life this fast."},
+            {name:"Amara Diallo",seed:"AmaraDiallo",location:"Dakar → London, UK",quote:"I never thought I could work in London. Jobsesame matched me to a relocation job, rewrote my CV for UK employers, and I had an offer in 9 days. I am living in London now."},
           ].map(t=>(
             <div key={t.name} style={{background:"#fff",border:"1.5px solid #D8EED8",borderRadius:14,padding:20}}>
               <div style={{color:"#C8E600",fontSize:13,marginBottom:8,background:"#052A14",width:"fit-content",padding:"3px 10px",borderRadius:99,fontWeight:700}}>★★★★★</div>
               <p style={{fontSize:13,color:"#333",lineHeight:1.7,fontStyle:"italic",marginBottom:14}}>&ldquo;{t.quote}&rdquo;</p>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:36,height:36,borderRadius:"50%",background:"#052A14",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#C8E600",flexShrink:0}}>{t.initials}</div>
+                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${t.seed}&backgroundColor=052A14`} width={40} height={40} style={{borderRadius:"50%",background:"#052A14",flexShrink:0}} alt={t.name} />
                 <div>
                   <div style={{fontSize:13,fontWeight:700,color:"#052A14"}}>{t.name}</div>
                   <div style={{fontSize:11,color:"#2A7A3A",fontWeight:600}}>{t.location}</div>
@@ -452,11 +480,19 @@ export default function Home() {
       {/* CTA */}
       <section style={{background:"#C8E600",padding:"44px 24px",textAlign:"center"}}>
         <p style={{fontSize:11,fontWeight:700,color:"#1A4A00",letterSpacing:"2px",textTransform:"uppercase",marginBottom:10}}>YOUR TURN</p>
-        <h2 style={{fontSize:32,fontWeight:800,color:"#052A14",marginBottom:8,letterSpacing:-0.5}}>Open sesame —<br/><em style={{fontStyle:"italic"}}>your future is behind this door</em></h2>
-        <p style={{fontSize:14,color:"#2A5A14",marginBottom:8,lineHeight:1.6}}>3 free Quick Apply credits. AI rewrites your CV. No card needed.</p>
-        <p style={{fontSize:13,color:"#3A6A1A",marginBottom:24}}>Join 50,000+ job seekers who unlocked their careers with Jobsesame.</p>
-        <a href="/sign-up" style={{background:"#052A14",color:"#C8E600",fontSize:15,fontWeight:800,padding:"15px 38px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Open your future — free</a>
+        <h2 style={{fontSize:isMobile?24:32,fontWeight:800,color:"#052A14",marginBottom:8,letterSpacing:-0.5}}>Stop getting ignored.<br/><em style={{fontStyle:"italic"}}>Start getting hired today.</em></h2>
+        <p style={{fontSize:14,color:"#2A5A14",marginBottom:8,lineHeight:1.6}}>3 free applications. AI rewrites your CV. No card needed. Takes 60 seconds.</p>
+        <p style={{fontSize:13,color:"#3A6A1A",marginBottom:24}}>Join 50,000+ job seekers who stopped being ignored with Jobsesame.</p>
+        <a href="/sign-up" style={{background:"#052A14",color:"#C8E600",fontSize:15,fontWeight:800,padding:"15px 38px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Get hired free — start now</a>
       </section>
+
+      {/* URGENCY BAR */}
+      <div style={{background:"#052A14",padding:"14px 24px",textAlign:"center",borderTop:"1px solid #1A5A2A"}}>
+        <div style={{display:"inline-flex",alignItems:"center",gap:10,background:"rgba(200,230,0,0.08)",border:"1px solid rgba(200,230,0,0.3)",borderRadius:99,padding:"8px 20px"}}>
+          <span style={{width:8,height:8,background:"#C8E600",borderRadius:"50%",display:"inline-block",flexShrink:0}}></span>
+          <span style={{fontSize:13,color:"#FFFFFF",fontWeight:600}}>47 people applied for jobs in the last hour using Jobsesame</span>
+        </div>
+      </div>
 
       {/* PRICING */}
       <section id="pricing" style={{background:"#F4FCF4",padding:"32px 24px"}}>
@@ -485,7 +521,7 @@ export default function Home() {
       {/* FOOTER */}
       <footer style={{background:"#052A14",borderTop:"1px solid #0D4A20",padding:"48px 24px 28px"}}>
         <div style={{maxWidth:900,margin:"0 auto"}}>
-          <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:36,marginBottom:36}}>
+          <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:36,marginBottom:36,flexDirection:isMobile?"column":"row"}}>
             <div style={{maxWidth:240}}>
               <div style={{fontSize:20,fontWeight:800,marginBottom:10}}>
                 <span style={{color:"#FFFFFF"}}>job</span>

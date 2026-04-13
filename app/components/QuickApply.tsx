@@ -53,6 +53,19 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
 
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+  const [autoEmailSending, setAutoEmailSending] = useState(false);
+  const [autoEmailSent, setAutoEmailSent] = useState(false);
+  const [autoEmailError, setAutoEmailError] = useState('');
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  const employerEmail = job.description.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/)?.[0] || null;
 
   const FREE_LIMIT = 3;
   const autoApply = isAutoApply(job.url);
@@ -116,6 +129,52 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
     localStorage.removeItem('jobsesame_cv_data');
     setSavedCvData(null);
     setStep('profile');
+  };
+
+  const handleAutoEmail = async () => {
+    if (!employerEmail) return;
+    const currentCount = parseInt(localStorage.getItem('jobsesame_apply_count') || '0');
+    if (currentCount >= FREE_LIMIT) { setStep('paywall'); return; }
+    setAutoEmailSending(true);
+    setAutoEmailError('');
+    try {
+      const email = user?.emailAddresses[0]?.emailAddress;
+      const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Candidate';
+      const res = await fetch('/api/auto-apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employerEmail,
+          jobTitle: job.title,
+          jobCompany: job.company,
+          candidateName: name,
+          candidateEmail: email,
+          cvData: rewrittenCV,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAutoEmailSent(true);
+        const newCount = currentCount + 1;
+        localStorage.setItem('jobsesame_apply_count', String(newCount));
+        const applications = JSON.parse(localStorage.getItem('jobsesame_applications') || '[]');
+        applications.push({
+          id: Date.now().toString(),
+          jobTitle: job.title,
+          company: job.company,
+          location: job.location,
+          dateApplied: new Date().toISOString(),
+          status: 'Auto-Applied',
+          jobUrl: job.url,
+        });
+        localStorage.setItem('jobsesame_applications', JSON.stringify(applications));
+      } else {
+        setAutoEmailError(data.error || 'Failed to send application email');
+      }
+    } catch {
+      setAutoEmailError('Something went wrong. Please try again.');
+    }
+    setAutoEmailSending(false);
   };
 
   const handleRewrite = async (cv: any) => {
@@ -287,14 +346,25 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   };
 
   const overlay: React.CSSProperties = {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-    zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+    position: 'fixed', inset: 0,
+    background: isMobile ? '#072E16' : 'rgba(0,0,0,0.75)',
+    zIndex: 1000, display: 'flex',
+    alignItems: isMobile ? 'flex-start' : 'center',
+    justifyContent: 'center',
+    padding: isMobile ? 0 : 16,
   };
 
   const modal: React.CSSProperties = {
-    background: '#072E16', borderRadius: 16, padding: 28,
-    maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto',
-    border: '1.5px solid #C8E600', position: 'relative',
+    background: '#072E16',
+    borderRadius: isMobile ? 0 : 16,
+    padding: isMobile ? '20px 16px' : 28,
+    maxWidth: isMobile ? '100%' : 560,
+    width: '100%',
+    height: isMobile ? '100vh' : 'auto',
+    maxHeight: isMobile ? '100vh' : '90vh',
+    overflowY: 'auto',
+    border: isMobile ? 'none' : '1.5px solid #C8E600',
+    position: 'relative',
   };
 
   return (
@@ -454,6 +524,31 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
               </div>
             )}
 
+            {employerEmail && !autoEmailSent && (
+              <div style={{marginBottom:12}}>
+                <div style={{background:"rgba(0,180,80,0.08)",border:"1.5px solid #00B850",borderRadius:12,padding:"14px 16px"}}>
+                  <div style={{fontSize:10,fontWeight:700,color:"#00C864",letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:6}}>✉️ AUTO-APPLY AVAILABLE</div>
+                  <div style={{fontSize:13,color:"#FFFFFF",marginBottom:10,lineHeight:1.6}}>
+                    We found the employer&apos;s email. We can send your application directly — no portal needed.
+                  </div>
+                  <button
+                    onClick={handleAutoEmail}
+                    disabled={autoEmailSending}
+                    style={{background:"#00C864",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 20px",borderRadius:99,border:"none",cursor:autoEmailSending?"default":"pointer",width:"100%",opacity:autoEmailSending?0.7:1}}>
+                    {autoEmailSending ? '📤 Sending your application...' : '✉️ Auto-apply — we email for you'}
+                  </button>
+                  {autoEmailError && <div style={{fontSize:12,color:"#F09595",marginTop:8}}>{autoEmailError}</div>}
+                </div>
+                <div style={{textAlign:"center",fontSize:11,color:"#3A7A4A",margin:"8px 0 4px"}}>— or apply manually below —</div>
+              </div>
+            )}
+            {autoEmailSent && (
+              <div style={{background:"rgba(0,180,80,0.1)",border:"1.5px solid #00C864",borderRadius:12,padding:"16px",marginBottom:12,textAlign:"center"}}>
+                <div style={{fontSize:24,marginBottom:6}}>✅</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#00C864",marginBottom:4}}>Application sent automatically</div>
+                <div style={{fontSize:12,color:"#90C898",lineHeight:1.6}}>Your email was sent directly to the employer at {employerEmail}. Check your inbox for confirmation.</div>
+              </div>
+            )}
             <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
               <button
                 onClick={handleApply}
