@@ -403,10 +403,26 @@ export default function Home() {
             ))}
           </div>
         ) : jobs.length === 0 ? (
-          <div style={{textAlign:"center",padding:"60px 0"}}>
-            <div style={{fontSize:16,color:"#2A6A3A",fontWeight:700,marginBottom:8}}>No doors found for that search</div>
-            <div style={{fontSize:13,color:"#4A8A5A"}}>Try a different keyword</div>
-          </div>
+          activeTab === 'south-africa' ? (
+            <div style={{background:"#052A14",border:"1.5px solid #1A5A2A",borderRadius:16,padding:"32px 24px",textAlign:"center",maxWidth:560,margin:"0 auto"}}>
+              <div style={{fontSize:32,marginBottom:16}}>🌍</div>
+              <div style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:10}}>African Jobs — coming soon</div>
+              <p style={{fontSize:13,color:"#90C898",lineHeight:1.8,marginBottom:20}}>
+                We are activating our African job feeds. In the meantime, browse{' '}
+                <strong style={{color:"#C8E600"}}>Remote Jobs</strong> — thousands of positions open to African candidates worldwide, with no relocation required.
+              </p>
+              <button
+                onClick={() => handleTabChange('remote')}
+                style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,border:"none",cursor:"pointer"}}>
+                💻 Browse Remote Jobs
+              </button>
+            </div>
+          ) : (
+            <div style={{textAlign:"center",padding:"60px 0"}}>
+              <div style={{fontSize:16,color:"#2A6A3A",fontWeight:700,marginBottom:8}}>No jobs found for that search</div>
+              <div style={{fontSize:13,color:"#4A8A5A"}}>Try a different keyword</div>
+            </div>
+          )
         ) : (
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {jobs.map((job,i)=>(
@@ -435,7 +451,6 @@ export default function Home() {
                       {activeTab === 'remote' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Remote</span>}
                       {activeTab === 'relocation' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Relocation</span>}
                       {activeTab === 'teaching' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>🎓 Teaching</span>}
-                      {activeTab === 'south-africa' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>🌍 Africa</span>}
                       {/* TASK 1 — auto-apply badge */}
                       {isAutoApply(job.url)
                         ? <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:700,background:"rgba(200,230,0,0.12)",color:"#C8E600",border:"1px solid rgba(200,230,0,0.35)",whiteSpace:"nowrap"}}>⚡ Auto-apply</span>

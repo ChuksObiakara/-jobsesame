@@ -1,60 +1,67 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 
-const CAREERJET_API_KEY = process.env.CAREERJET_API_KEY || '';
+// Keywords that confirm a job is genuinely African
+const AFRICAN_KEYWORDS = [
+  'south africa', 'johannesburg', 'cape town', 'pretoria', 'durban', 'sandton', 'soweto',
+  'nigeria', 'lagos', 'abuja', 'port harcourt', 'ibadan',
+  'kenya', 'nairobi', 'mombasa', 'kisumu',
+  'ghana', 'accra', 'kumasi',
+  'ethiopia', 'addis ababa',
+  'tanzania', 'dar es salaam',
+  'uganda', 'kampala',
+  'zimbabwe', 'harare',
+  'zambia', 'lusaka',
+  'rwanda', 'kigali',
+  'senegal', 'dakar',
+  'africa', 'african',
+];
 
-// ── Careerjet v4 ────────────────────────────────────────────────────────────
-
-async function fetchCareerjet(query: string, location: string): Promise<any[]> {
-  const auth = Buffer.from(`${CAREERJET_API_KEY}:`).toString('base64');
-  const params = new URLSearchParams({
-    keywords: query,
-    location,
-    pagesize: '20',
-    affid: 'jobsesame',
-  });
-
-  const res = await fetch(
-    `https://search.api.careerjet.net/v4/query?${params.toString()}`,
-    { headers: { Authorization: `Basic ${auth}` } }
-  );
-
-  const data = await res.json();
-  console.log(`[Careerjet] ${location}: type=${data.type} total=${data.total_results} jobs=${data.jobs?.length ?? 0}${data.error ? ' error=' + data.error : ''}`);
-
-  if (data.type === 'ERROR' || !data.jobs?.length) return [];
-
-  return data.jobs.map((job: any) => ({
-    id: job.id || `cj-${location}-${Math.random()}`,
-    title: job.title || '',
-    company: job.company || 'Company',
-    location: job.locations || location,
-    description: (job.description || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
-    url: job.url || '',
-    salary: job.salary || '',
-    category: 'Africa',
-    level: 'All levels',
-    type: 'south-africa',
-  }));
+function isAfricanJob(job: any): boolean {
+  const haystack = [job.title, job.company, job.location, job.description]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return AFRICAN_KEYWORDS.some(kw => haystack.includes(kw));
 }
 
-// ── Remotive fallback (remote jobs — open to African applicants) ─────────────
+function dedupe(jobs: any[]): any[] {
+  const seen = new Set<string>();
+  return jobs.filter(job => {
+    const key = `${(job.title || '').toLowerCase().trim()}|${(job.company || '').toLowerCase().trim()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
-async function fetchRemotiveFallback(): Promise<any[]> {
-  const searches = ['developer', 'engineer', 'manager', 'analyst', 'designer'];
+// ── Source 1: Remotive — search African keywords ─────────────────────────────
+
+async function fetchRemotive(query: string): Promise<any[]> {
+  // Run separate searches for each region so we get broad coverage
+  const searches = [
+    'south africa',
+    'nigeria',
+    'kenya africa',
+    query !== 'software engineer' ? query : '', // user search query if custom
+  ].filter(Boolean);
+
   const results = await Promise.all(
     searches.map(q =>
-      fetch(`https://remotive.com/api/remote-jobs?search=${q}&limit=20`)
+      fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(q)}&limit=20`)
         .then(r => r.json())
         .then(d => d.jobs || [])
         .catch(() => [])
     )
   );
+
   const jobs = results.flat().map((job: any) => ({
     id: `remotive-${job.id}`,
     title: job.title || '',
     company: job.company_name || 'Company',
-    location: 'Remote — Open worldwide',
+    location: job.candidate_required_location
+      ? `Remote — ${job.candidate_required_location}`
+      : 'Remote — Open to Africa',
     description: (job.description || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
     url: job.url || '',
     salary: job.salary || '',
@@ -62,42 +69,49 @@ async function fetchRemotiveFallback(): Promise<any[]> {
     level: 'All levels',
     type: 'south-africa',
   }));
-  console.log(`[Africa fallback] Remotive: ${jobs.length} remote jobs`);
+
+  console.log(`[Africa] Remotive: ${results.flat().length} raw`);
   return jobs;
 }
 
-// ── Jobicy fallback (global remote) ─────────────────────────────────────────
+// ── Source 2: The Muse — African city location strings ───────────────────────
 
-async function fetchJobicyFallback(): Promise<any[]> {
-  const res = await fetch('https://jobicy.com/api/v2/remote-jobs?count=30')
-    .then(r => r.json())
-    .catch(() => ({ jobs: [] }));
-  const jobs = (res.jobs || []).map((job: any) => ({
-    id: `jobicy-${job.id}`,
-    title: job.jobTitle || '',
-    company: job.companyName || 'Company',
-    location: job.jobGeo ? `${job.jobGeo} (Remote)` : 'Remote — Worldwide',
-    description: (job.jobExcerpt || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
-    url: job.url || '',
-    salary: '',
-    category: 'General',
-    level: job.jobLevel || 'All levels',
-    type: 'south-africa',
-  }));
-  console.log(`[Africa fallback] Jobicy: ${jobs.length} remote jobs`);
+async function fetchMuse(): Promise<any[]> {
+  const locations = [
+    'Johannesburg, South Africa',
+    'Cape Town, South Africa',
+    'Lagos, Nigeria',
+    'Nairobi, Kenya',
+  ];
+
+  const results = await Promise.all(
+    locations.map(loc =>
+      fetch(
+        `https://www.themuse.com/api/public/jobs?location=${encodeURIComponent(loc)}&page=1`,
+        { headers: { Accept: 'application/json' } }
+      )
+        .then(r => r.json())
+        .then(d =>
+          (d.results || []).map((job: any) => ({
+            id: `muse-${job.id}`,
+            title: job.name || '',
+            company: job.company?.name || 'Company',
+            location: job.locations?.[0]?.name || loc,
+            description: (job.contents || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+            url: job.refs?.landing_page || '#',
+            salary: '',
+            category: job.categories?.[0]?.name || 'General',
+            level: job.levels?.[0]?.name || 'All levels',
+            type: 'south-africa',
+          }))
+        )
+        .catch(() => [])
+    )
+  );
+
+  const jobs = results.flat();
+  console.log(`[Africa] Muse (African cities): ${jobs.length} raw`);
   return jobs;
-}
-
-// ── Deduplicate by title + company ───────────────────────────────────────────
-
-function dedupe(jobs: any[]): any[] {
-  const seen = new Set<string>();
-  return jobs.filter(job => {
-    const key = `${job.title.toLowerCase().trim()}|${job.company.toLowerCase().trim()}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
 }
 
 // ── Handler ──────────────────────────────────────────────────────────────────
@@ -105,39 +119,20 @@ function dedupe(jobs: any[]): any[] {
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('query') || 'software engineer';
 
-  // ── 1. Try Careerjet v4 (primary) ─────────────────────────────────────────
   try {
-    const [saJobs, ngJobs, keJobs] = await Promise.all([
-      fetchCareerjet(query, 'South Africa'),
-      fetchCareerjet(query, 'Nigeria'),
-      fetchCareerjet(query, 'Kenya'),
+    const [remotiveJobs, museJobs] = await Promise.all([
+      fetchRemotive(query),
+      fetchMuse(),
     ]);
 
-    const careerjetJobs = dedupe([...saJobs, ...ngJobs, ...keJobs]);
-    console.log(`[Africa jobs] Careerjet total unique: ${careerjetJobs.length}`);
+    // Combine, deduplicate, then filter strictly to African jobs only
+    const combined = dedupe([...museJobs, ...remotiveJobs]);
+    const africanJobs = combined.filter(isAfricanJob);
 
-    if (careerjetJobs.length > 0) {
-      return NextResponse.json({ jobs: careerjetJobs, total: careerjetJobs.length, source: 'Careerjet' });
-    }
-
-    console.log('[Africa jobs] Careerjet returned 0 results — falling back to The Muse');
+    console.log(`[Africa] Combined: ${combined.length} total → ${africanJobs.length} confirmed African`);
+    return NextResponse.json({ jobs: africanJobs, total: africanJobs.length, source: 'Multi-source' });
   } catch (err) {
-    console.error('[Africa jobs] Careerjet error — falling back to The Muse:', err);
-  }
-
-  // ── 2. Fallback: Remotive + Jobicy remote jobs (open to African applicants) ─
-  try {
-    const [remotiveJobs, jobicyJobs] = await Promise.all([
-      fetchRemotiveFallback(),
-      fetchJobicyFallback(),
-    ]);
-
-    const fallbackJobs = dedupe([...remotiveJobs, ...jobicyJobs]);
-    console.log(`[Africa jobs] Fallback total unique: ${fallbackJobs.length}`);
-
-    return NextResponse.json({ jobs: fallbackJobs, total: fallbackJobs.length, source: 'Remote (Worldwide)' });
-  } catch (err) {
-    console.error('[Africa jobs] Fallback error:', err);
-    return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch Africa jobs' });
+    console.error('[Africa] Error:', err);
+    return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch African jobs' });
   }
 }
