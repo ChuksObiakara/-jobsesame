@@ -1,18 +1,6 @@
-'use client';
-import { SignIn, useAuth } from '@clerk/nextjs';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { SignIn } from '@clerk/nextjs';
 
 export default function SignInPage() {
-  const { isSignedIn } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isSignedIn) {
-      router.push('/dashboard');
-    }
-  }, [isSignedIn, router]);
-
   return (
     <main style={{
       minHeight: '100vh',
@@ -33,7 +21,7 @@ export default function SignInPage() {
         </p>
       </div>
       <SignIn
-        forceRedirectUrl="/dashboard"
+        forceRedirectUrl="/onboarding"
         appearance={{
           elements: {
             rootBox: {width: '100%', maxWidth: 480},

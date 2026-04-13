@@ -119,7 +119,7 @@ export default function Dashboard() {
     setLoadingJobs(true);
     fetch(`/api/jobs?query=${encodeURIComponent(titleQuery)}&location=`)
       .then(r => r.json())
-      .then(data => setRecommendedJobs((data.jobs || []).slice(0, 4)))
+      .then(data => setRecommendedJobs((data.jobs || []).slice(0, 6)))
       .catch(() => {})
       .finally(() => setLoadingJobs(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -278,7 +278,7 @@ export default function Dashboard() {
   }
   if (!isSignedIn) return null;
 
-  const firstName = user?.firstName || profile?.name?.split(' ')[0] || user?.emailAddresses[0]?.emailAddress?.split('@')[0] || 'there';
+  const firstName = profile?.name?.split(' ')[0] || user?.firstName || user?.emailAddresses[0]?.emailAddress?.split('@')[0] || 'there';
   const atsScore = cvData?.ats_score || (cvData ? 72 : 0);
   const today = new Date().toLocaleDateString('en-ZA', {weekday:'long',day:'numeric',month:'long'});
   const navBtnStyle = (s: string) => ({
@@ -424,7 +424,7 @@ export default function Dashboard() {
             {[
               {label:"Applications sent",value:applications.length,color:"#90C898",icon:"📤"},
               {label:"Interviews",value:applications.filter(a=>a.status==='Interview').length,color:"#FFA500",icon:"📞"},
-              {label:"Offers",value:applications.filter(a=>a.status==='Offer').length,color:"#C8E600",icon:"🎉"},
+              {label:"Saved jobs",value:(() => { try { const s = localStorage.getItem('jobsesame_saved_jobs'); return s ? JSON.parse(s).length : 0; } catch { return 0; } })(),color:"#A8D8B0",icon:"🔖"},
               {label:"CV score",value:atsScore?`${atsScore}%`:"—",color:"#C8E600",icon:"📊"},
             ].map(s=>(
               <div key={s.label} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px"}}>
@@ -536,13 +536,13 @@ export default function Dashboard() {
                 <a href="/jobs" style={{fontSize:12,color:"#C8E600",fontWeight:700,textDecoration:"none"}}>View all jobs →</a>
               </div>
               {loadingJobs ? (
-                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,1fr)",gap:10}}>
-                  {[1,2,3,4].map(i=>(
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
+                  {[1,2,3,4,5,6].map(i=>(
                     <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:16,height:100}}/>
                   ))}
                 </div>
               ) : (
-                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(2,1fr)",gap:10}}>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
                   {recommendedJobs.map(job=>(
                     <div key={job.id} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:16}}>
                       <div style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:10}}>

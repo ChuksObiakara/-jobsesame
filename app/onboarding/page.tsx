@@ -50,6 +50,15 @@ export default function OnboardingPage() {
     workPreference: 'hybrid', desiredLocation: '', salaryExpectation: '',
   });
 
+  // Skip onboarding if already completed
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (localStorage.getItem('jobsesame_onboarding_complete') === 'true') {
+        router.replace('/dashboard');
+      }
+    }
+  }, [router]);
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -123,6 +132,7 @@ export default function OnboardingPage() {
   const handleComplete = () => {
     const fullProfile = { ...profile, cvData, completedAt: new Date().toISOString() };
     localStorage.setItem('jobsesame_profile', JSON.stringify(fullProfile));
+    localStorage.setItem('jobsesame_onboarding_complete', 'true');
     router.push('/dashboard');
   };
 
