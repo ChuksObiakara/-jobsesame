@@ -1,7 +1,7 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
-import QuickApply from './components/QuickApply';
+import QuickApply, { isAutoApply } from './components/QuickApply';
 
 interface Job {
   id: number;
@@ -19,7 +19,7 @@ interface Job {
 export default function Home() {
   const { isSignedIn } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('');
   const [total, setTotal] = useState(0);
@@ -28,6 +28,8 @@ export default function Home() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const jobsSectionRef = useRef<HTMLDivElement>(null);
+  const jobsFetchedRef = useRef(false);
   const [savedJobs, setSavedJobs] = useState<number[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('jobsesame_saved_jobs');
@@ -89,7 +91,30 @@ export default function Home() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchJobs('all'); }, []);
+  // TASK 2 — lazy-load jobs via IntersectionObserver
+  useEffect(() => {
+    const el = jobsSectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !jobsFetchedRef.current) {
+          jobsFetchedRef.current = true;
+          fetchJobs('all');
+        }
+      },
+      { rootMargin: '300px' } // start fetching 300px before the section scrolls into view
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // TASK 4 — redirect to dashboard if user just signed in
+  useEffect(() => {
+    if (isSignedIn && typeof document !== 'undefined' && document.referrer.includes('/sign-in')) {
+      window.location.href = '/dashboard';
+    }
+  }, [isSignedIn]);
 
   const handleTabChange = (tab: 'all' | 'remote' | 'relocation' | 'teaching' | 'south-africa') => {
     setActiveTab(tab);
@@ -308,7 +333,7 @@ export default function Home() {
       </div>
 
       {/* JOBS LIST */}
-      <section style={{background:"#F4FCF4",padding:24}}>
+      <section ref={jobsSectionRef} style={{background:"#F4FCF4",padding:24}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
           <div>
             <span style={{fontSize:15,fontWeight:800,color:"#052A14"}}>
@@ -411,6 +436,11 @@ export default function Home() {
                       {activeTab === 'relocation' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Relocation</span>}
                       {activeTab === 'teaching' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>🎓 Teaching</span>}
                       {activeTab === 'south-africa' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>🌍 Africa</span>}
+                      {/* TASK 1 — auto-apply badge */}
+                      {isAutoApply(job.url)
+                        ? <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:700,background:"rgba(200,230,0,0.12)",color:"#C8E600",border:"1px solid rgba(200,230,0,0.35)",whiteSpace:"nowrap"}}>⚡ Auto-apply</span>
+                        : <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:700,background:"rgba(255,165,0,0.10)",color:"#FFA500",border:"1px solid rgba(255,165,0,0.35)",whiteSpace:"nowrap"}}>🎯 Assisted</span>
+                      }
                     </div>
                     <p style={{fontSize:12,color:"#666",lineHeight:1.55,margin:0,display:"-webkit-box" as any,WebkitLineClamp:2,WebkitBoxOrient:"vertical" as any,overflow:"hidden"}}>{job.description}</p>
                   </div>

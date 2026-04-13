@@ -1,3 +1,4 @@
+export const revalidate = 300;
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -6,7 +7,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const res = await fetch(
-      `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=20`
+      `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}&limit=20`,
+      { next: { revalidate: 300 } }
     );
     const data = await res.json();
     const jobs = data.jobs?.map((job: any) => ({

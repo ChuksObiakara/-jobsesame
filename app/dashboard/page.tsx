@@ -45,8 +45,9 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (isSignedIn && user) {
-      generateReferralLink();
       sendWelcomeEmailOnce();
+      // Defer referral link so it doesn't block initial render
+      setTimeout(() => generateReferralLink(), 500);
     }
   }, [isSignedIn, user]);
 
@@ -104,8 +105,36 @@ export default function Dashboard() {
 
   if (!isLoaded) {
     return (
-      <div style={{background:"#052A14",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <div style={{color:"#C8E600",fontSize:16,fontWeight:700}}>Opening your doors...</div>
+      <div style={{background:"#052A14",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:32}}>
+        {/* Logo */}
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:40,height:40,background:"#C8E600",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+              <circle cx="9" cy="9" r="5.5" stroke="#052A14" strokeWidth="2.2"/>
+              <circle cx="9" cy="9" r="2.5" fill="#052A14" opacity="0.4"/>
+              <line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#052A14" strokeWidth="2.8" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <span style={{fontSize:22,fontWeight:800}}>
+            <span style={{color:"#FFFFFF"}}>job</span>
+            <span style={{color:"#C8E600"}}>sesame</span>
+          </span>
+        </div>
+        {/* Spinner */}
+        <div style={{width:40,height:40,border:"3px solid #1A5A2A",borderTop:"3px solid #C8E600",borderRadius:"50%",animation:"spin 0.8s linear infinite"}} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        {/* Skeleton rows */}
+        <div style={{width:"min(440px,90vw)",display:"flex",flexDirection:"column",gap:12}}>
+          {[80,60,70].map((w,i) => (
+            <div key={i} style={{height:14,background:"#1A4A2A",borderRadius:8,width:`${w}%`,opacity:0.6}} />
+          ))}
+          <div style={{height:80,background:"#1A4A2A",borderRadius:12,marginTop:8,opacity:0.4}} />
+          <div style={{display:"flex",gap:10,marginTop:4}}>
+            {[45,40].map((w,i) => (
+              <div key={i} style={{height:36,background:"#1A4A2A",borderRadius:99,width:`${w}%`,opacity:0.5}} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

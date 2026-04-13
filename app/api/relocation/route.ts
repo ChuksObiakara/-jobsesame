@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 import { NextRequest, NextResponse } from 'next/server';
 
 const RELOCATION_LOCATIONS = [
@@ -15,7 +15,7 @@ async function fetchMuseByLocation(location: string, query: string): Promise<any
   const params = new URLSearchParams({ location, page: '1' });
   const res = await fetch(
     `https://www.themuse.com/api/public/jobs?${params.toString()}`,
-    { headers: { Accept: 'application/json' } }
+    { headers: { Accept: 'application/json' }, next: { revalidate: 300 } }
   );
   const data = await res.json();
   const results = data.results || [];

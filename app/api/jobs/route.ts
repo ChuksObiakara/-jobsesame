@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 import { NextRequest, NextResponse } from 'next/server';
 
 // Maps homepage dropdown values to Muse city/region strings.
@@ -20,6 +20,7 @@ async function fetchMusePage(location: string, page: number): Promise<any[]> {
   const params = new URLSearchParams({ location, page: String(page) });
   const res = await fetch(`https://www.themuse.com/api/public/jobs?${params}`, {
     headers: { Accept: 'application/json' },
+    next: { revalidate: 300 },
   });
   if (!res.ok) return [];
   const data = await res.json();
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
     try {
       const res = await fetch(
         `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
-        { headers: { Accept: 'application/json' } }
+        { headers: { Accept: 'application/json' }, next: { revalidate: 300 } }
       );
       if (!res.ok) throw new Error(`Muse API error: ${res.status}`);
       const data = await res.json();
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
     try {
       const res = await fetch(
         `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
-        { headers: { Accept: 'application/json' } }
+        { headers: { Accept: 'application/json' }, next: { revalidate: 300 } }
       );
       const data = await res.json();
       return NextResponse.json({ jobs: (data.results || []).map(mapJob), total: data.total || 0, source: 'The Muse' });
