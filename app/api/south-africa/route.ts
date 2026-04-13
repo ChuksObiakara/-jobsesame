@@ -38,33 +38,54 @@ async function fetchCareerjet(query: string, location: string): Promise<any[]> {
   }));
 }
 
-// ── The Muse fallback ────────────────────────────────────────────────────────
+// ── Remotive fallback (remote jobs — open to African applicants) ─────────────
 
-async function fetchMuseAfrica(location: string): Promise<any[]> {
-  const params = new URLSearchParams({ location, page: '1' });
-  const res = await fetch(
-    `https://www.themuse.com/api/public/jobs?${params.toString()}`,
-    { headers: { Accept: 'application/json' } }
+async function fetchRemotiveFallback(): Promise<any[]> {
+  const searches = ['developer', 'engineer', 'manager', 'analyst', 'designer'];
+  const results = await Promise.all(
+    searches.map(q =>
+      fetch(`https://remotive.com/api/remote-jobs?search=${q}&limit=20`)
+        .then(r => r.json())
+        .then(d => d.jobs || [])
+        .catch(() => [])
+    )
   );
-
-  if (!res.ok) return [];
-
-  const data = await res.json();
-  const results: any[] = data.results || [];
-  console.log(`[Muse fallback] ${location}: ${results.length} results`);
-
-  return results.map((job: any) => ({
-    id: job.id,
-    title: job.name,
-    company: job.company?.name || 'Company',
-    location: job.locations?.[0]?.name || location,
-    description: (job.contents || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
-    url: job.refs?.landing_page || '#',
-    salary: '',
-    category: job.categories?.[0]?.name || 'General',
-    level: job.levels?.[0]?.name || 'All levels',
+  const jobs = results.flat().map((job: any) => ({
+    id: `remotive-${job.id}`,
+    title: job.title || '',
+    company: job.company_name || 'Company',
+    location: 'Remote — Open worldwide',
+    description: (job.description || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+    url: job.url || '',
+    salary: job.salary || '',
+    category: job.category || 'General',
+    level: 'All levels',
     type: 'south-africa',
   }));
+  console.log(`[Africa fallback] Remotive: ${jobs.length} remote jobs`);
+  return jobs;
+}
+
+// ── Jobicy fallback (global remote) ─────────────────────────────────────────
+
+async function fetchJobicyFallback(): Promise<any[]> {
+  const res = await fetch('https://jobicy.com/api/v2/remote-jobs?count=30')
+    .then(r => r.json())
+    .catch(() => ({ jobs: [] }));
+  const jobs = (res.jobs || []).map((job: any) => ({
+    id: `jobicy-${job.id}`,
+    title: job.jobTitle || '',
+    company: job.companyName || 'Company',
+    location: job.jobGeo ? `${job.jobGeo} (Remote)` : 'Remote — Worldwide',
+    description: (job.jobExcerpt || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+    url: job.url || '',
+    salary: '',
+    category: 'General',
+    level: job.jobLevel || 'All levels',
+    type: 'south-africa',
+  }));
+  console.log(`[Africa fallback] Jobicy: ${jobs.length} remote jobs`);
+  return jobs;
 }
 
 // ── Deduplicate by title + company ───────────────────────────────────────────
@@ -104,20 +125,19 @@ export async function GET(request: NextRequest) {
     console.error('[Africa jobs] Careerjet error — falling back to The Muse:', err);
   }
 
-  // ── 2. Fallback: The Muse with African location filters ───────────────────
+  // ── 2. Fallback: Remotive + Jobicy remote jobs (open to African applicants) ─
   try {
-    const [saJobs, ngJobs, keJobs] = await Promise.all([
-      fetchMuseAfrica('South Africa'),
-      fetchMuseAfrica('Nigeria'),
-      fetchMuseAfrica('Kenya'),
+    const [remotiveJobs, jobicyJobs] = await Promise.all([
+      fetchRemotiveFallback(),
+      fetchJobicyFallback(),
     ]);
 
-    const museJobs = dedupe([...saJobs, ...ngJobs, ...keJobs]);
-    console.log(`[Africa jobs] Muse fallback total unique: ${museJobs.length}`);
+    const fallbackJobs = dedupe([...remotiveJobs, ...jobicyJobs]);
+    console.log(`[Africa jobs] Fallback total unique: ${fallbackJobs.length}`);
 
-    return NextResponse.json({ jobs: museJobs, total: museJobs.length, source: 'The Muse' });
+    return NextResponse.json({ jobs: fallbackJobs, total: fallbackJobs.length, source: 'Remote (Worldwide)' });
   } catch (err) {
-    console.error('[Africa jobs] Muse fallback error:', err);
+    console.error('[Africa jobs] Fallback error:', err);
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch Africa jobs' });
   }
 }

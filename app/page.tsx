@@ -72,7 +72,7 @@ export default function Home() {
       } else if (tab === 'relocation') {
         url = `/api/relocation?query=${encodeURIComponent(searchQuery || 'engineer')}`;
       } else if (tab === 'teaching') {
-        url = `/api/relocation?query=${encodeURIComponent(searchQuery || 'english teacher OR ESL OR TEFL OR teaching')}`;
+        url = `/api/teaching`;
       } else if (tab === 'south-africa') {
         url = `/api/south-africa?query=${encodeURIComponent(searchQuery || 'software engineer')}`;
       } else {
@@ -307,10 +307,10 @@ export default function Home() {
             <div style={{display:"flex",alignItems:"center",gap:10}}>
               <span style={{fontSize:18}}>🌍</span>
               <span style={{fontSize:13,color:"#A8D8B0",fontWeight:600}}>
-                Jobs in <strong style={{color:"#FFFFFF"}}>South Africa, Nigeria, Kenya</strong> and across Africa — powered by Careerjet
+                Jobs in <strong style={{color:"#FFFFFF"}}>South Africa, Nigeria, Kenya</strong> and across Africa — plus remote roles open to African applicants
               </span>
             </div>
-            <span style={{fontSize:11,color:"#3A7A4A",fontWeight:600,whiteSpace:"nowrap"}}>3 countries · live results</span>
+            <span style={{fontSize:11,color:"#3A7A4A",fontWeight:600,whiteSpace:"nowrap"}}>Live results</span>
           </div>
         )}
         {activeTab === 'teaching' && !loading && (
