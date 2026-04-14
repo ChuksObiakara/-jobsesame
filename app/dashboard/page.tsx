@@ -91,7 +91,8 @@ export default function Dashboard() {
   useEffect(() => {
     if (isSignedIn && user) {
       sendWelcomeEmailOnce();
-      setTimeout(() => generateReferralLink(), 500);
+      // Defer referral link — non-critical, load after main content
+      setTimeout(() => generateReferralLink(), 2000);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, user]);
@@ -112,16 +113,19 @@ export default function Dashboard() {
       .catch(() => {});
   }, []);
 
-  // Fetch recommended jobs based on profile preference
+  // Fetch recommended jobs lazily — 1 second after mount so main content renders first
   useEffect(() => {
-    const p = profile || {};
-    const titleQuery = p.preferredJobTitle || p.jobTitle || cvData?.title || 'software engineer';
-    setLoadingJobs(true);
-    fetch(`/api/jobs?query=${encodeURIComponent(titleQuery)}&location=`)
-      .then(r => r.json())
-      .then(data => setRecommendedJobs((data.jobs || []).slice(0, 6)))
-      .catch(() => {})
-      .finally(() => setLoadingJobs(false));
+    const t = setTimeout(() => {
+      const p = profile || {};
+      const titleQuery = p.preferredJobTitle || p.jobTitle || cvData?.title || 'software engineer';
+      setLoadingJobs(true);
+      fetch(`/api/jobs?query=${encodeURIComponent(titleQuery)}&location=`)
+        .then(r => r.json())
+        .then(data => setRecommendedJobs((data.jobs || []).slice(0, 6)))
+        .catch(() => {})
+        .finally(() => setLoadingJobs(false));
+    }, 1000);
+    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
@@ -263,16 +267,48 @@ export default function Dashboard() {
     }
   };
 
-  // ── Loading state ─────────────────────────────────────────────
+  // ── Loading skeleton — shows immediately, no layout shift ─────
   if (!isLoaded) {
     return (
-      <div style={{background:"#052A14",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:32}}>
-        <div style={{fontSize:22,fontWeight:800}}>
-          <span style={{color:"#FFFFFF"}}>job</span>
-          <span style={{color:"#C8E600"}}>sesame</span>
+      <div style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#052A14",minHeight:"100vh"}}>
+        <style>{`@keyframes shimmer{0%{opacity:0.4}50%{opacity:0.8}100%{opacity:0.4}}`}</style>
+        {/* Nav skeleton */}
+        <div style={{background:"#052A14",borderBottom:"1px solid #0D4A20",height:64,display:"flex",alignItems:"center",padding:"0 20px",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:36,height:36,borderRadius:9,background:"#C8E600"}}/>
+            <div style={{width:100,height:16,borderRadius:6,background:"#1A4A2A",animation:"shimmer 1.5s ease infinite"}}/>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            {[80,90,100,36].map((w,i)=>(
+              <div key={i} style={{width:w,height:32,borderRadius:99,background:"#1A4A2A",animation:"shimmer 1.5s ease infinite"}}/>
+            ))}
+          </div>
         </div>
-        <div style={{width:40,height:40,border:"3px solid #1A5A2A",borderTop:"3px solid #C8E600",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        {/* Body skeleton */}
+        <div style={{padding:"32px 28px",maxWidth:960,margin:"0 auto"}}>
+          {/* Welcome + stats */}
+          <div style={{width:220,height:28,borderRadius:8,background:"#1A4A2A",marginBottom:8,animation:"shimmer 1.5s ease infinite"}}/>
+          <div style={{width:140,height:14,borderRadius:6,background:"#0D3A1A",marginBottom:20,animation:"shimmer 1.5s ease infinite"}}/>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
+            {[1,2,3,4].map(i=>(
+              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px",height:72,animation:"shimmer 1.5s ease infinite"}}/>
+            ))}
+          </div>
+          {/* CV panel */}
+          <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:24,marginBottom:20,height:160,animation:"shimmer 1.5s ease infinite"}}/>
+          {/* AI actions */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
+            {[1,2,3].map(i=>(
+              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,height:90,animation:"shimmer 1.5s ease infinite"}}/>
+            ))}
+          </div>
+          {/* Job cards */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+            {[1,2,3,4,5,6].map(i=>(
+              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,height:100,animation:"shimmer 1.5s ease infinite"}}/>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
