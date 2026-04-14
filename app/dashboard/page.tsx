@@ -435,6 +435,7 @@ export default function Dashboard() {
           {!isMobile && <button style={navBtnStyle('referral')} onClick={()=>setActiveSection('referral')}>Free rewrites</button>}
           <button style={navBtnStyle('applications')} onClick={()=>setActiveSection('applications')}>Applications</button>
           {!isMobile && <a href="/jobs" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>Find Jobs</a>}
+          {!isMobile && <a href="/optimise" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>CV Optimiser</a>}
           <UserButton afterSignOutUrl="/" />
         </div>
       </nav>
