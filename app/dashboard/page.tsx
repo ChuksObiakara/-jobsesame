@@ -534,11 +534,18 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div style={{background:"#072E16",border:"2px dashed #1A5A2A",borderRadius:16,padding:"28px 24px",textAlign:"center"}}>
-                <div style={{fontSize:36,marginBottom:12}}>📄</div>
-                <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:6}}>Upload your CV to get started</h3>
-                <p style={{fontSize:13,color:"#5A9A6A",marginBottom:16,maxWidth:360,margin:"0 auto 16px"}}>AI analyses your CV and builds your career profile in seconds — then matches you to the best jobs.</p>
-                <button onClick={()=>setActiveSection('cv')} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,border:"none",cursor:"pointer"}}>Upload my CV</button>
+              <div style={{background:"linear-gradient(135deg,#072E16 0%,#0D3A1A 100%)",border:"2px dashed #C8E600",borderRadius:16,padding:"32px 28px",textAlign:"center"}}>
+                <div style={{fontSize:48,marginBottom:16}}>📄</div>
+                <h3 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV to get started</h3>
+                <p style={{fontSize:14,color:"#5A9A6A",marginBottom:8,maxWidth:400,margin:"0 auto 8px",lineHeight:1.7}}>
+                  Upload your CV once. AI reads everything, builds your career profile, and matches you to the best jobs worldwide.
+                </p>
+                <p style={{fontSize:12,color:"#3A7A4A",marginBottom:24,fontStyle:"italic"}}>Takes about 15 seconds. Free.</p>
+                <button
+                  onClick={()=>setActiveSection('cv')}
+                  style={{background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:800,padding:"14px 36px",borderRadius:99,border:"none",cursor:"pointer",boxShadow:"0 4px 20px rgba(200,230,0,0.25)"}}>
+                  Upload my CV →
+                </button>
               </div>
             )}
 
@@ -672,29 +679,42 @@ export default function Dashboard() {
                 <p style={{fontSize:14,color:"#5A9A6A",marginBottom:24,maxWidth:400,margin:"0 auto 24px"}}>
                   Upload your CV once. AI reads everything and builds your complete career profile in seconds.
                 </p>
-                <div
-                  onDrop={handleDrop}
-                  onDragOver={e=>{e.preventDefault();setDragOver(true);}}
-                  onDragLeave={()=>setDragOver(false)}
-                  style={{border:`2px dashed ${dragOver?'#C8E600':'#1A5A2A'}`,borderRadius:14,padding:"40px 24px",marginBottom:16,background:dragOver?'rgba(200,230,0,0.05)':'transparent',transition:"all 0.2s",cursor:"pointer"}}>
-                  <div style={{fontSize:13,color:"#5A9A6A",marginBottom:12}}>
-                    {uploading ? 'AI is reading your CV...' : 'Drag and drop your CV here'}
-                  </div>
-                  {!uploading && (
-                    <div>
-                      <div style={{fontSize:12,color:"#3A7A4A",marginBottom:16}}>or</div>
-                      <label style={{cursor:"pointer"}}>
-                        <input type="file" accept=".pdf" onChange={handleFileInput} style={{display:"none"}}/>
-                        <span style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,cursor:"pointer"}}>
-                          Choose PDF file
-                        </span>
-                      </label>
+                {uploading ? (
+                  <div style={{border:"2px dashed #C8E600",borderRadius:14,padding:"48px 24px",marginBottom:16,background:"rgba(200,230,0,0.03)",textAlign:"center"}}>
+                    <div style={{fontSize:36,marginBottom:16}}>🤖</div>
+                    <div style={{fontSize:16,fontWeight:800,color:"#C8E600",marginBottom:8}}>AI is reading your CV...</div>
+                    <div style={{fontSize:13,color:"#5A9A6A",marginBottom:20}}>Extracting skills, experience and achievements — about 15 seconds</div>
+                    <div style={{width:200,height:4,background:"#1A4A2A",borderRadius:99,margin:"0 auto",overflow:"hidden"}}>
+                      <div style={{height:4,background:"#C8E600",borderRadius:99,animation:"cvprogress 2s ease-in-out infinite"}}/>
                     </div>
-                  )}
-                  {uploading && <div style={{marginTop:16,fontSize:14,color:"#C8E600",fontWeight:700}}>Reading your CV... ~10 seconds</div>}
-                </div>
-                {error && <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginBottom:16}}>{error}</div>}
-                <div style={{fontSize:11,color:"#3A7A4A"}}>PDF only · Maximum 10MB · Processed securely</div>
+                    <style>{`@keyframes cvprogress{0%{width:5%}50%{width:75%}100%{width:95%}}`}</style>
+                  </div>
+                ) : (
+                  <div
+                    onDrop={handleDrop}
+                    onDragOver={e=>{e.preventDefault();setDragOver(true);}}
+                    onDragLeave={()=>setDragOver(false)}
+                    style={{border:`2px dashed ${dragOver?'#C8E600':'#1A5A2A'}`,borderRadius:14,padding:"40px 24px",marginBottom:16,background:dragOver?'rgba(200,230,0,0.05)':'transparent',transition:"all 0.2s",cursor:"pointer"}}>
+                    <div style={{fontSize:32,marginBottom:12}}>📄</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"#FFFFFF",marginBottom:6}}>Drag your PDF CV here</div>
+                    <div style={{fontSize:12,color:"#3A7A4A",marginBottom:16}}>or</div>
+                    <label style={{cursor:"pointer",display:"inline-block"}}>
+                      <input type="file" accept=".pdf" onChange={handleFileInput} style={{display:"none"}}/>
+                      <span style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,cursor:"pointer",display:"inline-block"}}>
+                        Choose PDF file
+                      </span>
+                    </label>
+                  </div>
+                )}
+                {error && (
+                  <div style={{background:"rgba(163,45,45,0.2)",border:"1.5px solid #A32D2D",borderRadius:10,padding:"12px 16px",fontSize:13,color:"#F09595",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                    <span>⚠️ {error}</span>
+                    <button onClick={()=>setError('')} style={{background:"#A32D2D",color:"#fff",fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                      Retry
+                    </button>
+                  </div>
+                )}
+                <div style={{fontSize:11,color:"#3A7A4A"}}>PDF only · Maximum 10MB · Processed securely by AI</div>
               </div>
             ) : rewrittenCV ? (
               <div>
