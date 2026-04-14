@@ -77,14 +77,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (error) {
-      console.error('[Auto-apply] Resend error:', error);
       return NextResponse.json({ error: (error as any).message || 'Email send failed' }, { status: 500 });
     }
 
-    console.log(`[Auto-apply] Sent to ${employerEmail} for "${jobTitle}" by ${candidateName}`);
     return NextResponse.json({ success: true, id: data?.id });
   } catch (err: any) {
-    console.error('[Auto-apply] Error:', err);
     return NextResponse.json({ error: err.message || 'Failed to send application' }, { status: 500 });
   }
 }

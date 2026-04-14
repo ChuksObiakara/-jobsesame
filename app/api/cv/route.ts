@@ -57,7 +57,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('CV upload error:', error);
     return NextResponse.json(
       { error: 'Failed to process CV', details: String(error) },
       { status: 500 }

@@ -73,10 +73,8 @@ export async function GET(request: NextRequest) {
       if (!res.ok) throw new Error(`Muse API error: ${res.status}`);
       const data = await res.json();
       const jobs = (data.results || []).map(mapJob);
-      console.log(`[Jobs] Global (no location): ${jobs.length}`);
       return NextResponse.json({ jobs, total: data.total || 0, source: 'The Muse' });
     } catch (error) {
-      console.error('[Jobs] Error:', error);
       return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
     }
   }
@@ -125,10 +123,8 @@ export async function GET(request: NextRequest) {
     }
 
     const jobs = dedupe(combined).slice(0, 20);
-    console.log(`[Jobs] Location=${location}: on-target=${onTarget.length} total returned=${jobs.length}`);
     return NextResponse.json({ jobs, total: jobs.length, source: 'The Muse' });
   } catch (error) {
-    console.error('[Jobs] Location filter error:', error);
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
   }
 }

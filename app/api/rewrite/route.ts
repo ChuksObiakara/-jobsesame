@@ -93,7 +93,6 @@ Return ONLY a valid JSON object with no markdown or extra text:
     });
 
   } catch (error) {
-    console.error('CV rewrite error:', error);
     return NextResponse.json(
       { error: 'Failed to rewrite CV', details: String(error) },
       { status: 500 }

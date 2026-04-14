@@ -70,7 +70,6 @@ async function fetchRemotive(query: string): Promise<any[]> {
     type: 'south-africa',
   }));
 
-  console.log(`[Africa] Remotive: ${results.flat().length} raw`);
   return jobs;
 }
 
@@ -110,7 +109,6 @@ async function fetchMuse(): Promise<any[]> {
   );
 
   const jobs = results.flat();
-  console.log(`[Africa] Muse (African cities): ${jobs.length} raw`);
   return jobs;
 }
 
@@ -129,10 +127,8 @@ export async function GET(request: NextRequest) {
     const combined = dedupe([...museJobs, ...remotiveJobs]);
     const africanJobs = combined.filter(isAfricanJob);
 
-    console.log(`[Africa] Combined: ${combined.length} total → ${africanJobs.length} confirmed African`);
     return NextResponse.json({ jobs: africanJobs, total: africanJobs.length, source: 'Multi-source' });
   } catch (err) {
-    console.error('[Africa] Error:', err);
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch African jobs' });
   }
 }

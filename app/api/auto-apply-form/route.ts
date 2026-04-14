@@ -98,14 +98,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log(`[Auto-apply-form] Filled: ${filled.join(', ')} on ${jobUrl}`);
     return NextResponse.json({
       success: true,
       filled,
       message: `Form fields filled (${filled.join(', ')}). Please review and submit your application.`,
     });
   } catch (err: any) {
-    console.error('[Auto-apply-form] Error:', err);
     return NextResponse.json({
       success: false,
       requiresManual: true,

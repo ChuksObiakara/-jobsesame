@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Referral error:', error);
     return NextResponse.json({ error: 'Failed to process referral' }, { status: 500 });
   }
 }

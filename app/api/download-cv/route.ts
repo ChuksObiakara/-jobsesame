@@ -99,7 +99,6 @@ ${cvData.keywords_added?.length ? `
     });
 
   } catch (error) {
-    console.error('Download CV error:', error);
     return NextResponse.json({ error: 'Failed to generate CV' }, { status: 500 });
   }
 }

@@ -85,8 +85,7 @@ export default function JobsPage() {
       const data = await res.json();
       setJobs(data.jobs || []);
       setTotal(data.total || 0);
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
+    } catch {
     }
     setLoading(false);
   };

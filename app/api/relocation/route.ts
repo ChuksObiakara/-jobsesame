@@ -28,8 +28,6 @@ async function fetchMuseByLocation(location: string, query: string): Promise<any
       )
     : results;
 
-  console.log(`[Relocation] ${location}: ${results.length} raw → ${filtered.length} matching`);
-
   return filtered.map((job: any) => ({
     id: job.id,
     title: job.name,
@@ -63,10 +61,8 @@ export async function GET(request: NextRequest) {
       return true;
     });
 
-    console.log(`[Relocation] Total unique jobs: ${jobs.length}`);
     return NextResponse.json({ jobs, total: jobs.length, source: 'The Muse' });
   } catch (error) {
-    console.error('[Relocation] Error:', error);
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch relocation jobs' });
   }
 }

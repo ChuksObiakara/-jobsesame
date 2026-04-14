@@ -24,10 +24,8 @@ export async function GET(request: NextRequest) {
       salary: job.salary || '',
       type: 'remote',
     })) || [];
-    console.log(`[Remote jobs] Returned: ${jobs.length}`);
     return NextResponse.json({ jobs, total: jobs.length, source: 'Remotive' });
   } catch (error) {
-    console.error('Remote jobs error:', error);
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch remote jobs' });
   }
 }

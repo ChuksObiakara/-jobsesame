@@ -220,13 +220,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (error) {
-      console.error('Resend error:', error);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, id: data?.id });
   } catch (err) {
-    console.error('Welcome email error:', err);
     return NextResponse.json({ error: 'Failed to send welcome email' }, { status: 500 });
   }
 }

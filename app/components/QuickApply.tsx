@@ -317,8 +317,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
 
       const fileName = `${(cv.name || 'CV').replace(/\s+/g, '_')}_CV_for_${(job.company || 'Job').replace(/\s+/g, '_')}.pdf`;
       doc.save(fileName);
-    } catch (err) {
-      console.error('PDF generation error:', err);
+    } catch {
     }
   };
 
