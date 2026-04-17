@@ -1,7 +1,7 @@
 'use client';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import QuickApply from '../components/QuickApply';
 
 interface Application {
@@ -61,6 +61,9 @@ export default function Dashboard() {
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const freeRewrites = 3;
+
+  // ── ATS score display (animated) ──────────────────────────────────
+  const [displayAts, setDisplayAts] = useState(0);
 
   // ── Recommended jobs ──────────────────────────────────────────
   const [recommendedJobs, setRecommendedJobs] = useState<Job[]>([]);
@@ -128,6 +131,41 @@ export default function Dashboard() {
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
+
+  const atsScore = useMemo(() => {
+    if (!cvData) return 0;
+    let score = 25;
+    if (cvData.summary) score += 10;
+    if ((cvData.skills?.length || 0) >= 5) score += 10;
+    if (cvData.experience_years || cvData.experience?.length) score += 10;
+    if (cvData.education) score += 10;
+    if ((cvData.languages?.length || 0) > 0) score += 10;
+    const text = [cvData.summary, ...(cvData.skills || []), cvData.title].filter(Boolean).join(' ').toLowerCase();
+    ['management', 'leadership', 'strategy', 'communication', 'analytics'].forEach(kw => {
+      if (text.includes(kw)) score += 5;
+    });
+    return Math.min(100, score);
+  }, [cvData]);
+
+  useEffect(() => {
+    if (!atsScore) { setDisplayAts(0); return; }
+    let current = 0;
+    const inc = atsScore / 30;
+    const interval = setInterval(() => {
+      current += inc;
+      if (current >= atsScore) { setDisplayAts(atsScore); clearInterval(interval); }
+      else setDisplayAts(Math.round(current));
+    }, 50);
+    return () => clearInterval(interval);
+  }, [atsScore]);
+
+  const calcJobMatch = (job: Job): number | null => {
+    if (!cvData?.skills?.length) return null;
+    const text = (job.title + ' ' + job.description).toLowerCase();
+    const skills = cvData.skills as string[];
+    const matches = skills.filter(s => text.includes(s.toLowerCase())).length;
+    return Math.min(95, 50 + matches * 3);
+  };
 
   const updateApplicationStatus = (id: string, status: Application['status']) => {
     const updated = applications.map(a => a.id === id ? { ...a, status } : a);
@@ -303,9 +341,9 @@ export default function Dashboard() {
             ))}
           </div>
           {/* Job cards */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))",gap:10,width:"100%",overflow:"hidden"}}>
             {[1,2,3,4,5,6].map(i=>(
-              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,height:100,animation:"shimmer 1.5s ease infinite"}}/>
+              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,height:130,animation:"shimmer 1.5s ease infinite"}}/>
             ))}
           </div>
         </div>
@@ -315,7 +353,6 @@ export default function Dashboard() {
   if (!isSignedIn) return null;
 
   const firstName = profile?.name?.split(' ')[0] || user?.firstName || user?.emailAddresses[0]?.emailAddress?.split('@')[0] || 'there';
-  const atsScore = cvData?.ats_score || (cvData ? 72 : 0);
   const today = new Date().toLocaleDateString('en-ZA', {weekday:'long',day:'numeric',month:'long'});
   const navBtnStyle = (s: string) => ({
     padding: '8px 16px',
@@ -462,7 +499,7 @@ export default function Dashboard() {
               {label:"Applications sent",value:applications.length,color:"#90C898",icon:"📤"},
               {label:"Interviews",value:applications.filter(a=>a.status==='Interview').length,color:"#FFA500",icon:"📞"},
               {label:"Saved jobs",value:(() => { try { const s = localStorage.getItem('jobsesame_saved_jobs'); return s ? JSON.parse(s).length : 0; } catch { return 0; } })(),color:"#A8D8B0",icon:"🔖"},
-              {label:"CV score",value:atsScore?`${atsScore}%`:"—",color:"#C8E600",icon:"📊"},
+              {label:"CV score",value:cvData?`${displayAts}%`:"—",color:"#C8E600",icon:"📊"},
             ].map(s=>(
               <div key={s.label} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px"}}>
                 <div style={{fontSize:10,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>{s.icon} {s.label}</div>
@@ -493,11 +530,11 @@ export default function Dashboard() {
                         <circle cx="50" cy="50" r="40" fill="none" stroke="#1A4A2A" strokeWidth="9"/>
                         <circle cx="50" cy="50" r="40" fill="none" stroke={atsScore>=80?"#C8E600":atsScore>=60?"#FFA500":"#F09595"} strokeWidth="9"
                           strokeDasharray={`${2*Math.PI*40}`}
-                          strokeDashoffset={`${2*Math.PI*40*(1-atsScore/100)}`}
+                          strokeDashoffset={`${2*Math.PI*40*(1-displayAts/100)}`}
                           strokeLinecap="round"/>
                       </svg>
                       <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
-                        <span style={{fontSize:20,fontWeight:800,color:"#C8E600",lineHeight:1}}>{atsScore}%</span>
+                        <span style={{fontSize:20,fontWeight:800,color:"#C8E600",lineHeight:1}}>{displayAts}%</span>
                         <span style={{fontSize:9,color:"#5A9A6A",lineHeight:1.3,marginTop:2}}>ATS score</span>
                       </div>
                     </div>
@@ -580,34 +617,42 @@ export default function Dashboard() {
                 <a href="/jobs" style={{fontSize:12,color:"#C8E600",fontWeight:700,textDecoration:"none"}}>View all jobs →</a>
               </div>
               {loadingJobs ? (
-                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))",gap:10,width:"100%",overflow:"hidden"}}>
                   {[1,2,3,4,5,6].map(i=>(
-                    <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:16,height:100}}/>
+                    <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:16,height:130}}/>
                   ))}
                 </div>
               ) : (
-                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
-                  {recommendedJobs.map(job=>(
-                    <div key={job.id} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:16}}>
-                      <div style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:10}}>
-                        <div style={{width:36,height:36,borderRadius:8,background:"#0D3A1A",color:"#C8E600",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>
-                          {job.company.charAt(0).toUpperCase()}
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))",gap:10,width:"100%",overflow:"hidden"}}>
+                  {recommendedJobs.map(job=>{
+                    const matchPct = calcJobMatch(job);
+                    return (
+                      <div key={job.id} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:16,display:"flex",flexDirection:"column",minHeight:130}}>
+                        <div style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:10}}>
+                          <div style={{width:36,height:36,borderRadius:8,background:"#0D3A1A",color:"#C8E600",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>
+                            {job.company.charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
+                              <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,minWidth:0}}>{job.title}</div>
+                              {matchPct !== null && (
+                                <span style={{fontSize:9,fontWeight:800,color:"#1A5A2A",background:"#EAF5EA",padding:"1px 6px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{matchPct}%</span>
+                              )}
+                            </div>
+                            <div style={{fontSize:11,color:"#5A9A6A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{job.company} · {job.location}</div>
+                          </div>
                         </div>
-                        <div style={{flex:1,minWidth:0}}>
-                          <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{job.title}</div>
-                          <div style={{fontSize:11,color:"#5A9A6A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{job.company} · {job.location}</div>
+                        <div style={{display:"flex",gap:8,marginTop:"auto"}}>
+                          <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"7px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
+                            ⚡ Quick Apply
+                          </button>
+                          <button onClick={()=>window.open(job.url,'_blank')} style={{background:"transparent",color:"#5A9A6A",fontSize:11,fontWeight:600,padding:"7px 12px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+                            View
+                          </button>
                         </div>
                       </div>
-                      <div style={{display:"flex",gap:8}}>
-                        <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"7px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
-                          ⚡ Quick Apply
-                        </button>
-                        <button onClick={()=>window.open(job.url,'_blank')} style={{background:"transparent",color:"#5A9A6A",fontSize:11,fontWeight:600,padding:"7px 12px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
-                          View
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {recommendedJobs.length === 0 && !loadingJobs && (
                     <div style={{gridColumn:"1/-1",textAlign:"center",padding:"32px 0"}}>
                       <div style={{fontSize:13,color:"#5A9A6A",marginBottom:12}}>No recommended jobs yet</div>

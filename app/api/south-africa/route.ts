@@ -112,19 +112,53 @@ async function fetchMuse(): Promise<any[]> {
   return jobs;
 }
 
+// ── Source 3: Adzuna ZA ───────────────────────────────────────────────────────
+
+async function fetchAdzunaZA(query: string): Promise<any[]> {
+  const appId = process.env.ADZUNA_APP_ID;
+  const apiKey = process.env.ADZUNA_API_KEY;
+  if (!appId || !apiKey) return [];
+  try {
+    const params = new URLSearchParams({
+      app_id: appId,
+      app_key: apiKey,
+      results_per_page: '20',
+      what: query,
+    });
+    const res = await fetch(`https://api.adzuna.com/v1/api/jobs/za/search/1?${params}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.results || []).map((job: any) => ({
+      id: `adzuna-za-${job.id}`,
+      title: job.title || '',
+      company: job.company?.display_name || 'Company',
+      location: job.location?.display_name || 'South Africa',
+      description: (job.description || '').substring(0, 220) + '...',
+      url: job.redirect_url || '#',
+      salary: job.salary_min ? `R${Math.round(job.salary_min)}${job.salary_max ? `–R${Math.round(job.salary_max)}` : ''}` : '',
+      category: job.category?.label || 'General',
+      level: job.contract_time || 'full_time',
+      type: 'south-africa',
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // ── Handler ──────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('query') || 'software engineer';
 
   try {
-    const [remotiveJobs, museJobs] = await Promise.all([
+    const [remotiveJobs, museJobs, adzunaJobs] = await Promise.all([
       fetchRemotive(query),
       fetchMuse(),
+      fetchAdzunaZA(query),
     ]);
 
     // Combine, deduplicate, then filter strictly to African jobs only
-    const combined = dedupe([...museJobs, ...remotiveJobs]);
+    const combined = dedupe([...adzunaJobs, ...museJobs, ...remotiveJobs]);
     const africanJobs = combined.filter(isAfricanJob);
 
     return NextResponse.json({ jobs: africanJobs, total: africanJobs.length, source: 'Multi-source' });

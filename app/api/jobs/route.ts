@@ -1,6 +1,37 @@
 export const revalidate = 300;
 import { NextRequest, NextResponse } from 'next/server';
 
+async function fetchJSearch(query: string, page: string): Promise<any[]> {
+  const apiKey = process.env.RAPIDAPI_KEY;
+  if (!apiKey) return [];
+  try {
+    const params = new URLSearchParams({ query, page, num_pages: '1' });
+    const res = await fetch(`https://jsearch.p.rapidapi.com/search?${params}`, {
+      headers: {
+        'x-rapidapi-key': apiKey,
+        'x-rapidapi-host': 'jsearch.p.rapidapi.com',
+      },
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.data || []).map((job: any) => ({
+      id: `jsearch-${job.job_id}`,
+      title: job.job_title || '',
+      company: job.employer_name || 'Company',
+      location: [job.job_city, job.job_country].filter(Boolean).join(', ') || 'Worldwide',
+      description: (job.job_description || '').substring(0, 200) + '...',
+      url: job.job_apply_link || job.job_google_link || '#',
+      created: '',
+      salary: '',
+      category: 'General',
+      level: job.job_employment_type || 'FULLTIME',
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // Maps homepage dropdown values to Muse city/region strings.
 // Multiple entries per country are fetched in parallel then merged.
 const LOCATION_MAP: Record<string, string[]> = {
@@ -66,14 +97,18 @@ export async function GET(request: NextRequest) {
   // ── No location filter: return global results ────────────────────────────
   if (!location) {
     try {
-      const res = await fetch(
-        `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
-        { headers: { Accept: 'application/json' }, next: { revalidate: 300 } }
-      );
-      if (!res.ok) throw new Error(`Muse API error: ${res.status}`);
-      const data = await res.json();
-      const jobs = (data.results || []).map(mapJob);
-      return NextResponse.json({ jobs, total: data.total || 0, source: 'The Muse' });
+      const [museRes, jsearchJobs] = await Promise.all([
+        fetch(
+          `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
+          { headers: { Accept: 'application/json' }, next: { revalidate: 300 } }
+        ),
+        fetchJSearch(query, page),
+      ]);
+      if (!museRes.ok) throw new Error(`Muse API error: ${museRes.status}`);
+      const museData = await museRes.json();
+      const museJobs = (museData.results || []).map(mapJob);
+      const jobs = dedupe([...museJobs, ...jsearchJobs]).slice(0, 30);
+      return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
     } catch (error) {
       return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
     }

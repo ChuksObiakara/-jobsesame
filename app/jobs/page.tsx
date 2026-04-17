@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
-import QuickApply, { isAutoApply } from '../components/QuickApply';
+import QuickApply from '../components/QuickApply';
 
 interface Job {
   id: number;
@@ -35,6 +35,14 @@ export default function JobsPage() {
       const saved = localStorage.getItem('jobsesame_saved_jobs');
       if (saved) return JSON.parse(saved).map((j: Job) => j.id);
     }
+    return [];
+  });
+  const [cvSkills] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem('jobsesame_cv_data');
+      if (stored) return JSON.parse(stored).skills || [];
+    } catch {}
     return [];
   });
 
@@ -115,6 +123,13 @@ export default function JobsPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchJobs(activeTab, query, location);
+  };
+
+  const calcMatch = (job: Job): number | null => {
+    if (!cvSkills.length) return null;
+    const text = (job.title + ' ' + job.description).toLowerCase();
+    const matches = cvSkills.filter(s => text.includes(s.toLowerCase())).length;
+    return Math.min(95, 50 + matches * 3);
   };
 
   const tabStyle = (tab: string) => ({
@@ -316,7 +331,7 @@ export default function JobsPage() {
           {loading ? (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               {[...Array(6)].map((_,i)=>(
-                <div key={i} style={{background:"#fff",border:"1.5px solid #D8EED8",borderRadius:14,padding:16,display:"flex",gap:16,alignItems:"flex-start"}}>
+                <div key={i} style={{background:"#fff",border:"1.5px solid #C8E6C8",borderRadius:14,padding:16,display:"flex",gap:16,alignItems:"flex-start"}}>
                   <div style={{display:"flex",gap:12,flex:1,minWidth:0}}>
                     <div style={{width:44,height:44,borderRadius:11,background:"#D8EED8",flexShrink:0}}></div>
                     <div style={{flex:1,minWidth:0}}>
@@ -378,9 +393,9 @@ export default function JobsPage() {
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3,minWidth:0}}>
                         <div style={{fontSize:14,fontWeight:700,color:"#052A14",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flex:1,minWidth:0}}>{job.title}</div>
-                        <span style={{fontSize:10,fontWeight:800,color:"#1A5A2A",background:"#EAF5EA",padding:"2px 7px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>
-                          {65 + (job.title.length % 31)}% match
-                        </span>
+                        {(() => { const pct = calcMatch(job); return pct !== null ? (
+                          <span style={{fontSize:10,fontWeight:800,color:"#1A5A2A",background:"#EAF5EA",padding:"2px 7px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{pct}% match</span>
+                        ) : null; })()}
                       </div>
                       <div style={{fontSize:12,color:"#666",marginBottom:8,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{job.company} · {job.location}</div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>
@@ -390,10 +405,6 @@ export default function JobsPage() {
                         {activeTab === 'remote' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Remote</span>}
                         {activeTab === 'relocation' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Relocation</span>}
                         {activeTab === 'teaching' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>🎓 Teaching</span>}
-                        {isAutoApply(job.url)
-                          ? <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:700,background:"rgba(200,230,0,0.12)",color:"#C8E600",border:"1px solid rgba(200,230,0,0.35)",whiteSpace:"nowrap"}}>⚡ Auto-apply</span>
-                          : <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:700,background:"rgba(255,165,0,0.10)",color:"#FFA500",border:"1px solid rgba(255,165,0,0.35)",whiteSpace:"nowrap"}}>🎯 Assisted</span>
-                        }
                       </div>
                       <p style={{fontSize:12,color:"#666",lineHeight:1.55,margin:0,display:"-webkit-box" as any,WebkitLineClamp:2,WebkitBoxOrient:"vertical" as any,overflow:"hidden"}}>{job.description}</p>
                     </div>
