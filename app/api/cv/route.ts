@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     });
 
     const response = await client.messages.create({
-      model: 'claude-opus-4-5',
+      model: 'claude-opus-4-5-20251101',
       max_tokens: 1000,
       messages: [
         {
@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    console.error('CV upload error:', error);
     return NextResponse.json(
       { error: 'Failed to process CV', details: String(error) },
       { status: 500 }
