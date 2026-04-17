@@ -7,6 +7,7 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('ZAR');
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -45,8 +46,49 @@ export default function Home() {
     setMenuOpen(false);
   };
 
+  const faqs = [
+    {
+      q: "Is Jobsesame really free?",
+      a: "Yes — you get 3 free AI CV rewrites and Quick Apply credits with no credit card required. After your free credits you can buy a pack of 10 for R185 or go unlimited with Pro at R370 per month.",
+    },
+    {
+      q: "How does the AI rewrite my CV?",
+      a: "You upload your CV once. When you click Quick Apply on any job our AI reads the full job description and rewrites your CV in 30 seconds to match exactly what that employer is looking for — adding the right keywords, restructuring your experience, and optimising for ATS systems.",
+    },
+    {
+      q: "What is an ATS system?",
+      a: "ATS stands for Applicant Tracking System. It is software that most companies use to automatically screen CVs before a human ever sees them. 8 out of 10 CVs are rejected by ATS. Jobsesame rewrites your CV to pass these systems automatically.",
+    },
+    {
+      q: "Will my real experience and company names be changed?",
+      a: "Never. We only rewrite how your experience is described — not the facts. Your real company names, job titles, dates and qualifications are always preserved. We just make them sound better and add the right keywords.",
+    },
+    {
+      q: "What jobs does Jobsesame have?",
+      a: "We aggregate jobs from multiple sources worldwide including remote jobs, relocation opportunities to London Dubai Toronto Singapore, teaching jobs in Asia, and local jobs in South Africa Nigeria and Kenya. New jobs are added daily.",
+    },
+    {
+      q: "How is Jobsesame different from LinkedIn or Indeed?",
+      a: "LinkedIn and Indeed are job boards — they just show you jobs. Jobsesame is an AI job application assistant. We help you actually get the job by rewriting your CV, applying automatically, and tracking everything. We also show jobs from multiple platforms in one place.",
+    },
+    {
+      q: "Is my CV data safe?",
+      a: "Yes. Your CV is processed securely and never sold to third parties. We use it only to help you apply for jobs. You can delete your data at any time.",
+    },
+    {
+      q: "Does Quick Apply actually submit my application?",
+      a: "For jobs that accept direct applications yes — we submit automatically. For jobs on platforms like LinkedIn that require a login we download your rewritten CV and open the employer portal so you can upload it in one click.",
+    },
+  ];
+
   return (
     <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#fff",margin:0,padding:0}}>
+      <style>{`
+        @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+        @keyframes pulseDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.5)}}
+        @keyframes floatUp{0%,100%{transform:translateY(0px)}50%{transform:translateY(-8px)}}
+        @keyframes faqSlide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+      `}</style>
 
       {/* NAV */}
       <nav style={{background:"#052A14",padding:"0 24px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 20px rgba(0,0,0,0.3)"}}>
@@ -91,69 +133,156 @@ export default function Home() {
       )}
 
       {/* HERO */}
-      <section style={{background:"#052A14",padding:isMobile?"48px 20px 52px":"80px 28px 72px",textAlign:"center",position:"relative",overflow:"hidden"}}>
-        {/* Background glow */}
-        <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:600,height:600,background:"radial-gradient(circle,rgba(200,230,0,0.06) 0%,transparent 70%)",pointerEvents:"none"}} />
+      <section style={{background:"#052A14",padding:isMobile?"48px 20px 56px":"88px 28px 80px",position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:"40%",left:"50%",transform:"translate(-50%,-50%)",width:800,height:800,background:"radial-gradient(circle,rgba(200,230,0,0.06) 0%,transparent 65%)",pointerEvents:"none"}} />
 
-        <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(200,230,0,0.12)",border:"1.5px solid rgba(200,230,0,0.4)",borderRadius:99,padding:"6px 16px",fontSize:11,color:"#C8E600",fontWeight:700,marginBottom:28,letterSpacing:"0.8px",position:"relative"}}>
-          <span style={{width:7,height:7,background:"#C8E600",borderRadius:"50%",display:"inline-block"}}></span>
-          AI-POWERED JOB APPLICATIONS
+        {/* Trust badge with shimmer */}
+        <div style={{display:"flex",justifyContent:"center",marginBottom:44}}>
+          <div style={{
+            display:"inline-flex",alignItems:"center",gap:8,
+            border:"1.5px solid rgba(200,230,0,0.35)",borderRadius:99,padding:"8px 22px",
+            background:"linear-gradient(90deg,rgba(200,230,0,0.08) 0%,rgba(200,230,0,0.22) 30%,rgba(200,230,0,0.08) 60%,rgba(200,230,0,0.22) 90%,rgba(200,230,0,0.08) 100%)",
+            backgroundSize:"200% auto",
+            animation:"shimmer 3s linear infinite",
+          }}>
+            <span style={{color:"#C8E600",fontSize:12,fontWeight:700,letterSpacing:"0.3px"}}>✦ 1,200+ users · 740+ job applications submitted</span>
+          </div>
         </div>
 
-        <h1 style={{fontSize:isMobile?30:54,fontWeight:800,color:"#FFFFFF",lineHeight:1.06,letterSpacing:-1.5,marginBottom:20,maxWidth:680,margin:"0 auto 20px",position:"relative"}}>
-          Stop getting ignored.<br/><span style={{color:"#C8E600"}}>Start getting hired.</span>
-        </h1>
+        {/* Two-column grid */}
+        <div style={{
+          maxWidth:1100,margin:"0 auto",
+          display:isMobile?"flex":"grid",
+          gridTemplateColumns:isMobile?undefined:"1fr 1fr",
+          flexDirection:isMobile?"column":undefined,
+          gap:isMobile?44:64,
+          alignItems:"center",
+          position:"relative",
+          zIndex:1,
+        }}>
 
-        <p style={{fontSize:isMobile?14:17,color:"#90C898",lineHeight:1.75,margin:"0 auto 32px",maxWidth:520,position:"relative"}}>
-          8 out of 10 CVs never reach a human recruiter. Jobsesame uses AI to tailor your CV for every job in 30 seconds — so yours always gets through.
-        </p>
+          {/* LEFT COLUMN */}
+          <div style={{textAlign:isMobile?"center":"left"}}>
+            <h1 style={{fontSize:isMobile?30:54,fontWeight:800,color:"#FFFFFF",lineHeight:1.07,letterSpacing:-1.5,marginBottom:20}}>
+              Your CV is losing<br/>you jobs.<br/>
+              <span style={{color:"#C8E600"}}>We fix that in 30 seconds.</span>
+            </h1>
+            <p style={{fontSize:isMobile?15:18,color:"#90C898",lineHeight:1.75,marginBottom:36,maxWidth:480}}>
+              AI rewrites your CV for every job you apply to. Beat ATS filters. Get seen. Get hired.
+            </p>
 
-        <div style={{display:"flex",gap:12,justifyContent:"center",flexWrap:"wrap",marginBottom:52,position:"relative"}}>
-          <a href="/sign-up" style={{background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:800,padding:"15px 34px",borderRadius:99,textDecoration:"none",display:"inline-block",boxShadow:"0 4px 24px rgba(200,230,0,0.3)"}}>
-            Get started free
-          </a>
-          <button onClick={()=>scrollTo('how-it-works')} style={{background:"transparent",color:"#C8E600",fontSize:15,fontWeight:500,padding:"15px 28px",borderRadius:99,border:"1.5px solid rgba(200,230,0,0.35)",cursor:"pointer"}}>
-            See how it works →
-          </button>
-        </div>
-
-        {/* AI Score Mockup Card */}
-        <div style={{position:"relative",maxWidth:320,margin:"0 auto",zIndex:2}}>
-          <div style={{background:"#fff",borderRadius:20,padding:"20px 24px",boxShadow:"0 24px 64px rgba(0,0,0,0.5)",textAlign:"left"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
-              <div style={{fontSize:10,color:"#888",fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase"}}>AI Match Analysis</div>
-              <span style={{background:"#EAF5EA",color:"#1A7A3A",fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:99}}>✓ ATS Ready</span>
+            {/* CTAs */}
+            <div style={{display:"flex",gap:12,flexWrap:"wrap",justifyContent:isMobile?"center":"flex-start",marginBottom:24}}>
+              <a href="/sign-up" style={{
+                background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:800,
+                padding:"16px 36px",borderRadius:99,textDecoration:"none",
+                display:"inline-block",boxShadow:"0 4px 28px rgba(200,230,0,0.35)",
+                whiteSpace:"nowrap",
+              }}>
+                Get hired faster — it&apos;s free
+              </a>
+              <button onClick={()=>scrollTo('how-it-works')} style={{
+                background:"transparent",color:"#C8E600",fontSize:15,fontWeight:500,
+                padding:"16px 28px",borderRadius:99,
+                border:"1.5px solid rgba(200,230,0,0.4)",cursor:"pointer",
+                whiteSpace:"nowrap",
+              }}>
+                Watch how it works →
+              </button>
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16}}>
-              {/* Circular score */}
-              <div style={{position:"relative",width:72,height:72,flexShrink:0}}>
-                <svg width="72" height="72" style={{transform:"rotate(-90deg)"}}>
-                  <circle cx="36" cy="36" r="28" fill="none" stroke="#E8F4E8" strokeWidth="7"/>
-                  <circle cx="36" cy="36" r="28" fill="none" stroke="#C8E600" strokeWidth="7"
-                    strokeDasharray={`${2*Math.PI*28}`}
-                    strokeDashoffset={`${2*Math.PI*28*(1-0.94)}`}
-                    strokeLinecap="round"/>
-                </svg>
-                <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <span style={{fontSize:15,fontWeight:800,color:"#052A14"}}>94%</span>
+
+            {/* Mini trust signals */}
+            <div style={{display:"flex",gap:20,flexWrap:"wrap",justifyContent:isMobile?"center":"flex-start"}}>
+              {["✓ No credit card needed","✓ 3 free applications","✓ Cancel anytime"].map(t=>(
+                <span key={t} style={{fontSize:12,color:"#5A9A6A",fontWeight:600}}>{t}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN — floating AI card */}
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
+
+            {/* Main card */}
+            <div style={{
+              background:"#fff",borderRadius:20,padding:"22px 24px",
+              boxShadow:"0 28px 72px rgba(0,0,0,0.55)",
+              width:"100%",maxWidth:340,
+              animation:"floatUp 4s ease-in-out infinite",
+            }}>
+              {/* Header row */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+                <span style={{fontSize:11,color:"#888",fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase"}}>AI Match Analysis</span>
+                <span style={{display:"flex",alignItems:"center",gap:5,background:"#EAF5EA",color:"#1A7A3A",fontSize:10,fontWeight:700,padding:"3px 9px",borderRadius:99}}>
+                  <span style={{width:6,height:6,background:"#2A9A4A",borderRadius:"50%",display:"inline-block",animation:"pulseDot 1.5s ease-in-out infinite"}}></span>
+                  Live
+                </span>
+              </div>
+
+              {/* Gauge + details */}
+              <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16}}>
+                <div style={{position:"relative",width:84,height:84,flexShrink:0}}>
+                  <svg width="84" height="84" style={{transform:"rotate(-90deg)"}}>
+                    <circle cx="42" cy="42" r="34" fill="none" stroke="#052A14" strokeWidth="8"/>
+                    <circle cx="42" cy="42" r="34" fill="none" stroke="#C8E600" strokeWidth="8"
+                      strokeDasharray={`${2*Math.PI*34}`}
+                      strokeDashoffset={`${2*Math.PI*34*(1-0.94)}`}
+                      strokeLinecap="round"/>
+                  </svg>
+                  <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <span style={{fontSize:18,fontWeight:800,color:"#C8E600"}}>94%</span>
+                  </div>
+                </div>
+                <div>
+                  <div style={{fontSize:16,fontWeight:800,color:"#052A14",marginBottom:4}}>Excellent Match</div>
+                  <div style={{fontSize:13,color:"#333",fontWeight:600,marginBottom:2}}>Senior Product Manager</div>
+                  <div style={{fontSize:12,color:"#888"}}>📍 London, UK</div>
                 </div>
               </div>
-              <div>
-                <div style={{fontSize:17,fontWeight:800,color:"#052A14",marginBottom:2}}>Excellent match</div>
-                <div style={{fontSize:12,color:"#2A7A3A",fontWeight:600}}>Senior Product Manager</div>
-                <div style={{fontSize:11,color:"#888"}}>Standard Bank • Johannesburg</div>
+
+              {/* Keywords */}
+              <div style={{marginBottom:14}}>
+                <div style={{fontSize:10,color:"#888",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:6}}>Keywords added</div>
+                <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                  {["Agile","Stakeholder Management","P&L","OKRs","Product Strategy"].map(kw=>(
+                    <span key={kw} style={{background:"#EAF5EA",color:"#1A5A2A",fontSize:10,padding:"3px 9px",borderRadius:99,fontWeight:700}}>{kw}</span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{background:"#C8E600",borderRadius:10,padding:"11px 14px",fontSize:13,fontWeight:800,color:"#052A14",textAlign:"center",cursor:"pointer"}}>
+                ⚡ Apply in 10 seconds
               </div>
             </div>
-            <div style={{marginBottom:12}}>
-              <div style={{fontSize:10,color:"#888",fontWeight:600,marginBottom:6,textTransform:"uppercase",letterSpacing:"1px"}}>Keywords added by AI</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                {["Agile","Stakeholder mgmt","P&L","OKRs"].map(kw=>(
-                  <span key={kw} style={{background:"#EAF5EA",color:"#1A5A2A",fontSize:10,padding:"2px 8px",borderRadius:99,fontWeight:700}}>{kw}</span>
-                ))}
+
+            {/* Floating mini cards */}
+            <div style={{display:"flex",gap:10,width:"100%",maxWidth:340,flexWrap:"wrap"}}>
+              <div style={{
+                background:"#fff",borderRadius:14,padding:"10px 14px",
+                boxShadow:"0 6px 24px rgba(0,0,0,0.22)",
+                display:"flex",alignItems:"center",gap:10,
+                flex:1,minWidth:0,
+              }}>
+                <img
+                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah&backgroundColor=b6e3f4"
+                  width={32} height={32}
+                  style={{borderRadius:"50%",border:"2px solid #C8E600",flexShrink:0}}
+                  alt="Sarah M."
+                />
+                <span style={{fontSize:11,color:"#052A14",fontWeight:600,lineHeight:1.3}}>
+                  Sarah M. — Just got hired as Marketing Director 🎉
+                </span>
               </div>
-            </div>
-            <div style={{background:"#C8E600",borderRadius:10,padding:"10px 14px",fontSize:13,fontWeight:800,color:"#052A14",textAlign:"center"}}>
-              ⚡ Apply in 10 seconds
+              <div style={{
+                background:"#fff",borderRadius:14,padding:"10px 14px",
+                boxShadow:"0 6px 24px rgba(0,0,0,0.22)",
+                display:"flex",alignItems:"center",gap:8,
+                flex:1,minWidth:0,
+              }}>
+                <span style={{fontSize:18,flexShrink:0}}>🔥</span>
+                <span style={{fontSize:11,color:"#052A14",fontWeight:600,lineHeight:1.3}}>
+                  47 people applied using Jobsesame today
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -295,9 +424,7 @@ export default function Home() {
             {val:"94%",label:"Avg ATS score"},
           ].map((s,i)=>(
             <div key={s.label} style={{
-              textAlign:"center",
-              flex:1,
-              padding:isMobile?"8px 4px":"12px 24px",
+              textAlign:"center",flex:1,padding:isMobile?"8px 4px":"12px 24px",
               borderRight:!isMobile&&i<3?"1px solid rgba(5,42,20,0.2)":undefined,
             }}>
               <div style={{fontSize:isMobile?22:28,fontWeight:800,color:"#052A14",lineHeight:1}}>{s.val}</div>
@@ -364,45 +491,25 @@ export default function Home() {
           <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:14}}>
             {[
               {
-                name:"Free",
-                price:"R0",
-                usdPrice:"$0",
-                per:"/always",
-                desc:"Get started instantly.",
+                name:"Free",price:"R0",usdPrice:"$0",per:"/always",desc:"Get started instantly.",
                 features:["3 AI-powered applications","CV analysed by AI","ATS score included","Browse all 495,000+ jobs","No card needed"],
-                popular:false,
-                btn:"Start free",
-                href:"/sign-up",
+                popular:false,btn:"Start free",href:"/sign-up",
               },
               {
-                name:"Credits",
-                price:"R185",
-                usdPrice:"$10",
-                per:"/pack",
-                desc:"Pay as you go.",
+                name:"Credits",price:"R185",usdPrice:"$10",per:"/pack",desc:"Pay as you go.",
                 features:["10 Quick Apply credits","Credits never expire","AI CV rewrite for each job","Cover letter generation","All job categories"],
-                popular:false,
-                btn:"Get 10 credits",
-                href:"/sign-up",
+                popular:false,btn:"Get 10 credits",href:"/sign-up",
               },
               {
-                name:"Pro",
-                price:"R370",
-                usdPrice:"$20",
-                per:"/month",
-                desc:"For serious job seekers.",
+                name:"Pro",price:"R370",usdPrice:"$20",per:"/month",desc:"For serious job seekers.",
                 features:["Unlimited Quick Apply","Unlimited CV rewrites","Auto-apply while you sleep","Cover letters included","Priority support"],
-                popular:true,
-                btn:"Unlock Pro",
-                href:"/sign-up",
+                popular:true,btn:"Unlock Pro",href:"/sign-up",
               },
             ].map(p=>(
               <div key={p.name} style={{
                 background:p.popular?"#052A14":"#fff",
                 border:`1.5px solid ${p.popular?"#C8E600":"#D8EED8"}`,
-                borderRadius:18,
-                padding:28,
-                position:"relative",
+                borderRadius:18,padding:28,position:"relative",
               }}>
                 {p.popular && (
                   <div style={{position:"absolute",top:-12,left:"50%",transform:"translateX(-50%)",background:"#C8E600",color:"#052A14",fontSize:10,fontWeight:800,padding:"3px 14px",borderRadius:99,whiteSpace:"nowrap"}}>
@@ -427,15 +534,10 @@ export default function Home() {
                   ))}
                 </div>
                 <a href={p.href} style={{
-                  display:"block",
-                  background:p.popular?"#C8E600":"#052A14",
+                  display:"block",background:p.popular?"#C8E600":"#052A14",
                   color:p.popular?"#052A14":"#C8E600",
-                  fontSize:14,
-                  fontWeight:800,
-                  padding:"12px 0",
-                  borderRadius:99,
-                  textDecoration:"none",
-                  textAlign:"center",
+                  fontSize:14,fontWeight:800,padding:"12px 0",
+                  borderRadius:99,textDecoration:"none",textAlign:"center",
                 }}>
                   {p.btn}
                 </a>
@@ -456,14 +558,10 @@ export default function Home() {
             Stop applying manually. Stop getting ignored. Let AI open every door for you — starting right now.
           </p>
           <a href="/sign-up" style={{
-            background:"#C8E600",
-            color:"#052A14",
-            fontSize:isMobile?15:17,
-            fontWeight:800,
-            padding:"17px 44px",
-            borderRadius:99,
-            textDecoration:"none",
-            display:"inline-block",
+            background:"#C8E600",color:"#052A14",
+            fontSize:isMobile?15:17,fontWeight:800,
+            padding:"17px 44px",borderRadius:99,
+            textDecoration:"none",display:"inline-block",
             boxShadow:"0 8px 32px rgba(200,230,0,0.25)",
           }}>
             Open your future — free
@@ -472,6 +570,59 @@ export default function Home() {
             {["3 free applications","No card needed","30 second setup"].map(t=>(
               <div key={t} style={{display:"flex",alignItems:"center",gap:6,fontSize:13,color:"#5A9A6A"}}>
                 <span style={{color:"#C8E600"}}>✓</span>{t}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section style={{background:"#052A14",padding:isMobile?"56px 20px":"80px 28px"}}>
+        <div style={{maxWidth:720,margin:"0 auto"}}>
+          <p style={{fontSize:11,fontWeight:700,color:"#C8E600",letterSpacing:"2.5px",textTransform:"uppercase",textAlign:"center",marginBottom:10}}>FAQ</p>
+          <h2 style={{fontSize:isMobile?26:38,fontWeight:800,color:"#FFFFFF",textAlign:"center",marginBottom:10,letterSpacing:-0.5}}>
+            Everything you need to know
+          </h2>
+          <p style={{fontSize:isMobile?14:16,color:"#5A9A6A",textAlign:"center",marginBottom:48}}>
+            Got questions? We have answers.
+          </p>
+
+          <div style={{display:"flex",flexDirection:"column",gap:4}}>
+            {faqs.map((faq,i)=>(
+              <div key={i} style={{
+                background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,
+                overflow:"hidden",
+                transition:"border-color 0.2s",
+                ...(openFaq===i?{borderColor:"rgba(200,230,0,0.4)"}:{}),
+              }}>
+                <button
+                  onClick={()=>setOpenFaq(openFaq===i?null:i)}
+                  style={{
+                    width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",
+                    padding:"18px 22px",background:"transparent",border:"none",cursor:"pointer",
+                    textAlign:"left",gap:12,
+                  }}
+                >
+                  <span style={{fontSize:isMobile?14:15,fontWeight:700,color:"#C8E600",lineHeight:1.4,flex:1}}>
+                    {faq.q}
+                  </span>
+                  <span style={{
+                    fontSize:20,color:"#C8E600",flexShrink:0,lineHeight:1,
+                    transform:openFaq===i?"rotate(45deg)":"rotate(0deg)",
+                    transition:"transform 0.2s",display:"inline-block",
+                  }}>+</span>
+                </button>
+                {openFaq===i && (
+                  <div style={{
+                    padding:"0 22px 20px",
+                    animation:"faqSlide 0.2s ease-out",
+                  }}>
+                    <div style={{height:1,background:"rgba(200,230,0,0.15)",marginBottom:16}} />
+                    <p style={{fontSize:14,color:"#90C898",lineHeight:1.8,margin:0}}>
+                      {faq.a}
+                    </p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

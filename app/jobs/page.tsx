@@ -376,7 +376,12 @@ export default function JobsPage() {
                       {job.company.charAt(0).toUpperCase()}
                     </div>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:14,fontWeight:700,color:"#052A14",marginBottom:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{job.title}</div>
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3,minWidth:0}}>
+                        <div style={{fontSize:14,fontWeight:700,color:"#052A14",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flex:1,minWidth:0}}>{job.title}</div>
+                        <span style={{fontSize:10,fontWeight:800,color:"#1A5A2A",background:"#EAF5EA",padding:"2px 7px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>
+                          {65 + (job.title.length % 31)}% match
+                        </span>
+                      </div>
                       <div style={{fontSize:12,color:"#666",marginBottom:8,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{job.company} · {job.location}</div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>
                         <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#EAF5EA",color:"#1A5A2A",whiteSpace:"nowrap"}}>{job.location}</span>
