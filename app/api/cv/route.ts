@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
     });
 
     const response = await client.messages.create({
-      model: 'claude-opus-4-5-20251101',
-      max_tokens: 1000,
+      model: 'claude-opus-4-6',
+      max_tokens: 2000,
       messages: [
         {
           role: 'user',
@@ -35,7 +35,33 @@ export async function POST(request: NextRequest) {
             },
             {
               type: 'text',
-              text: 'Extract the following information from this CV and return ONLY valid JSON with no other text or markdown: {"name": "full name", "email": "email address", "phone": "phone number", "location": "city and country", "title": "current or most recent job title", "summary": "2 sentence professional summary", "skills": ["skill1", "skill2", "skill3"], "experience_years": 0, "education": "highest qualification", "languages": ["language1"], "job_search_keywords": ["keyword1", "keyword2", "keyword3"]}',
+              text: `Extract information from this CV and return ONLY valid JSON with no other text or markdown.
+
+CRITICAL: Copy company names, job titles, and dates EXACTLY as written in the CV — do not paraphrase, abbreviate, or improve them.
+
+Return this exact shape:
+{
+  "name": "full name",
+  "email": "email address",
+  "phone": "phone number",
+  "location": "city and country",
+  "title": "most recent job title exactly as written",
+  "summary": "2 sentence professional summary",
+  "skills": ["skill1", "skill2"],
+  "experience_years": 0,
+  "experience": [
+    {
+      "title": "job title EXACTLY as written in CV",
+      "company": "company name EXACTLY as written in CV",
+      "duration": "dates/duration EXACTLY as written e.g. Jan 2020 – Mar 2023",
+      "location": "city if mentioned",
+      "bullets": ["responsibility or achievement as written"]
+    }
+  ],
+  "education": "highest qualification",
+  "languages": ["language1"],
+  "job_search_keywords": ["keyword1", "keyword2", "keyword3"]
+}`,
             },
           ],
         },

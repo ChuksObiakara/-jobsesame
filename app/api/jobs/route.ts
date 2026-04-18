@@ -132,10 +132,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Fetch page 1 for each city in parallel
-    const pageResults = await Promise.all(
-      cities.map(city => fetchMusePage(city, 1))
-    );
+    // Fetch Muse + JSearch in parallel
+    const [pageResults, jsearchJobs] = await Promise.all([
+      Promise.all(cities.map(city => fetchMusePage(city, 1))),
+      fetchJSearch(`${query} in ${location}`, page),
+    ]);
 
     const allRaw = pageResults.flat().map(mapJob);
 
@@ -157,8 +158,9 @@ export async function GET(request: NextRequest) {
       combined = [...onTarget, ...page2OnTarget, ...remote, ...page2Remote];
     }
 
-    const jobs = dedupe(combined).slice(0, 20);
-    return NextResponse.json({ jobs, total: jobs.length, source: 'The Muse' });
+    // Merge JSearch results — they are already location-matched by query
+    const jobs = dedupe([...combined, ...jsearchJobs]).slice(0, 30);
+    return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
   } catch (error) {
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
   }

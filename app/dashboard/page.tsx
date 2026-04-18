@@ -3,6 +3,7 @@ import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import QuickApply from '../components/QuickApply';
+import CoverLetter from '../components/CoverLetter';
 
 interface Application {
   id: string;
@@ -75,10 +76,6 @@ export default function Dashboard() {
 
   // ── AI actions modal ──────────────────────────────────────────
   const [showAiModal, setShowAiModal] = useState<'tailor' | 'cover' | null>(null);
-  const [coverJobTitle, setCoverJobTitle] = useState('');
-  const [coverCompany, setCoverCompany] = useState('');
-  const [coverLetter, setCoverLetter] = useState('');
-  const [generatingCover, setGeneratingCover] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -248,23 +245,6 @@ export default function Dashboard() {
     finally { setRewriting(false); }
   };
 
-  const handleGenerateCoverLetter = async () => {
-    if (!coverJobTitle) return;
-    setGeneratingCover(true);
-    try {
-      const res = await fetch('/api/rewrite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cvData, jobTitle: coverJobTitle, jobCompany: coverCompany, jobDescription: `Generate a cover letter for this position.` }),
-      });
-      const data = await res.json();
-      if (data.success && data.rewrittenCV?.summary) {
-        setCoverLetter(`Dear Hiring Manager,\n\nI am writing to express my strong interest in the ${coverJobTitle} role${coverCompany ? ` at ${coverCompany}` : ''}.\n\n${data.rewrittenCV.summary}\n\nI am excited about the opportunity to contribute my ${data.rewrittenCV.skills?.slice(0,3).join(', ')} skills to your team.\n\nThank you for your consideration.\n\nKind regards,\n${cvData?.name || user?.firstName || 'Applicant'}`);
-      }
-    } catch { /* Non-critical */ }
-    finally { setGeneratingCover(false); }
-  };
-
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
@@ -408,44 +388,12 @@ export default function Dashboard() {
                 {rewriting && <div style={{marginTop:12,fontSize:13,color:"#5A9A6A",fontStyle:"italic"}}>AI is rewriting your CV... ~15 seconds</div>}
               </div>
             )}
-            {showAiModal === 'cover' && (
-              <div>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-                  <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF"}}>Generate cover letter</h3>
-                  <button onClick={()=>{setShowAiModal(null);setCoverLetter('');}} style={{background:"transparent",border:"none",color:"#5A9A6A",fontSize:20,cursor:"pointer"}}>✕</button>
-                </div>
-                {!coverLetter ? (
-                  <div>
-                    <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
-                      <div>
-                        <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job title *</label>
-                        <input value={coverJobTitle} onChange={e=>setCoverJobTitle(e.target.value)} placeholder="e.g. Marketing Manager" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-                      </div>
-                      <div>
-                        <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Company</label>
-                        <input value={coverCompany} onChange={e=>setCoverCompany(e.target.value)} placeholder="e.g. Nedbank" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
-                      </div>
-                    </div>
-                    <div style={{display:"flex",gap:10}}>
-                      <button onClick={handleGenerateCoverLetter} disabled={generatingCover||!cvData||!coverJobTitle} style={{flex:1,background:generatingCover||!cvData||!coverJobTitle?"#1A4A2A":"#C8E600",color:generatingCover||!cvData||!coverJobTitle?"#3A7A4A":"#052A14",fontSize:14,fontWeight:800,padding:"12px",borderRadius:99,border:"none",cursor:generatingCover||!cvData||!coverJobTitle?"default":"pointer"}}>
-                        {generatingCover ? 'Generating...' : !cvData ? 'Upload CV first' : 'Generate cover letter'}
-                      </button>
-                      <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"12px 20px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Cancel</button>
-                    </div>
-                    {generatingCover && <div style={{marginTop:12,fontSize:13,color:"#5A9A6A",fontStyle:"italic"}}>Writing your cover letter... ~10 seconds</div>}
-                  </div>
-                ) : (
-                  <div>
-                    <div style={{background:"#0D3A1A",borderRadius:12,padding:16,fontSize:13,color:"#A8D8B0",lineHeight:1.8,marginBottom:16,whiteSpace:"pre-wrap",maxHeight:300,overflowY:"auto"}}>
-                      {coverLetter}
-                    </div>
-                    <div style={{display:"flex",gap:10}}>
-                      <button onClick={()=>navigator.clipboard.writeText(coverLetter)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px",borderRadius:99,border:"none",cursor:"pointer"}}>Copy letter</button>
-                      <button onClick={()=>setCoverLetter('')} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"10px 18px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>New letter</button>
-                    </div>
-                  </div>
-                )}
-              </div>
+            {showAiModal === 'cover' && cvData && (
+              <CoverLetter
+                cvData={cvData}
+                userName={user?.firstName || ''}
+                onClose={() => setShowAiModal(null)}
+              />
             )}
           </div>
         </div>

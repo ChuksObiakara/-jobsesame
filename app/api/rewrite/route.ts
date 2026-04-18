@@ -4,7 +4,7 @@ import Anthropic from '@anthropic-ai/sdk';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { cvData, jobTitle, jobDescription, jobCompany, userPrompt } = body;
+    const { cvData, jobTitle, jobDescription, jobCompany, userPrompt, coverLetter } = body;
 
     if (!cvData || !jobTitle) {
       return NextResponse.json({ error: 'Missing CV data or job title' }, { status: 400 });
@@ -14,8 +14,51 @@ export async function POST(request: NextRequest) {
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
+    // ── Cover letter mode ─────────────────────────────────────────────────────
+    if (coverLetter) {
+      const response = await client.messages.create({
+        model: 'claude-opus-4-6',
+        max_tokens: 1000,
+        messages: [
+          {
+            role: 'user',
+            content: `Write a professional cover letter for this candidate applying to the role below.
+
+RULES:
+1. Exactly 3 paragraphs — no more, no less
+2. Paragraph 1: Express genuine enthusiasm for the ${jobTitle} role at ${jobCompany || 'the company'} and briefly state why this candidate is a strong fit
+3. Paragraph 2: Draw on the candidate's REAL experience and skills to show how they meet the job requirements — use actual company names and achievements
+4. Paragraph 3: Confident call to action inviting the employer to schedule an interview
+5. Do NOT invent experience, qualifications or skills the candidate does not have
+6. Do NOT use generic phrases like "I am writing to apply" — start paragraph 1 with impact
+7. Return ONLY the cover letter text — no subject line, no "Dear Hiring Manager", no JSON, no markdown
+
+CANDIDATE:
+Name: ${cvData.name}
+Current Title: ${cvData.title}
+Summary: ${cvData.summary}
+Skills: ${Array.isArray(cvData.skills) ? cvData.skills.join(', ') : cvData.skills}
+Experience: ${cvData.experience_years} years
+${cvData.experience ? `Recent roles: ${cvData.experience.map((e: any) => `${e.title} at ${e.company} (${e.duration})`).join('; ')}` : ''}
+Education: ${cvData.education}
+
+JOB:
+Title: ${jobTitle}
+Company: ${jobCompany || 'the company'}
+Description: ${jobDescription || 'Not provided'}`,
+          },
+        ],
+      });
+
+      const content = response.content[0];
+      if (content.type !== 'text') throw new Error('Unexpected response type');
+
+      return NextResponse.json({ success: true, coverLetterText: content.text.trim() });
+    }
+
+    // ── CV rewrite mode ───────────────────────────────────────────────────────
     const response = await client.messages.create({
-      model: 'claude-opus-4-5-20251101',
+      model: 'claude-opus-4-6',
       max_tokens: 2000,
       messages: [
         {
@@ -36,8 +79,7 @@ Title: ${jobTitle}
 Company: ${jobCompany || 'the company'}
 Description: ${jobDescription || 'Not provided'}
 
-${userPrompt ? `SPECIAL INSTRUCTIONS FROM CANDIDATE:
-${userPrompt}` : ''}
+${userPrompt ? `SPECIAL INSTRUCTIONS FROM CANDIDATE:\n${userPrompt}` : ''}
 
 CANDIDATE CV:
 Name: ${cvData.name}
@@ -46,10 +88,11 @@ Location: ${cvData.location}
 Email: ${cvData.email || ''}
 Phone: ${cvData.phone || ''}
 Summary: ${cvData.summary}
-Skills: ${cvData.skills?.join(', ')}
+Skills: ${Array.isArray(cvData.skills) ? cvData.skills.join(', ') : cvData.skills}
 Experience: ${cvData.experience_years} years
 Education: ${cvData.education}
-Languages: ${cvData.languages?.join(', ')}
+Languages: ${Array.isArray(cvData.languages) ? cvData.languages.join(', ') : cvData.languages}
+${cvData.experience ? `Previous roles: ${cvData.experience.map((e: any) => `${e.title} at ${e.company} (${e.duration})`).join('; ')}` : ''}
 
 Return ONLY a valid JSON object with no markdown or extra text:
 {
@@ -65,6 +108,7 @@ Return ONLY a valid JSON object with no markdown or extra text:
       "title": "EXACT job title candidate held — do not change",
       "company": "EXACT company name candidate worked at — do not change",
       "duration": "exact duration as provided",
+      "location": "city if known",
       "bullets": ["rewritten achievement with metrics", "rewritten achievement with metrics", "rewritten achievement"]
     }
   ],

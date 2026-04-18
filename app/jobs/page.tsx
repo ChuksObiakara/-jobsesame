@@ -24,7 +24,7 @@ export default function JobsPage() {
   const [location, setLocation] = useState('');
   const [total, setTotal] = useState(0);
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('USD');
-  const [activeTab, setActiveTab] = useState<'all' | 'remote' | 'relocation' | 'teaching' | 'south-africa'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'remote' | 'relocation' | 'teaching'>('all');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -84,8 +84,6 @@ export default function JobsPage() {
         url = `/api/relocation?query=${encodeURIComponent(searchQuery || 'engineer')}`;
       } else if (tab === 'teaching') {
         url = `/api/teaching`;
-      } else if (tab === 'south-africa') {
-        url = `/api/south-africa?query=${encodeURIComponent(searchQuery || 'software engineer')}`;
       } else {
         url = `/api/jobs?query=${encodeURIComponent(searchQuery || 'software engineer')}&location=${encodeURIComponent(loc)}`;
       }
@@ -115,7 +113,7 @@ export default function JobsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleTabChange = (tab: 'all' | 'remote' | 'relocation' | 'teaching' | 'south-africa') => {
+  const handleTabChange = (tab: 'all' | 'remote' | 'relocation' | 'teaching') => {
     setActiveTab(tab);
     fetchJobs(tab, query, location);
   };
@@ -221,15 +219,15 @@ export default function JobsPage() {
         <div style={{maxWidth:900,margin:"0 auto"}}>
           <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",marginBottom:18}}>
             <div style={{display:"flex",gap:8,minWidth:"fit-content",padding:"4px 0"}}>
-              {(['all','remote','relocation','teaching','south-africa'] as const).map(tab=>(
+              {(['all','remote','relocation','teaching'] as const).map(tab=>(
                 <button key={tab} style={tabStyle(tab)} onClick={()=>handleTabChange(tab)}>
-                  {tab === 'all' ? '🌍 All Jobs' : tab === 'remote' ? '💻 Remote Jobs' : tab === 'teaching' ? '🎓 Teaching Jobs' : tab === 'south-africa' ? '🌍 African Jobs' : '✈️ Relocation Jobs'}
+                  {tab === 'all' ? '🌍 All Jobs' : tab === 'remote' ? '💻 Remote Jobs' : tab === 'teaching' ? '🎓 Teaching Jobs' : '✈️ Relocation Jobs'}
                 </button>
               ))}
             </div>
           </div>
           <p style={{fontSize:12,color:"#5A9A6A",marginBottom:14,fontStyle:"italic"}}>
-            {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : activeTab === 'teaching' ? 'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free' : activeTab === 'south-africa' ? 'Live jobs across South Africa, Nigeria, Kenya and beyond' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
+            {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : activeTab === 'teaching' ? 'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
           </p>
           <form onSubmit={handleSearch} style={{display:"flex",gap:8,flexWrap:"wrap"}}>
             <input
@@ -304,29 +302,16 @@ export default function JobsPage() {
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
             <div>
               <span style={{fontSize:15,fontWeight:800,color:"#052A14"}}>
-                {activeTab === 'remote' ? 'Remote roles worldwide' : activeTab === 'relocation' ? 'International opportunities' : activeTab === 'teaching' ? 'Teaching jobs worldwide' : activeTab === 'south-africa' ? 'African jobs' : 'All jobs'}
+                {activeTab === 'remote' ? 'Remote roles worldwide' : activeTab === 'relocation' ? 'International opportunities' : activeTab === 'teaching' ? 'Teaching jobs worldwide' : 'All jobs'}
               </span>
               {activeTab === 'relocation' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>Jobs in London, Dubai, Toronto, Singapore and beyond</div>}
               {activeTab === 'remote' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>Work from anywhere — earn in USD, GBP or EUR</div>}
               {activeTab === 'teaching' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>Teach abroad — free housing, flights and $2,000–$3,500/month</div>}
-              {activeTab === 'south-africa' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>South Africa, Nigeria, Kenya and across Africa</div>}
             </div>
             <span style={{fontSize:12,color:"#052A14",background:"#C8E600",padding:"3px 12px",borderRadius:99,fontWeight:800,whiteSpace:"nowrap"}}>
               {total > 0 ? total.toLocaleString() : '...'} matches
             </span>
           </div>
-
-          {activeTab === 'south-africa' && !loading && (
-            <div style={{background:"#052A14",border:"1.5px solid #C8E600",borderRadius:14,padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontSize:18}}>🌍</span>
-                <span style={{fontSize:13,color:"#A8D8B0",fontWeight:600}}>
-                  Jobs in <strong style={{color:"#FFFFFF"}}>South Africa, Nigeria, Kenya</strong> and across Africa — plus remote roles open to African applicants
-                </span>
-              </div>
-              <span style={{fontSize:11,color:"#3A7A4A",fontWeight:600,whiteSpace:"nowrap"}}>Live results</span>
-            </div>
-          )}
 
           {loading ? (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -353,26 +338,10 @@ export default function JobsPage() {
               ))}
             </div>
           ) : jobs.length === 0 ? (
-            activeTab === 'south-africa' ? (
-              <div style={{background:"#052A14",border:"1.5px solid #1A5A2A",borderRadius:16,padding:"32px 24px",textAlign:"center",maxWidth:560,margin:"0 auto"}}>
-                <div style={{fontSize:32,marginBottom:16}}>🌍</div>
-                <div style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:10}}>African Jobs — loading</div>
-                <p style={{fontSize:13,color:"#90C898",lineHeight:1.8,marginBottom:20}}>
-                  We are activating our African job feeds. Browse{' '}
-                  <strong style={{color:"#C8E600"}}>Remote Jobs</strong> — thousands of positions open to African candidates worldwide.
-                </p>
-                <button
-                  onClick={() => handleTabChange('remote')}
-                  style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,border:"none",cursor:"pointer"}}>
-                  💻 Browse Remote Jobs
-                </button>
-              </div>
-            ) : (
-              <div style={{textAlign:"center",padding:"60px 0"}}>
-                <div style={{fontSize:16,color:"#2A6A3A",fontWeight:700,marginBottom:8}}>No jobs found — try a different search</div>
-                <div style={{fontSize:13,color:"#4A8A5A"}}>Change keywords, location or tab</div>
-              </div>
-            )
+            <div style={{textAlign:"center",padding:"60px 0"}}>
+              <div style={{fontSize:16,color:"#2A6A3A",fontWeight:700,marginBottom:8}}>No jobs found — try a different search</div>
+              <div style={{fontSize:13,color:"#4A8A5A"}}>Change keywords, location or tab</div>
+            </div>
           ) : (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               {jobs.map((job,i)=>(
@@ -405,6 +374,7 @@ export default function JobsPage() {
                         {activeTab === 'remote' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Remote</span>}
                         {activeTab === 'relocation' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Relocation</span>}
                         {activeTab === 'teaching' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>🎓 Teaching</span>}
+
                       </div>
                       <p style={{fontSize:12,color:"#666",lineHeight:1.55,margin:0,display:"-webkit-box" as any,WebkitLineClamp:2,WebkitBoxOrient:"vertical" as any,overflow:"hidden"}}>{job.description}</p>
                     </div>

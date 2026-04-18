@@ -1,6 +1,14 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
+
+const PHOTOS = [
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face',
+];
 
 export default function Home() {
   const { isSignedIn } = useAuth();
@@ -10,8 +18,13 @@ export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [faqSearch, setFaqSearch] = useState('');
   const [scrolled, setScrolled] = useState(false);
-  const [demoTransformed, setDemoTransformed] = useState(false);
+  const [demoStage, setDemoStage] = useState<'idle' | 'loading' | 'done'>('idle');
+  const [demoAts, setDemoAts] = useState(42);
   const [notifVisible, setNotifVisible] = useState(false);
+  const [exitIntent, setExitIntent] = useState(false);
+  const [exitDismissed, setExitDismissed] = useState(false);
+  const [signupCount, setSignupCount] = useState(0);
+  const exitReadyRef = useRef(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -38,6 +51,39 @@ export default function Home() {
     return () => clearTimeout(t);
   }, []);
 
+  useEffect(() => {
+    const t = setTimeout(() => { exitReadyRef.current = true; }, 3000);
+    const onMove = (e: MouseEvent) => {
+      if (e.clientY < 5 && exitReadyRef.current && !exitDismissed) {
+        setExitIntent(true);
+        exitReadyRef.current = false;
+      }
+    };
+    window.addEventListener('mousemove', onMove);
+    return () => { clearTimeout(t); window.removeEventListener('mousemove', onMove); };
+  }, [exitDismissed]);
+
+  useEffect(() => {
+    const start = Math.floor(Math.random() * 21) + 40;
+    setSignupCount(start);
+    const iv = setInterval(() => setSignupCount(c => c + 1), 30000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const handleDemoTransform = () => {
+    if (demoStage !== 'idle') { setDemoStage('idle'); setDemoAts(42); return; }
+    setDemoStage('loading');
+    setTimeout(() => {
+      setDemoStage('done');
+      let n = 42;
+      const iv = setInterval(() => {
+        n += 2;
+        if (n >= 94) { setDemoAts(94); clearInterval(iv); return; }
+        setDemoAts(n);
+      }, 25);
+    }, 1500);
+  };
+
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     setMenuOpen(false);
@@ -48,7 +94,7 @@ export default function Home() {
     { q: "How does the AI rewrite my CV?", a: "You upload your CV once. When you click Quick Apply on any job our AI reads the full job description and rewrites your CV in 30 seconds to match exactly what that employer is looking for — adding the right keywords, restructuring your experience, and optimising for ATS systems." },
     { q: "What is an ATS system?", a: "ATS stands for Applicant Tracking System. It is software that most companies use to automatically screen CVs before a human ever sees them. 8 out of 10 CVs are rejected by ATS. Jobsesame rewrites your CV to pass these systems automatically." },
     { q: "Will my real experience and company names be changed?", a: "Never. We only rewrite how your experience is described — not the facts. Your real company names, job titles, dates and qualifications are always preserved. We just make them sound better and add the right keywords." },
-    { q: "What jobs does Jobsesame have?", a: "We aggregate jobs from multiple sources worldwide including remote jobs, relocation opportunities to London Dubai Toronto Singapore, teaching jobs in Asia, and local jobs in South Africa Nigeria and Kenya. New jobs are added daily." },
+    { q: "What jobs does Jobsesame have?", a: "We aggregate jobs from multiple sources worldwide including remote jobs, relocation opportunities to London, Dubai, Toronto and Singapore, teaching jobs in Asia, and local jobs worldwide. New jobs are added daily." },
     { q: "How is Jobsesame different from LinkedIn or Indeed?", a: "LinkedIn and Indeed are job boards — they just show you jobs. Jobsesame is an AI job application assistant. We help you actually get the job by rewriting your CV, applying automatically, and tracking everything. We also show jobs from multiple platforms in one place." },
     { q: "Is my CV data safe?", a: "Yes. Your CV is processed securely and never sold to third parties. We use it only to help you apply for jobs. You can delete your data at any time." },
     { q: "Does Quick Apply actually submit my application?", a: "For jobs that accept direct applications yes — we submit automatically. For jobs on platforms like LinkedIn that require a login we download your rewritten CV and open the employer portal so you can upload it in one click." },
@@ -58,31 +104,21 @@ export default function Home() {
     ? faqs.filter(f => f.q.toLowerCase().includes(faqSearch.toLowerCase()) || f.a.toLowerCase().includes(faqSearch.toLowerCase()))
     : faqs;
 
-  const tickerItems = [
-    { name: "Sarah M.", result: "hired as Marketing Director" },
-    { name: "James K.", result: "3 interviews in one week" },
-    { name: "Amina R.", result: "relocated to Dubai" },
-    { name: "David O.", result: "salary increased by 40%" },
-    { name: "Priya S.", result: "landed dream role at Google" },
-    { name: "Thabo N.", result: "hired by Standard Bank" },
-    { name: "Chioma O.", result: "Marketing Manager in Lagos" },
-    { name: "Brian O.", result: "40% salary increase, Nairobi" },
-  ];
-
   return (
     <main style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", background: "#052A14", margin: 0, padding: 0, overflowX: "hidden" }}>
       <style>{`
         *, *::before, *::after { box-sizing: border-box; }
-        @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.6)} }
-        @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
         @keyframes fadeInUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
         @keyframes floatCard { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-12px)} }
         @keyframes notifIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes glowPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
         @keyframes faqSlide { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes spinSlow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        .hov-lift { transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease; }
+        @keyframes ctaGlow { 0%,100%{box-shadow:0 8px 32px rgba(200,230,0,0.35)} 50%{box-shadow:0 8px 52px rgba(200,230,0,0.65)} }
+        @keyframes spinAI { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes slideInRight { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes modalIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+        .hov-lift { transition: transform 0.22s ease, border-color 0.22s ease; }
         .hov-lift:hover { transform: translateY(-5px); }
         .feat-card { transition: border-color 0.2s, transform 0.2s; }
         .feat-card:hover { border-color: rgba(200,230,0,0.35) !important; transform: translateY(-4px); }
@@ -92,7 +128,25 @@ export default function Home() {
         input:focus { border-color: rgba(200,230,0,0.35) !important; }
       `}</style>
 
-      {/* ── NAV ── */}
+      {/* EXIT INTENT */}
+      {exitIntent && !exitDismissed && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "#072E16", border: "1.5px solid rgba(200,230,0,0.4)", borderRadius: 20, padding: "36px 32px", maxWidth: 420, width: "100%", textAlign: "center", position: "relative", animation: "modalIn 0.25s ease-out" }}>
+            <button onClick={() => { setExitIntent(false); setExitDismissed(true); }} style={{ position: "absolute", top: 14, right: 16, background: "transparent", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 20, cursor: "pointer" }}>✕</button>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>⚡</div>
+            <h3 style={{ fontSize: 22, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.15, marginBottom: 10 }}>Wait — get 3 free CV rewrites before you go</h3>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, marginBottom: 24 }}>No credit card. No commitment. AI rewrites your CV in 30 seconds and gets you more interviews.</p>
+            <a href="/sign-up" onClick={() => setExitDismissed(true)} style={{ display: "block", background: "#C8E600", color: "#052A14", fontSize: 15, fontWeight: 800, padding: "14px 32px", borderRadius: 99, textDecoration: "none", marginBottom: 10, animation: "ctaGlow 2s ease-in-out infinite" }}>
+              Claim my 3 free rewrites →
+            </a>
+            <button onClick={() => { setExitIntent(false); setExitDismissed(true); }} style={{ background: "transparent", border: "none", fontSize: 12, color: "rgba(255,255,255,0.2)", cursor: "pointer" }}>
+              No thanks, I&apos;ll keep struggling
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* NAV */}
       <nav style={{
         position: "sticky", top: 0, zIndex: 200, height: 64,
         padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -118,12 +172,10 @@ export default function Home() {
         {!isMobile && (
           <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
             {[{ label: "How it works", id: "how-it-works" }, { label: "Features", id: "features" }, { label: "Pricing", id: "pricing" }, { label: "FAQ", id: "faq" }].map(item => (
-              <button key={item.id} onClick={() => scrollTo(item.id)} className="nav-link" style={{
-                background: "transparent", border: "none", fontSize: 13,
-                color: "rgba(255,255,255,0.6)", fontWeight: 500,
-                padding: "8px 14px", borderRadius: 8, cursor: "pointer",
-              }}>{item.label}</button>
+              <button key={item.id} onClick={() => scrollTo(item.id)} className="nav-link" style={{ background: "transparent", border: "none", fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500, padding: "8px 14px", borderRadius: 8, cursor: "pointer" }}>{item.label}</button>
             ))}
+            <a href="/recruiters" className="nav-link" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500, padding: "8px 14px", textDecoration: "none", borderRadius: 8 }}>Recruiters</a>
+            <a href="/blog" className="nav-link" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500, padding: "8px 14px", textDecoration: "none", borderRadius: 8 }}>Blog</a>
           </div>
         )}
 
@@ -149,6 +201,8 @@ export default function Home() {
           {[{ label: "How it works", id: "how-it-works" }, { label: "Features", id: "features" }, { label: "Pricing", id: "pricing" }, { label: "FAQ", id: "faq" }].map(item => (
             <button key={item.id} onClick={() => scrollTo(item.id)} style={{ background: "transparent", border: "none", fontSize: 16, color: "rgba(255,255,255,0.75)", fontWeight: 600, textAlign: "left", cursor: "pointer", padding: "4px 0" }}>{item.label}</button>
           ))}
+          <a href="/recruiters" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: "rgba(255,255,255,0.75)", fontWeight: 600, textDecoration: "none" }}>Recruiters</a>
+          <a href="/blog" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: "rgba(255,255,255,0.75)", fontWeight: 600, textDecoration: "none" }}>Blog</a>
           <div style={{ height: 1, background: "rgba(255,255,255,0.06)" }} />
           {isSignedIn
             ? <a href="/dashboard" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: "#C8E600", fontWeight: 700, textDecoration: "none" }}>Dashboard →</a>
@@ -160,33 +214,21 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── HERO ── */}
-      <section style={{
-        background: "#052A14", minHeight: "100vh",
-        display: "flex", flexDirection: "column", justifyContent: "center",
-        padding: isMobile ? "96px 20px 64px" : "120px 28px 80px",
-        position: "relative", overflow: "hidden",
-      }}>
+      {/* HERO */}
+      <section style={{ background: "#052A14", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: isMobile ? "96px 20px 96px" : "120px 28px 80px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: "15%", left: "5%", width: 700, height: 700, background: "radial-gradient(circle,rgba(200,230,0,0.07) 0%,transparent 65%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: "5%", right: "0%", width: 500, height: 500, background: "radial-gradient(circle,rgba(200,230,0,0.04) 0%,transparent 65%)", pointerEvents: "none" }} />
 
         <div style={{ maxWidth: 1140, margin: "0 auto", width: "100%" }}>
-          <div style={{
-            display: isMobile ? "flex" : "grid",
-            gridTemplateColumns: isMobile ? undefined : "1fr 1fr",
-            flexDirection: isMobile ? "column" : undefined,
-            gap: isMobile ? 52 : 80, alignItems: "center",
-          }}>
+          <div style={{ display: isMobile ? "flex" : "grid", gridTemplateColumns: isMobile ? undefined : "1fr 1fr", flexDirection: isMobile ? "column" : undefined, gap: isMobile ? 52 : 80, alignItems: "center" }}>
 
             {/* LEFT */}
             <div style={{ animation: "fadeInUp 0.65s ease-out" }}>
-              {/* Live badge */}
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "7px 16px", marginBottom: 28, backdropFilter: "blur(10px)" }}>
                 <span style={{ width: 8, height: 8, background: "#FF4444", borderRadius: "50%", display: "inline-block", animation: "pulse 1.6s ease-in-out infinite", flexShrink: 0 }} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>LIVE — 47 people applying right now</span>
               </div>
 
-              {/* Headline */}
               <h1 style={{ fontSize: isMobile ? 38 : 64, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.05, letterSpacing: -2, marginBottom: 22 }}>
                 Your CV is being<br />
                 <span style={{ color: "rgba(255,100,100,0.8)", textDecoration: "line-through", textDecorationColor: "#FF6B6B", textDecorationThickness: 3 }}>ignored.</span><br />
@@ -197,12 +239,12 @@ export default function Home() {
                 8 out of 10 CVs never reach a human. Our AI rewrites yours for every job in 30 seconds — so yours always gets through.
               </p>
 
-              {/* Avatars + social proof */}
+              {/* Avatars */}
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32, justifyContent: isMobile ? "center" : "flex-start" }}>
                 <div style={{ display: "flex", alignItems: "center" }}>
-                  {['A', 'B', 'C', 'D', 'E'].map((seed, i) => (
-                    <img key={seed} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,ffd5dc,c0aede`}
-                      width={36} height={36} alt="" style={{ borderRadius: "50%", border: "2.5px solid #052A14", marginLeft: i === 0 ? 0 : -10, zIndex: 5 - i, position: "relative", background: "#1A4A2A" }} />
+                  {PHOTOS.map((src, i) => (
+                    <img key={i} src={src} crossOrigin="anonymous" loading="lazy" width={36} height={36} alt="Member"
+                      style={{ borderRadius: "50%", border: "2.5px solid #052A14", marginLeft: i === 0 ? 0 : -10, zIndex: 5 - i, position: "relative", background: "#1A4A2A", objectFit: "cover" }} />
                   ))}
                 </div>
                 <div>
@@ -212,16 +254,19 @@ export default function Home() {
               </div>
 
               {/* CTAs */}
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: isMobile ? "center" : "flex-start", marginBottom: 24 }}>
-                <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: 15, fontWeight: 800, padding: "16px 32px", borderRadius: 99, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: "0 8px 32px rgba(200,230,0,0.35)", whiteSpace: "nowrap" }}>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: isMobile ? "center" : "flex-start", marginBottom: 16 }}>
+                <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: 15, fontWeight: 800, padding: "18px 40px", borderRadius: 99, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8, animation: "ctaGlow 2.5s ease-in-out infinite", whiteSpace: "nowrap" }}>
                   Start for free — no card needed →
                 </a>
-                <button onClick={() => scrollTo('demo')} style={{ background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 15, fontWeight: 600, padding: "16px 24px", borderRadius: 99, border: "1.5px solid rgba(255,255,255,0.12)", cursor: "pointer", whiteSpace: "nowrap" }}>
+                <button onClick={() => scrollTo('demo')} style={{ background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 15, fontWeight: 600, padding: "18px 24px", borderRadius: 99, border: "1.5px solid rgba(255,255,255,0.12)", cursor: "pointer", whiteSpace: "nowrap" }}>
                   See a live demo →
                 </button>
               </div>
 
-              {/* Trust signals */}
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 16, textAlign: isMobile ? "center" : "left" }}>
+                <span style={{ color: "#C8E600", fontWeight: 700 }}>{signupCount}</span> people signed up today
+              </div>
+
               <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: isMobile ? "center" : "flex-start" }}>
                 {["🔒 CV never shared", "⚡ 30 seconds", "🌍 50+ countries"].map(t => (
                   <span key={t} style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", fontWeight: 500 }}>{t}</span>
@@ -229,16 +274,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* RIGHT — glass card */}
+            {/* RIGHT */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, animation: "fadeInUp 0.65s ease-out 0.15s both", position: "relative" }}>
-              <div style={{
-                background: "rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
-                border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, padding: 24,
-                width: "100%", maxWidth: 380,
-                boxShadow: "0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04)",
-                animation: "floatCard 5s ease-in-out infinite",
-              }}>
-                {/* AI badge */}
+              <div style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, padding: 24, width: "100%", maxWidth: 380, boxShadow: "0 32px 80px rgba(0,0,0,0.5)", animation: "floatCard 5s ease-in-out infinite" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 18 }}>
                   <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
                   <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(200,230,0,0.1)", border: "1px solid rgba(200,230,0,0.2)", borderRadius: 99, padding: "4px 12px" }}>
@@ -247,10 +285,7 @@ export default function Home() {
                   </div>
                   <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
                 </div>
-
-                {/* Before / After */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 28px 1fr", gap: 8, alignItems: "start" }}>
-                  {/* Before */}
                   <div>
                     <div style={{ fontSize: 9, fontWeight: 700, color: "#FF6B6B", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 8 }}>Before</div>
                     {["Responsible for managing team", "Worked on various projects", "Helped with strategy"].map(t => (
@@ -263,14 +298,10 @@ export default function Home() {
                       <span style={{ fontSize: 13, fontWeight: 800, color: "#FF6B6B" }}>42%</span>
                     </div>
                   </div>
-
-                  {/* Middle AI icon */}
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 18, gap: 4 }}>
                     <div style={{ width: 24, height: 24, background: "linear-gradient(135deg,#C8E600,#88AA00)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, boxShadow: "0 0 12px rgba(200,230,0,0.4)" }}>🤖</div>
                     <div style={{ width: 1, height: 36, background: "linear-gradient(to bottom,rgba(200,230,0,0.3),transparent)" }} />
                   </div>
-
-                  {/* After */}
                   <div>
                     <div style={{ fontSize: 9, fontWeight: 700, color: "#4ADE80", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 8 }}>After</div>
                     {["Led 12-person team, +40% efficiency", "5 projects on time, 15% under budget", "Strategy driving $2.4M new revenue"].map(t => (
@@ -284,17 +315,15 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-
-                <a href="/sign-up" style={{ display: "block", marginTop: 16, background: "#C8E600", color: "#052A14", fontSize: 13, fontWeight: 800, padding: "12px", borderRadius: 12, textDecoration: "none", textAlign: "center", boxShadow: "0 4px 20px rgba(200,230,0,0.25)" }}>
+                <a href="/sign-up" style={{ display: "block", marginTop: 16, background: "#C8E600", color: "#052A14", fontSize: 13, fontWeight: 800, padding: "12px", borderRadius: 12, textDecoration: "none", textAlign: "center" }}>
                   ⚡ Try it free now
                 </a>
               </div>
 
-              {/* Notification */}
               {notifVisible && (
-                <div style={{ position: "absolute", bottom: -20, right: isMobile ? 0 : -16, background: "rgba(10,30,15,0.92)", backdropFilter: "blur(16px)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, maxWidth: 230, animation: "notifIn 0.5s ease-out", boxShadow: "0 8px 32px rgba(0,0,0,0.4)", zIndex: 2 }}>
+                <div style={{ position: "absolute", bottom: -20, right: isMobile ? 0 : -16, background: "rgba(10,30,15,0.92)", backdropFilter: "blur(16px)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, maxWidth: 248, animation: "notifIn 0.5s ease-out", boxShadow: "0 8px 32px rgba(0,0,0,0.4)", zIndex: 2 }}>
                   <span style={{ width: 8, height: 8, background: "#4ADE80", borderRadius: "50%", flexShrink: 0, animation: "pulse 2s infinite" }} />
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 600, lineHeight: 1.4 }}>✓ Thabo just got a callback from Standard Bank</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 600, lineHeight: 1.4 }}>✓ New member just got 3 interview invites this week</span>
                 </div>
               )}
             </div>
@@ -302,39 +331,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF TICKER ── */}
-      <div style={{ background: "#040F07", borderTop: "1px solid rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "14px 0", overflow: "hidden" }}>
-        <div style={{ display: "flex", width: "max-content", animation: "ticker 32s linear infinite" }}>
-          {[0, 1].map(rep => (
-            <div key={rep} style={{ display: "flex", alignItems: "center" }}>
-              {tickerItems.map((item, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 28px", whiteSpace: "nowrap" }}>
-                  <span style={{ fontSize: 10, color: "#4ADE80", fontWeight: 700 }}>✓</span>
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", fontWeight: 600 }}>{item.name}</span>
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>—</span>
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{item.result}</span>
-                  <span style={{ width: 3, height: 3, background: "rgba(200,230,0,0.3)", borderRadius: "50%", marginLeft: 8 }} />
-                </div>
-              ))}
-            </div>
+      {/* TRUST BAR */}
+      <div style={{ background: "#040F07", borderTop: "1px solid rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "18px 28px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? 20 : 44, flexWrap: "wrap" }}>
+          {["🔒 Bank-grade security", "⭐ 4.8/5 rating", "🌍 Used in 50+ countries", "✓ GDPR compliant", "💼 495,000+ live jobs"].map(item => (
+            <span key={item} style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>{item}</span>
           ))}
         </div>
       </div>
 
-      {/* ── PROBLEM SECTION ── */}
+      {/* PROBLEM */}
       <section style={{ background: "#020A04", padding: isMobile ? "72px 20px" : "96px 28px", textAlign: "center" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)", borderRadius: 99, padding: "6px 18px", marginBottom: 28 }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,120,120,0.9)", letterSpacing: "1.5px", textTransform: "uppercase" }}>The problem</span>
           </div>
           <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>
-            The job market is broken.<br />
-            <span style={{ color: "rgba(255,255,255,0.25)" }}>Here is proof.</span>
+            The job market is broken.<br /><span style={{ color: "rgba(255,255,255,0.25)" }}>Here is proof.</span>
           </h2>
           <p style={{ fontSize: isMobile ? 14 : 16, color: "rgba(255,255,255,0.35)", lineHeight: 1.75, maxWidth: 500, margin: "0 auto 56px" }}>
             It is not your qualifications. It is not your experience. The system is filtering you out before any human sees your name.
           </p>
-
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 16, marginBottom: 40 }}>
             {[
               { stat: "80%", label: "of CVs rejected by ATS", desc: "Before a human ever sees them. One missing keyword and you disappear from the entire process.", color: "#FF6B6B" },
@@ -348,14 +365,11 @@ export default function Home() {
               </div>
             ))}
           </div>
-
-          <p style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>
-            &ldquo;You are not the problem. Your CV is.&rdquo;
-          </p>
+          <p style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>&ldquo;You are not the problem. Your CV is.&rdquo;</p>
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
+      {/* HOW IT WORKS */}
       <section id="how-it-works" style={{ background: "#052A14", padding: isMobile ? "72px 20px" : "96px 28px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 48 : 64 }}>
@@ -365,22 +379,17 @@ export default function Home() {
             <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>
               One upload.<br /><span style={{ color: "#C8E600" }}>Infinite possibilities.</span>
             </h2>
-            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.4)", maxWidth: 460, margin: "0 auto" }}>
-              Upload your CV once and let AI handle everything else.
-            </p>
+            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.4)", maxWidth: 460, margin: "0 auto" }}>Upload your CV once and let AI handle everything else.</p>
           </div>
-
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4,1fr)", gap: isMobile ? 14 : 12, position: "relative" }}>
-            {!isMobile && (
-              <div style={{ position: "absolute", top: 36, left: "12%", right: "12%", height: 2, background: "linear-gradient(to right,transparent,rgba(200,230,0,0.3),rgba(200,230,0,0.3),transparent)", zIndex: 0, borderTop: "2px dashed rgba(200,230,0,0.2)" }} />
-            )}
+            {!isMobile && <div style={{ position: "absolute", top: 36, left: "12%", right: "12%", height: 2, background: "linear-gradient(to right,transparent,rgba(200,230,0,0.3),rgba(200,230,0,0.3),transparent)", zIndex: 0, borderTop: "2px dashed rgba(200,230,0,0.2)" }} />}
             {[
               { n: "01", icon: "📄", title: "Upload CV", desc: "Drop your PDF. AI reads everything in seconds." },
               { n: "02", icon: "🧠", title: "AI Analyses", desc: "Skills, experience and strengths extracted automatically." },
               { n: "03", icon: "⚡", title: "Apply Smarter", desc: "CV rewritten for each job. Every application perfectly tailored." },
               { n: "04", icon: "🏆", title: "Get Hired", desc: "Pass ATS filters. Reach human recruiters. Get interviews." },
-            ].map((step, i) => (
-              <div key={step.n} className="hov-lift" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "28px 18px 24px", textAlign: "center", position: "relative", zIndex: 1, margin: isMobile ? 0 : "0 4px" }}>
+            ].map(step => (
+              <div key={step.n} className="hov-lift" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "28px 18px 24px", textAlign: "center", position: "relative", zIndex: 1 }}>
                 <div style={{ position: "absolute", top: 14, right: 16, fontSize: 11, fontWeight: 800, color: "rgba(200,230,0,0.25)", letterSpacing: "1px" }}>{step.n}</div>
                 <div style={{ width: 48, height: 48, background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.15)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, margin: "0 auto 16px" }}>{step.icon}</div>
                 <div style={{ fontSize: 14, fontWeight: 800, color: "#FFFFFF", marginBottom: 8 }}>{step.title}</div>
@@ -391,26 +400,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── FEATURES GRID ── */}
+      {/* FEATURES */}
       <section id="features" style={{ background: "#020A04", padding: isMobile ? "72px 20px" : "96px 28px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 48 : 64 }}>
             <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>Features</span>
             </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>
-              Everything you need<br />to get hired faster
-            </h2>
-            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 400, margin: "0 auto" }}>
-              One platform. Every tool an ambitious job seeker needs.
-            </p>
+            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>Everything you need<br />to get hired faster</h2>
+            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 400, margin: "0 auto" }}>One platform. Every tool an ambitious job seeker needs.</p>
           </div>
-
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 14 }}>
             {[
               { icon: "🧬", title: "AI CV Tailoring", desc: "Rewrites your CV for each job in 30 seconds. Keywords, tone, structure — all matched to the role." },
               { icon: "🔍", title: "ATS Optimisation", desc: "Pass automated screening systems every time. Our AI knows exactly what filters look for." },
-              { icon: "🌍", title: "495,000+ Live Jobs", desc: "All jobs in one place from 50+ sources. Remote, relocation, African jobs and more." },
+              { icon: "🌍", title: "495,000+ Live Jobs", desc: "All jobs in one place from 50+ sources. Remote, relocation, teaching and more." },
               { icon: "⚡", title: "Quick Apply", desc: "Apply to any job in under 10 seconds. AI handles the CV, cover letter and submission." },
               { icon: "🎯", title: "Match Scoring", desc: "See exactly how well your CV fits each role before you apply. Fix the gaps first." },
               { icon: "📊", title: "Application Tracker", desc: "Track every application in one dashboard. Know what stage you are at — always." },
@@ -425,7 +429,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── LIVE DEMO ── */}
+      {/* LIVE DEMO */}
       <section id="demo" style={{ background: "#052A14", padding: isMobile ? "72px 20px" : "96px 28px" }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 40 : 56 }}>
@@ -435,21 +439,17 @@ export default function Home() {
             <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>
               Watch AI rewrite a CV<br /><span style={{ color: "#C8E600" }}>in real time</span>
             </h2>
-            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 400, margin: "0 auto" }}>
-              See the transformation from weak language to recruiter-ready copy.
-            </p>
+            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 400, margin: "0 auto" }}>See the transformation from weak language to recruiter-ready copy.</p>
           </div>
 
           <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 24, overflow: "hidden" }}>
-            {/* Window bar */}
             <div style={{ padding: "14px 22px", background: "rgba(0,0,0,0.25)", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 8 }}>
               {["#FF5F57", "#FFBD2E", "#28CA41"].map(c => <div key={c} style={{ width: 11, height: 11, background: c, borderRadius: "50%" }} />)}
               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginLeft: 8 }}>CV Optimiser — AI Transform</span>
             </div>
-
-            <div style={{ display: isMobile ? "flex" : "grid", gridTemplateColumns: isMobile ? undefined : "1fr 100px 1fr", flexDirection: isMobile ? "column" : undefined }}>
+            <div style={{ display: isMobile ? "flex" : "grid", gridTemplateColumns: isMobile ? undefined : "1fr 120px 1fr", flexDirection: isMobile ? "column" : undefined }}>
               {/* Before */}
-              <div style={{ padding: "28px 24px" }}>
+              <div style={{ padding: "28px 24px", opacity: demoStage === 'loading' ? 0 : 1, transition: "opacity 0.3s" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: "1.5px", textTransform: "uppercase" }}>Your original CV</span>
                   <div style={{ background: "rgba(255,100,100,0.1)", border: "1px solid rgba(255,100,100,0.2)", borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: "#FF6B6B" }}>ATS: 42%</div>
@@ -462,58 +462,60 @@ export default function Home() {
               </div>
 
               {/* Center */}
-              <div style={{ display: "flex", flexDirection: isMobile ? "row" : "column", alignItems: "center", justifyContent: "center", padding: isMobile ? "16px 24px" : "28px 12px", borderLeft: isMobile ? "none" : "1px solid rgba(255,255,255,0.04)", borderRight: isMobile ? "none" : "1px solid rgba(255,255,255,0.04)", borderTop: isMobile ? "1px solid rgba(255,255,255,0.04)" : "none", borderBottom: isMobile ? "1px solid rgba(255,255,255,0.04)" : "none", gap: 8 }}>
-                <button onClick={() => setDemoTransformed(!demoTransformed)} style={{ background: "#C8E600", color: "#052A14", fontSize: 12, fontWeight: 800, padding: "10px 16px", borderRadius: 12, border: "none", cursor: "pointer", boxShadow: "0 4px 20px rgba(200,230,0,0.3)", whiteSpace: "nowrap" }}>
-                  {demoTransformed ? "Reset ↺" : "Transform →"}
-                </button>
-                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", textAlign: "center" }}>AI<br />magic</span>
+              <div style={{ display: "flex", flexDirection: isMobile ? "row" : "column", alignItems: "center", justifyContent: "center", padding: isMobile ? "16px 24px" : "28px 12px", borderLeft: isMobile ? "none" : "1px solid rgba(255,255,255,0.04)", borderRight: isMobile ? "none" : "1px solid rgba(255,255,255,0.04)", gap: 10 }}>
+                {demoStage === 'loading' ? (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 32, height: 32, border: "3px solid rgba(200,230,0,0.2)", borderTop: "3px solid #C8E600", borderRadius: "50%", animation: "spinAI 0.8s linear infinite" }} />
+                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>AI working...</span>
+                  </div>
+                ) : (
+                  <>
+                    <button onClick={handleDemoTransform} style={{ background: demoStage === 'done' ? "rgba(74,222,128,0.1)" : "#C8E600", color: demoStage === 'done' ? "#4ADE80" : "#052A14", border: demoStage === 'done' ? "1.5px solid rgba(74,222,128,0.3)" : "none", fontSize: 12, fontWeight: 800, padding: "10px 16px", borderRadius: 12, cursor: "pointer", boxShadow: demoStage === 'idle' ? "0 4px 20px rgba(200,230,0,0.3)" : "none", whiteSpace: "nowrap" }}>
+                      {demoStage === 'done' ? "Transformed ✓" : "Transform →"}
+                    </button>
+                    {demoStage === 'done' && <button onClick={() => { setDemoStage('idle'); setDemoAts(42); }} style={{ background: "transparent", border: "none", fontSize: 10, color: "rgba(255,255,255,0.2)", cursor: "pointer", textDecoration: "underline" }}>Reset</button>}
+                    {demoStage === 'idle' && <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", textAlign: "center" }}>AI magic</span>}
+                  </>
+                )}
               </div>
 
               {/* After */}
-              <div style={{ padding: "28px 24px", background: demoTransformed ? "rgba(200,230,0,0.015)" : "transparent", transition: "background 0.5s" }}>
+              <div style={{ padding: "28px 24px", background: demoStage === 'done' ? "rgba(200,230,0,0.015)" : "transparent", opacity: demoStage === 'done' ? 1 : 0.25, animation: demoStage === 'done' ? "slideInRight 0.4s ease-out" : "none", transition: "background 0.5s, opacity 0.4s" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: demoTransformed ? "rgba(200,230,0,0.7)" : "rgba(255,255,255,0.15)", letterSpacing: "1.5px", textTransform: "uppercase", transition: "color 0.4s" }}>AI-optimised version</span>
-                  <div style={{ background: demoTransformed ? "rgba(200,230,0,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${demoTransformed ? "rgba(200,230,0,0.2)" : "rgba(255,255,255,0.06)"}`, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: demoTransformed ? "#C8E600" : "rgba(255,255,255,0.15)", transition: "all 0.4s" }}>
-                    ATS: {demoTransformed ? "94%" : "—"}
+                  <span style={{ fontSize: 11, fontWeight: 700, color: demoStage === 'done' ? "rgba(200,230,0,0.7)" : "rgba(255,255,255,0.15)", letterSpacing: "1.5px", textTransform: "uppercase", transition: "color 0.4s" }}>AI-optimised version</span>
+                  <div style={{ background: demoStage === 'done' ? "rgba(200,230,0,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${demoStage === 'done' ? "rgba(200,230,0,0.2)" : "rgba(255,255,255,0.06)"}`, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: demoStage === 'done' ? "#C8E600" : "rgba(255,255,255,0.15)", transition: "all 0.4s" }}>
+                    ATS: {demoStage === 'done' ? `${demoAts}%` : "—"}
                   </div>
                 </div>
                 {["Led cross-functional team of 12 driving 40% efficiency gains", "Delivered 5 enterprise projects on time and 15% under budget", "Architected go-to-market strategy generating $2.4M in new revenue"].map((t, i) => (
-                  <div key={i} style={{ background: demoTransformed ? "rgba(200,230,0,0.04)" : "rgba(255,255,255,0.015)", border: `1px solid ${demoTransformed ? "rgba(200,230,0,0.12)" : "rgba(255,255,255,0.04)"}`, borderRadius: 10, padding: "10px 12px", fontSize: 12, color: demoTransformed ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.1)", lineHeight: 1.5, marginBottom: 8, transition: `all 0.4s ${i * 0.1}s` }}>
-                    <span style={{ color: demoTransformed ? "#C8E600" : "rgba(255,255,255,0.1)", marginRight: 8, transition: "color 0.3s" }}>✓</span>{t}
+                  <div key={i} style={{ background: demoStage === 'done' ? "rgba(200,230,0,0.04)" : "rgba(255,255,255,0.015)", border: `1px solid ${demoStage === 'done' ? "rgba(200,230,0,0.12)" : "rgba(255,255,255,0.04)"}`, borderRadius: 10, padding: "10px 12px", fontSize: 12, color: demoStage === 'done' ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.1)", lineHeight: 1.5, marginBottom: 8, transition: `all 0.4s ${i * 0.1}s` }}>
+                    <span style={{ color: demoStage === 'done' ? "#C8E600" : "rgba(255,255,255,0.1)", marginRight: 8, transition: "color 0.3s" }}>✓</span>{t}
                   </div>
                 ))}
               </div>
             </div>
           </div>
-
           <div style={{ textAlign: "center", marginTop: 28 }}>
-            <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: 14, fontWeight: 800, padding: "14px 36px", borderRadius: 99, textDecoration: "none", display: "inline-block", boxShadow: "0 4px 24px rgba(200,230,0,0.3)" }}>
-              Transform my CV now →
-            </a>
+            <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: 14, fontWeight: 800, padding: "14px 36px", borderRadius: 99, textDecoration: "none", display: "inline-block", boxShadow: "0 4px 24px rgba(200,230,0,0.3)" }}>Transform my CV now →</a>
           </div>
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ── */}
+      {/* TESTIMONIALS */}
       <section style={{ background: "#020A04", padding: isMobile ? "72px 20px" : "96px 28px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 48 : 64 }}>
             <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>Success stories</span>
             </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>
-              Real people.<br /><span style={{ color: "#C8E600" }}>Real results.</span>
-            </h2>
-            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 360, margin: "0 auto" }}>
-              From Lagos to London. From silence to offers.
-            </p>
+            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>Real people.<br /><span style={{ color: "#C8E600" }}>Real results.</span></h2>
+            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 360, margin: "0 auto" }}>From silence to offer letters.</p>
           </div>
-
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 14, marginBottom: 14 }}>
             {[
-              { seed: "Thabo", name: "Thabo Nkosi", result: "Got hired in 3 weeks", quote: "I applied to 30 jobs manually for 4 months. Zero responses. After Jobsesame I had 4 interviews in 10 days. The AI knew exactly what recruiters wanted to see." },
-              { seed: "Amara", name: "Amara Diallo", result: "ATS score: 38% → 91%", quote: "My CV was good. Jobsesame made it exceptional. The ATS score went from 38 to 91 percent. I got a callback within 48 hours." },
-              { seed: "Chioma", name: "Chioma Okafor", result: "Lagos → London, hired", quote: "I was relocating from Lagos to London and had no idea what UK employers wanted. Jobsesame rewrote my CV perfectly. I got the job." },
+              { photo: PHOTOS[3], name: "Thabo N.", result: "Got hired in 3 weeks", quote: "I applied to 30 jobs manually for 4 months. Zero responses. After Jobsesame I had 4 interviews in 10 days. The AI knew exactly what recruiters wanted to see." },
+              { photo: PHOTOS[0], name: "Amara D.", result: "ATS score: 38% → 91%", quote: "My CV was good. Jobsesame made it exceptional. The ATS score went from 38 to 91 percent. I got a callback within 48 hours." },
+              { photo: PHOTOS[2], name: "Chioma O.", result: "Relocated internationally, hired", quote: "I was relocating and had no idea what employers there wanted. Jobsesame rewrote my CV perfectly for the market. I got the job." },
             ].map(t => (
               <div key={t.name} className="hov-lift" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "28px 22px" }}>
                 <div style={{ display: "flex", gap: 2, marginBottom: 14 }}>
@@ -521,7 +523,7 @@ export default function Home() {
                 </div>
                 <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.75, fontStyle: "italic", marginBottom: 20 }}>&ldquo;{t.quote}&rdquo;</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${t.seed}&backgroundColor=b6e3f4,ffd5dc`} width={48} height={48} alt={t.name} style={{ borderRadius: "50%", border: "2px solid rgba(200,230,0,0.25)", background: "#1A4A2A", flexShrink: 0 }} />
+                  <img src={t.photo} crossOrigin="anonymous" loading="lazy" width={48} height={48} alt={t.name} style={{ borderRadius: "50%", border: "2px solid rgba(200,230,0,0.25)", background: "#1A4A2A", flexShrink: 0, objectFit: "cover" }} />
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>{t.name}</div>
                     <div style={{ fontSize: 12, color: "#C8E600", fontWeight: 600 }}>{t.result}</div>
@@ -530,8 +532,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-
-          {/* Wide metric */}
           <div style={{ background: "rgba(200,230,0,0.04)", border: "1px solid rgba(200,230,0,0.12)", borderRadius: 20, padding: "28px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
             <div>
               <div style={{ fontSize: isMobile ? 38 : 52, fontWeight: 800, color: "#C8E600", lineHeight: 1, letterSpacing: -2 }}>11 days</div>
@@ -542,33 +542,24 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── PRICING ── */}
+      {/* PRICING */}
       <section id="pricing" style={{ background: "#052A14", padding: isMobile ? "72px 20px" : "96px 28px" }}>
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 48 : 64 }}>
             <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>Pricing</span>
             </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>
-              Simple pricing.<br /><span style={{ color: "#C8E600" }}>Serious results.</span>
-            </h2>
+            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>Simple pricing.<br /><span style={{ color: "#C8E600" }}>Serious results.</span></h2>
             <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 340, margin: "0 auto" }}>Start free. Upgrade when you are ready.</p>
           </div>
-
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 14, alignItems: "start" }}>
             {[
               { name: "Free", price: "R0", usdPrice: "$0", per: " forever", desc: "Get started instantly", features: ["3 Quick Apply credits", "AI CV analysis", "ATS score included", "Browse 495,000+ jobs", "No card needed"], popular: false, btn: "Get started free" },
               { name: "Credits", price: "R185", usdPrice: "$10", per: " per pack", desc: "Pay as you go", features: ["10 Quick Apply credits", "Credits never expire", "AI CV rewrite per job", "Cover letter generation", "All job categories"], popular: false, btn: "Buy credits" },
               { name: "Pro", price: "R370", usdPrice: "$20", per: " per month", desc: "For serious job seekers", features: ["Unlimited Quick Apply", "Unlimited CV rewrites", "Priority support", "Cover letters included", "Application tracking"], popular: true, btn: "Go Pro" },
             ].map(p => (
-              <div key={p.name} style={{
-                background: p.popular ? "rgba(200,230,0,0.05)" : "rgba(255,255,255,0.03)",
-                border: `1.5px solid ${p.popular ? "rgba(200,230,0,0.35)" : "rgba(255,255,255,0.07)"}`,
-                borderRadius: 20, padding: "28px 22px", position: "relative",
-              }}>
-                {p.popular && (
-                  <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: "#C8E600", color: "#052A14", fontSize: 10, fontWeight: 800, padding: "4px 16px", borderRadius: 99, whiteSpace: "nowrap", letterSpacing: "0.5px" }}>MOST POPULAR</div>
-                )}
+              <div key={p.name} style={{ background: p.popular ? "rgba(200,230,0,0.05)" : "rgba(255,255,255,0.03)", border: `1.5px solid ${p.popular ? "rgba(200,230,0,0.35)" : "rgba(255,255,255,0.07)"}`, borderRadius: 20, padding: "28px 22px", position: "relative" }}>
+                {p.popular && <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: "#C8E600", color: "#052A14", fontSize: 10, fontWeight: 800, padding: "4px 16px", borderRadius: 99, whiteSpace: "nowrap" }}>MOST POPULAR</div>}
                 <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>{p.name}</div>
                 <div style={{ marginBottom: 4 }}>
                   <span style={{ fontSize: 40, fontWeight: 800, color: p.popular ? "#C8E600" : "#FFFFFF", lineHeight: 1 }}>{currency === 'ZAR' ? p.price : p.usdPrice}</span>
@@ -586,36 +577,30 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                <a href="/sign-up" style={{ display: "block", background: p.popular ? "#C8E600" : "rgba(255,255,255,0.06)", color: p.popular ? "#052A14" : "rgba(255,255,255,0.75)", border: `1px solid ${p.popular ? "transparent" : "rgba(255,255,255,0.1)"}`, fontSize: 14, fontWeight: 800, padding: "13px 0", borderRadius: 99, textDecoration: "none", textAlign: "center" }}>
-                  {p.btn}
-                </a>
+                <a href="/sign-up" style={{ display: "block", background: p.popular ? "#C8E600" : "rgba(255,255,255,0.06)", color: p.popular ? "#052A14" : "rgba(255,255,255,0.75)", border: `1px solid ${p.popular ? "transparent" : "rgba(255,255,255,0.1)"}`, fontSize: 14, fontWeight: 800, padding: "13px 0", borderRadius: 99, textDecoration: "none", textAlign: "center" }}>{p.btn}</a>
               </div>
             ))}
           </div>
-
           <div style={{ textAlign: "center", marginTop: 20 }}>
             <span style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>🔒 30-day money back guarantee. No questions asked.</span>
           </div>
         </div>
       </section>
 
-      {/* ── FAQ ── */}
+      {/* FAQ */}
       <section id="faq" style={{ background: "#020A04", padding: isMobile ? "72px 20px" : "96px 28px" }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: isMobile ? 40 : 52 }}>
             <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>FAQ</span>
             </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>
-              Everything you need<br />to know
-            </h2>
+            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>Everything you need<br />to know</h2>
             <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 360, margin: "0 auto 24px" }}>Got questions? We have answers.</p>
             <div style={{ position: "relative", maxWidth: 440, margin: "0 auto" }}>
               <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "rgba(255,255,255,0.25)", pointerEvents: "none" }}>🔍</span>
               <input value={faqSearch} onChange={e => setFaqSearch(e.target.value)} placeholder="Search questions..." style={{ width: "100%", padding: "13px 16px 13px 40px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, fontSize: 14, color: "#FFFFFF", outline: "none", fontFamily: "inherit" }} />
             </div>
           </div>
-
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {filteredFaqs.length === 0
               ? <div style={{ textAlign: "center", padding: "32px", color: "rgba(255,255,255,0.25)", fontSize: 14 }}>No questions match &ldquo;{faqSearch}&rdquo;</div>
@@ -632,29 +617,27 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-              ))
-            }
+              ))}
           </div>
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
+      {/* FINAL CTA */}
       <section style={{ background: "#052A14", padding: isMobile ? "88px 20px" : "120px 28px", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 70% 55% at 50% 50%,rgba(200,230,0,0.08) 0%,transparent 70%)", pointerEvents: "none", animation: "glowPulse 4s ease-in-out infinite" }} />
         <div style={{ maxWidth: 600, margin: "0 auto", position: "relative", zIndex: 1 }}>
-          <h2 style={{ fontSize: isMobile ? 32 : 56, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.05, letterSpacing: -2, marginBottom: 16 }}>
-            Stop sending CVs<br />into the void.
-          </h2>
+          <h2 style={{ fontSize: isMobile ? 32 : 56, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.05, letterSpacing: -2, marginBottom: 16 }}>Stop sending CVs<br />into the void.</h2>
           <p style={{ fontSize: isMobile ? 16 : 19, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, maxWidth: 440, margin: "0 auto 36px" }}>
             Join 2,400+ job seekers who stopped applying manually and started getting interviews.
           </p>
-          <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: isMobile ? 15 : 17, fontWeight: 800, padding: "18px 44px", borderRadius: 99, textDecoration: "none", display: "inline-block", boxShadow: "0 8px 40px rgba(200,230,0,0.35)", marginBottom: 28 }}>
+          <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: isMobile ? 15 : 17, fontWeight: 800, padding: "18px 44px", borderRadius: 99, textDecoration: "none", display: "inline-block", animation: "ctaGlow 2.5s ease-in-out infinite", marginBottom: 28 }}>
             Get your first 3 applications free
           </a>
           <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <div style={{ display: "flex", alignItems: "center" }}>
-              {['A', 'B', 'C', 'D', 'E'].map((seed, i) => (
-                <img key={seed} src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,ffd5dc,c0aede`} width={30} height={30} alt="" style={{ borderRadius: "50%", border: "2px solid rgba(5,42,20,0.8)", marginLeft: i === 0 ? 0 : -7, zIndex: 5 - i, position: "relative", background: "#1A4A2A" }} />
+              {PHOTOS.map((src, i) => (
+                <img key={i} src={src} crossOrigin="anonymous" loading="lazy" width={30} height={30} alt="Member"
+                  style={{ borderRadius: "50%", border: "2px solid rgba(5,42,20,0.8)", marginLeft: i === 0 ? 0 : -7, zIndex: 5 - i, position: "relative", background: "#1A4A2A", objectFit: "cover" }} />
               ))}
             </div>
             <span style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>2,400+ new members this week</span>
@@ -662,8 +645,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer style={{ background: "#020804", borderTop: "1px solid rgba(255,255,255,0.04)", padding: isMobile ? "48px 20px 28px" : "64px 28px 32px" }}>
+      {/* FOOTER */}
+      <footer style={{ background: "#020804", borderTop: "1px solid rgba(255,255,255,0.04)", padding: isMobile ? "48px 20px 96px" : "64px 28px 32px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "2fr 1fr 1fr 1fr", gap: isMobile ? "32px 24px" : 40, marginBottom: 48 }}>
             <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
@@ -676,10 +659,9 @@ export default function Home() {
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.18)", lineHeight: 1.8, maxWidth: 220, marginBottom: 10 }}>AI-powered job applications for professionals who refuse to be ignored.</p>
               <p style={{ fontSize: 11, color: "rgba(255,255,255,0.1)", fontStyle: "italic" }}>&ldquo;Open sesame — your future awaits.&rdquo;</p>
             </div>
-
             {[
               { heading: "Product", links: [{ label: "Find Jobs", href: "/jobs" }, { label: "CV Optimiser", href: "/optimise" }, { label: "Dashboard", href: "/dashboard" }] },
-              { heading: "Company", links: [{ label: "About", href: "/about" }, { label: "Contact", href: "mailto:hello@jobsesame.co.za" }] },
+              { heading: "Company", links: [{ label: "About", href: "/about" }, { label: "Recruiters", href: "/recruiters" }, { label: "Blog", href: "/blog" }, { label: "Contact", href: "mailto:hello@jobsesame.co.za" }] },
               { heading: "Legal", links: [{ label: "Privacy Policy", href: "/privacy" }, { label: "Terms of Service", href: "/terms" }] },
             ].map(col => (
               <div key={col.heading}>
@@ -692,17 +674,23 @@ export default function Home() {
               </div>
             ))}
           </div>
-
           <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.12)" }}>© 2025 Jobsesame. All rights reserved.</span>
             <div style={{ display: "flex", gap: 20 }}>
-              {["Twitter", "LinkedIn", "Instagram"].map(s => (
-                <span key={s} style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", cursor: "pointer" }}>{s}</span>
-              ))}
+              {["Twitter", "LinkedIn", "Instagram"].map(s => <span key={s} style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", cursor: "pointer" }}>{s}</span>)}
             </div>
           </div>
         </div>
       </footer>
+
+      {/* MOBILE STICKY BOTTOM BAR */}
+      {isMobile && !isSignedIn && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 300, background: "rgba(3,15,7,0.96)", backdropFilter: "blur(20px)", borderTop: "1px solid rgba(200,230,0,0.2)", padding: "12px 20px", paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}>
+          <a href="/sign-up" style={{ display: "block", background: "#C8E600", color: "#052A14", fontSize: 15, fontWeight: 800, padding: "16px 24px", borderRadius: 99, textDecoration: "none", textAlign: "center", boxShadow: "0 4px 24px rgba(200,230,0,0.35)" }}>
+            Get started free — 3 free applications
+          </a>
+        </div>
+      )}
     </main>
   );
 }
