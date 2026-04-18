@@ -588,7 +588,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
               <div style={{background:"#0D3A1A",border:"1.5px solid #1A5A2A",borderRadius:14,padding:16,textAlign:"center"}}>
                 <div style={{fontSize:22,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>
-                  {currency === 'ZAR' ? 'R185' : '$10'}<span style={{fontSize:12,color:"#888"}}>/pack</span>
+                  {currency === 'ZAR' ? 'R99' : '$5'}<span style={{fontSize:12,color:"#888"}}>/pack</span>
                 </div>
                 <div style={{fontSize:12,color:"#5A9A6A",marginBottom:12}}>10 applications. No expiry.</div>
                 <button
@@ -601,7 +601,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
               <div style={{background:"#0D3A1A",border:"1.5px solid #C8E600",borderRadius:14,padding:16,textAlign:"center"}}>
                 <div style={{background:"#C8E600",color:"#052A14",fontSize:10,fontWeight:800,padding:"2px 10px",borderRadius:99,display:"inline-block",marginBottom:6}}>Best value</div>
                 <div style={{fontSize:22,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>
-                  {currency === 'ZAR' ? 'R370' : '$20'}<span style={{fontSize:12,color:"#888"}}>/month</span>
+                  {currency === 'ZAR' ? 'R249' : '$14'}<span style={{fontSize:12,color:"#888"}}>/month</span>
                 </div>
                 <div style={{fontSize:12,color:"#5A9A6A",marginBottom:12}}>Unlimited. Everything.</div>
                 <button

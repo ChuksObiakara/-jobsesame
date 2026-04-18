@@ -759,7 +759,7 @@ export default function Dashboard() {
                 <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
                   <div>
                     <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Unlock Pro to download as PDF</div>
-                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. {currency==='ZAR'?'R370':'$20'}/month.</div>
+                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. {currency==='ZAR'?'R249':'$14'}/month.</div>
                   </div>
                   <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
                     {paying?'Loading...':'Upgrade to Pro'}
@@ -842,7 +842,7 @@ export default function Dashboard() {
                 <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
                   <div>
                     <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Unlock Pro — all doors open</div>
-                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Cover letters. {currency==='ZAR'?'R370':'$20'}/month.</div>
+                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Cover letters. {currency==='ZAR'?'R249':'$14'}/month.</div>
                   </div>
                   <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
                     {paying?'Loading...':'Upgrade to Pro'}
@@ -891,7 +891,7 @@ export default function Dashboard() {
             <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
               <div>
                 <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Want unlimited rewrites now?</div>
-                <div style={{fontSize:12,color:"#5A9A6A"}}>Upgrade to Pro for {currency==='ZAR'?'R370':'$20'}/month — unlimited everything.</div>
+                <div style={{fontSize:12,color:"#5A9A6A"}}>Upgrade to Pro for {currency==='ZAR'?'R249':'$14'}/month — unlimited everything.</div>
               </div>
               <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
                 {paying?'Loading...':'Upgrade to Pro'}

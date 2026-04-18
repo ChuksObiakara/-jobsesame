@@ -1,67 +1,81 @@
 'use client';
 import { useState } from 'react';
 
+const INDUSTRIES = [
+  'Technology', 'Finance & Banking', 'Healthcare', 'Education', 'Engineering',
+  'Marketing & Media', 'Legal', 'Retail & E-commerce', 'Construction',
+  'Manufacturing', 'Logistics & Supply Chain', 'Hospitality & Tourism',
+  'Consulting', 'Non-profit', 'Government', 'Other',
+];
+
+const COMPANY_SIZES = ['1–10', '11–50', '51–200', '201–1,000', '1,000+'];
+const HOW_HEARD = ['Google search', 'LinkedIn', 'Word of mouth', 'Social media', 'Email', 'Other'];
+
 export default function RecruitersPage() {
-  const [email, setEmail] = useState('');
+  const [form, setForm] = useState({
+    companyName: '',
+    contactName: '',
+    workEmail: '',
+    phone: '',
+    companySize: '',
+    industry: '',
+    openPositions: '',
+    howHeard: '',
+    message: '',
+  });
   const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const set = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm(prev => ({ ...prev, [key]: e.target.value }));
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!form.companyName.trim()) errs.companyName = 'Required';
+    if (!form.contactName.trim()) errs.contactName = 'Required';
+    if (!form.workEmail.includes('@')) errs.workEmail = 'Valid email required';
+    if (!form.phone.trim()) errs.phone = 'Required';
+    if (!form.companySize) errs.companySize = 'Required';
+    if (!form.industry) errs.industry = 'Required';
+    return errs;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    const submissions = JSON.parse(localStorage.getItem('jobsesame_recruiter_submissions') || '[]');
+    submissions.push({ ...form, submittedAt: new Date().toISOString() });
+    localStorage.setItem('jobsesame_recruiter_submissions', JSON.stringify(submissions));
     setSubmitted(true);
   };
 
-  const plans = [
-    {
-      name: 'Starter',
-      price: '$99',
-      period: '/month',
-      desc: 'Perfect for small agencies and in-house recruiters',
-      features: [
-        'Post up to 10 jobs/month',
-        'AI candidate matching',
-        'Access to 50,000+ active candidates',
-        'Email support',
-      ],
-      highlight: false,
-    },
-    {
-      name: 'Growth',
-      price: '$299',
-      period: '/month',
-      desc: 'For growing teams that need volume and speed',
-      features: [
-        'Post up to 50 jobs/month',
-        'Priority AI matching',
-        'Access to 200,000+ active candidates',
-        'CV screening & shortlisting',
-        'Dedicated account manager',
-        'Analytics dashboard',
-      ],
-      highlight: true,
-    },
-    {
-      name: 'Enterprise',
-      price: 'Custom',
-      period: '',
-      desc: 'For large organisations with complex hiring needs',
-      features: [
-        'Unlimited job postings',
-        'Custom AI matching models',
-        'Full candidate database access',
-        'ATS integration',
-        'SLA guarantee',
-        'White-label option',
-      ],
-      highlight: false,
-    },
-  ];
+  const inputStyle = (key: string): React.CSSProperties => ({
+    width: '100%',
+    padding: '12px 16px',
+    border: `1.5px solid ${errors[key] ? '#A32D2D' : '#1A5A2A'}`,
+    borderRadius: 10,
+    fontSize: 14,
+    color: '#FFFFFF',
+    background: '#0D3A1A',
+    outline: 'none',
+    fontFamily: 'inherit',
+    boxSizing: 'border-box',
+  });
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 12,
+    color: '#5A9A6A',
+    fontWeight: 600,
+    display: 'block',
+    marginBottom: 6,
+  };
 
   return (
-    <main style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#F4FCF4', minHeight: '100vh', margin: 0 }}>
+    <main style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#052A14', minHeight: '100vh', margin: 0 }}>
 
       {/* NAV */}
-      <nav style={{ background: '#052A14', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+      <nav style={{ background: '#052A14', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #0D4A20', position: 'sticky', top: 0, zIndex: 100 }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           <div style={{ width: 36, height: 36, background: '#C8E600', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
@@ -75,130 +89,124 @@ export default function RecruitersPage() {
             <span style={{ color: '#C8E600' }}>sesame</span>
           </span>
         </a>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <a href="/jobs" style={{ fontSize: 13, color: '#A8D8B0', fontWeight: 500, textDecoration: 'none' }}>Find Jobs</a>
-          <a href="/" style={{ background: '#C8E600', color: '#052A14', fontSize: 13, fontWeight: 800, padding: '9px 22px', borderRadius: 99, textDecoration: 'none' }}>Get Started</a>
-        </div>
+        <a href="/jobs" style={{ fontSize: 13, color: '#A8D8B0', fontWeight: 500, textDecoration: 'none' }}>Find Jobs</a>
       </nav>
 
-      {/* HERO */}
-      <div style={{ background: '#052A14', padding: '60px 24px 48px', textAlign: 'center' }}>
-        <div style={{ display: 'inline-block', background: 'rgba(200,230,0,0.12)', border: '1px solid rgba(200,230,0,0.3)', borderRadius: 99, padding: '6px 18px', fontSize: 12, color: '#C8E600', fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 20 }}>
-          Coming Soon
-        </div>
-        <h1 style={{ fontSize: 'clamp(28px, 5vw, 48px)', fontWeight: 800, color: '#FFFFFF', marginBottom: 16, lineHeight: 1.2 }}>
-          Hire faster with<br /><span style={{ color: '#C8E600' }}>AI-powered recruiting</span>
-        </h1>
-        <p style={{ fontSize: 16, color: '#90C898', maxWidth: 560, margin: '0 auto 32px', lineHeight: 1.8 }}>
-          Jobsesame for Recruiters is launching soon. Get access to 500,000+ pre-screened candidates, AI matching, and one-click outreach — at a fraction of traditional agency fees.
-        </p>
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 24px 80px' }}>
 
-        {!submitted ? (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 10, maxWidth: 440, margin: '0 auto', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="Your work email"
-              required
-              style={{ flex: 1, minWidth: 220, padding: '13px 18px', border: '2px solid #C8E600', borderRadius: 11, fontSize: 14, color: '#052A14', fontWeight: 600, outline: 'none', background: '#fff' }}
-            />
-            <button type="submit" style={{ background: '#C8E600', color: '#052A14', fontSize: 14, fontWeight: 800, padding: '13px 28px', borderRadius: 11, border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              Get early access
-            </button>
-          </form>
-        ) : (
-          <div style={{ background: 'rgba(200,230,0,0.1)', border: '1.5px solid #C8E600', borderRadius: 12, padding: '16px 28px', display: 'inline-block', fontSize: 15, color: '#C8E600', fontWeight: 700 }}>
-            ✓ You're on the list — we'll be in touch soon!
-          </div>
-        )}
-      </div>
-
-      {/* PRICING */}
-      <div style={{ padding: '60px 24px', maxWidth: 960, margin: '0 auto' }}>
+        {/* HEADER */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <h2 style={{ fontSize: 28, fontWeight: 800, color: '#052A14', marginBottom: 12 }}>Simple, transparent pricing</h2>
-          <p style={{ fontSize: 15, color: '#4A8A5A' }}>No placement fees. No surprises. Cancel any time.</p>
+          <h1 style={{ fontSize: 'clamp(26px, 5vw, 40px)', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.15, marginBottom: 14 }}>
+            Post jobs. Find the<br /><span style={{ color: '#C8E600' }}>right talent.</span>
+          </h1>
+          <p style={{ fontSize: 15, color: '#90C898', lineHeight: 1.8, maxWidth: 480, margin: '0 auto' }}>
+            Join thousands of companies hiring smarter with Jobsesame. Tell us about your hiring needs and our team will be in touch within 24 hours.
+          </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
-          {plans.map(plan => (
-            <div key={plan.name} style={{
-              background: plan.highlight ? '#052A14' : '#fff',
-              border: `2px solid ${plan.highlight ? '#C8E600' : '#D8EED8'}`,
-              borderRadius: 20,
-              padding: '32px 28px',
-              position: 'relative',
-            }}>
-              {plan.highlight && (
-                <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#C8E600', color: '#052A14', fontSize: 11, fontWeight: 800, padding: '4px 16px', borderRadius: 99, whiteSpace: 'nowrap' }}>
-                  MOST POPULAR
-                </div>
-              )}
-              <div style={{ fontSize: 13, fontWeight: 700, color: plan.highlight ? '#90C898' : '#4A8A5A', marginBottom: 8 }}>{plan.name}</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
-                <span style={{ fontSize: 36, fontWeight: 800, color: plan.highlight ? '#C8E600' : '#052A14' }}>{plan.price}</span>
-                {plan.period && <span style={{ fontSize: 14, color: plan.highlight ? '#5A9A6A' : '#4A8A5A' }}>{plan.period}</span>}
+        {submitted ? (
+          <div style={{ background: 'rgba(200,230,0,0.08)', border: '2px solid #C8E600', borderRadius: 20, padding: '48px 32px', textAlign: 'center' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', marginBottom: 12 }}>Request received!</h2>
+            <p style={{ fontSize: 15, color: '#90C898', lineHeight: 1.8 }}>
+              Thank you. Our team will be in touch within 24 hours.
+            </p>
+            <a href="/" style={{ display: 'inline-block', marginTop: 24, background: '#C8E600', color: '#052A14', fontSize: 14, fontWeight: 800, padding: '12px 28px', borderRadius: 99, textDecoration: 'none' }}>
+              Back to home
+            </a>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ background: '#072E16', border: '1.5px solid #1A4A2A', borderRadius: 20, padding: '36px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>Company name *</label>
+                <input value={form.companyName} onChange={set('companyName')} placeholder="Acme Corp" style={inputStyle('companyName')} />
+                {errors.companyName && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.companyName}</div>}
               </div>
-              <p style={{ fontSize: 13, color: plan.highlight ? '#5A9A6A' : '#4A8A5A', marginBottom: 24, lineHeight: 1.6 }}>{plan.desc}</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
-                {plan.features.map(f => (
-                  <div key={f} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: plan.highlight ? '#A8D8B0' : '#2A4A2A' }}>
-                    <span style={{ color: '#C8E600', flexShrink: 0, fontWeight: 700 }}>✓</span>
-                    {f}
-                  </div>
-                ))}
+              <div>
+                <label style={labelStyle}>Contact person full name *</label>
+                <input value={form.contactName} onChange={set('contactName')} placeholder="Jane Smith" style={inputStyle('contactName')} />
+                {errors.contactName && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.contactName}</div>}
               </div>
-              <button
-                onClick={() => setSubmitted(false)}
-                style={{
-                  width: '100%',
-                  background: plan.highlight ? '#C8E600' : 'transparent',
-                  color: plan.highlight ? '#052A14' : '#052A14',
-                  fontSize: 13,
-                  fontWeight: 800,
-                  padding: '12px 0',
-                  borderRadius: 10,
-                  border: plan.highlight ? 'none' : '2px solid #052A14',
-                  cursor: 'pointer',
-                }}
-              >
-                {plan.price === 'Custom' ? 'Contact us' : 'Join waitlist'}
-              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>Work email *</label>
+                <input type="email" value={form.workEmail} onChange={set('workEmail')} placeholder="jane@company.com" style={inputStyle('workEmail')} />
+                {errors.workEmail && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.workEmail}</div>}
+              </div>
+              <div>
+                <label style={labelStyle}>Phone number *</label>
+                <input type="tel" value={form.phone} onChange={set('phone')} placeholder="+27 82 000 0000" style={inputStyle('phone')} />
+                {errors.phone && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.phone}</div>}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>Company size *</label>
+                <select value={form.companySize} onChange={set('companySize')} style={{ ...inputStyle('companySize'), cursor: 'pointer' }}>
+                  <option value="">Select size</option>
+                  {COMPANY_SIZES.map(s => <option key={s} value={s}>{s} employees</option>)}
+                </select>
+                {errors.companySize && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.companySize}</div>}
+              </div>
+              <div>
+                <label style={labelStyle}>Industry *</label>
+                <select value={form.industry} onChange={set('industry')} style={{ ...inputStyle('industry'), cursor: 'pointer' }}>
+                  <option value="">Select industry</option>
+                  {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+                </select>
+                {errors.industry && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.industry}</div>}
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={labelStyle}>Number of open positions</label>
+                <input type="number" min="1" value={form.openPositions} onChange={set('openPositions')} placeholder="e.g. 5" style={inputStyle('openPositions')} />
+              </div>
+              <div>
+                <label style={labelStyle}>How did you hear about us?</label>
+                <select value={form.howHeard} onChange={set('howHeard')} style={{ ...inputStyle('howHeard'), cursor: 'pointer' }}>
+                  <option value="">Select</option>
+                  {HOW_HEARD.map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Tell us about your hiring needs</label>
+              <textarea
+                value={form.message}
+                onChange={set('message')}
+                placeholder="What roles are you hiring for? What challenges are you facing with recruitment? Any specific requirements?"
+                rows={5}
+                style={{ ...inputStyle('message'), resize: 'vertical', lineHeight: 1.6 }}
+              />
+            </div>
+
+            <button type="submit" style={{ background: '#C8E600', color: '#052A14', fontSize: 15, fontWeight: 800, padding: '14px 0', borderRadius: 12, border: 'none', cursor: 'pointer', width: '100%', marginTop: 4 }}>
+              Request recruiter access →
+            </button>
+
+            <p style={{ textAlign: 'center', fontSize: 12, color: '#3A7A4A', margin: 0 }}>
+              No commitment required. Our team will contact you within 24 hours.
+            </p>
+          </form>
+        )}
+
+        {/* TRUST SIGNALS */}
+        <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', marginTop: 40 }}>
+          {['495,000+ active candidates', 'AI-powered matching', 'Dedicated account manager', 'No placement fees'].map(t => (
+            <div key={t} style={{ fontSize: 12, color: '#3A7A4A', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: '#C8E600' }}>✓</span> {t}
             </div>
           ))}
         </div>
       </div>
-
-      {/* WHY */}
-      <div style={{ background: '#052A14', padding: '60px 24px' }}>
-        <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 26, fontWeight: 800, color: '#FFFFFF', marginBottom: 40 }}>Why recruiters choose Jobsesame</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24 }}>
-            {[
-              { icon: '🤖', title: 'AI shortlisting', desc: 'CV screening and candidate ranking done automatically — save 10+ hours per hire.' },
-              { icon: '🌍', title: 'Global reach', desc: 'Access candidates from 50+ countries actively looking for work right now.' },
-              { icon: '⚡', title: 'Speed to hire', desc: 'Average time-to-shortlist under 24 hours. Traditional agencies take weeks.' },
-              { icon: '💰', title: 'No placement fees', desc: 'Flat monthly subscription. No percentage-of-salary surprises ever.' },
-            ].map(item => (
-              <div key={item.title} style={{ background: '#072E16', border: '1.5px solid #1A4A2A', borderRadius: 16, padding: 24, textAlign: 'left' }}>
-                <div style={{ fontSize: 28, marginBottom: 12 }}>{item.icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#C8E600', marginBottom: 8 }}>{item.title}</div>
-                <div style={{ fontSize: 12, color: '#5A9A6A', lineHeight: 1.7 }}>{item.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* FOOTER */}
-      <footer style={{ background: '#052A14', borderTop: '1px solid #0D4A20', padding: '24px', textAlign: 'center' }}>
-        <span style={{ fontSize: 13, fontWeight: 800 }}>
-          <span style={{ color: '#FFFFFF' }}>job</span>
-          <span style={{ color: '#C8E600' }}>sesame</span>
-        </span>
-        <div style={{ fontSize: 11, color: '#1A4A2A', marginTop: 8 }}>© 2025 Jobsesame</div>
-      </footer>
     </main>
   );
 }

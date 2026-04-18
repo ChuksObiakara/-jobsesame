@@ -8,6 +8,7 @@ const PHOTOS = [
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
   'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&h=80&fit=crop&crop=face',
 ];
 
 export default function Home() {
@@ -90,7 +91,7 @@ export default function Home() {
   };
 
   const faqs = [
-    { q: "Is Jobsesame really free?", a: "Yes — you get 3 free AI CV rewrites and Quick Apply credits with no credit card required. After your free credits you can buy a pack of 10 for R185 or go unlimited with Pro at R370 per month." },
+    { q: "Is Jobsesame really free?", a: "Yes — you get 3 free AI CV rewrites and Quick Apply credits with no credit card required. After your free credits you can buy a pack of 10 for R99 or go unlimited with Pro at R249 per month." },
     { q: "How does the AI rewrite my CV?", a: "You upload your CV once. When you click Quick Apply on any job our AI reads the full job description and rewrites your CV in 30 seconds to match exactly what that employer is looking for — adding the right keywords, restructuring your experience, and optimising for ATS systems." },
     { q: "What is an ATS system?", a: "ATS stands for Applicant Tracking System. It is software that most companies use to automatically screen CVs before a human ever sees them. 8 out of 10 CVs are rejected by ATS. Jobsesame rewrites your CV to pass these systems automatically." },
     { q: "Will my real experience and company names be changed?", a: "Never. We only rewrite how your experience is described — not the facts. Your real company names, job titles, dates and qualifications are always preserved. We just make them sound better and add the right keywords." },
@@ -513,9 +514,9 @@ export default function Home() {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 14, marginBottom: 14 }}>
             {[
-              { photo: PHOTOS[3], name: "Thabo N.", result: "Got hired in 3 weeks", quote: "I applied to 30 jobs manually for 4 months. Zero responses. After Jobsesame I had 4 interviews in 10 days. The AI knew exactly what recruiters wanted to see." },
+              { photo: PHOTOS[5], name: "Thabo N.", result: "Got hired in 3 weeks", quote: "I applied to 30 jobs manually for 4 months. Zero responses. After Jobsesame I had 4 interviews in 10 days. The AI knew exactly what recruiters wanted to see." },
               { photo: PHOTOS[0], name: "Amara D.", result: "ATS score: 38% → 91%", quote: "My CV was good. Jobsesame made it exceptional. The ATS score went from 38 to 91 percent. I got a callback within 48 hours." },
-              { photo: PHOTOS[2], name: "Chioma O.", result: "Relocated internationally, hired", quote: "I was relocating and had no idea what employers there wanted. Jobsesame rewrote my CV perfectly for the market. I got the job." },
+              { photo: PHOTOS[1], name: "James K.", result: "Relocated internationally, hired", quote: "I was relocating and had no idea what employers there wanted. Jobsesame rewrote my CV perfectly for the market. I got the job." },
             ].map(t => (
               <div key={t.name} className="hov-lift" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "28px 22px" }}>
                 <div style={{ display: "flex", gap: 2, marginBottom: 14 }}>
@@ -555,8 +556,8 @@ export default function Home() {
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 14, alignItems: "start" }}>
             {[
               { name: "Free", price: "R0", usdPrice: "$0", per: " forever", desc: "Get started instantly", features: ["3 Quick Apply credits", "AI CV analysis", "ATS score included", "Browse 495,000+ jobs", "No card needed"], popular: false, btn: "Get started free" },
-              { name: "Credits", price: "R185", usdPrice: "$10", per: " per pack", desc: "Pay as you go", features: ["10 Quick Apply credits", "Credits never expire", "AI CV rewrite per job", "Cover letter generation", "All job categories"], popular: false, btn: "Buy credits" },
-              { name: "Pro", price: "R370", usdPrice: "$20", per: " per month", desc: "For serious job seekers", features: ["Unlimited Quick Apply", "Unlimited CV rewrites", "Priority support", "Cover letters included", "Application tracking"], popular: true, btn: "Go Pro" },
+              { name: "Credits", price: "R99", usdPrice: "$5", per: " per pack", desc: "Pay as you go", features: ["10 Quick Apply credits", "Credits never expire", "AI CV rewrite per job", "Cover letter generation", "All job categories"], popular: false, btn: "Buy credits" },
+              { name: "Pro", price: "R249", usdPrice: "$14", per: " per month", desc: "For serious job seekers", features: ["Unlimited Quick Apply", "Unlimited CV rewrites", "Priority support", "Cover letters included", "Application tracking"], popular: true, btn: "Go Pro" },
             ].map(p => (
               <div key={p.name} style={{ background: p.popular ? "rgba(200,230,0,0.05)" : "rgba(255,255,255,0.03)", border: `1.5px solid ${p.popular ? "rgba(200,230,0,0.35)" : "rgba(255,255,255,0.07)"}`, borderRadius: 20, padding: "28px 22px", position: "relative" }}>
                 {p.popular && <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: "#C8E600", color: "#052A14", fontSize: 10, fontWeight: 800, padding: "4px 16px", borderRadius: 99, whiteSpace: "nowrap" }}>MOST POPULAR</div>}
