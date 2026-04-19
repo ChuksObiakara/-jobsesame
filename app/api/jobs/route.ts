@@ -13,8 +13,12 @@ async function fetchJSearch(query: string, page: string): Promise<any[]> {
       },
       next: { revalidate: 300 },
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.warn(`JSearch error ${res.status}: ${res.statusText} — subscription may be inactive`);
+      return [];
+    }
     const data = await res.json();
+    if (data.message) console.warn('JSearch API message:', data.message);
     return (data.data || []).map((job: any) => ({
       id: `jsearch-${job.job_id}`,
       title: job.job_title || '',
@@ -26,6 +30,38 @@ async function fetchJSearch(query: string, page: string): Promise<any[]> {
       salary: '',
       category: 'General',
       level: job.job_employment_type || 'FULLTIME',
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function fetchAdzuna(query: string, country: string): Promise<any[]> {
+  const appId = process.env.ADZUNA_APP_ID;
+  const apiKey = process.env.ADZUNA_API_KEY;
+  if (!appId || !apiKey) return [];
+  try {
+    const params = new URLSearchParams({
+      app_id: appId, app_key: apiKey,
+      results_per_page: '20', what: query,
+    });
+    const res = await fetch(
+      `https://api.adzuna.com/v1/api/jobs/${country}/search/1?${params}`,
+      { next: { revalidate: 300 } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.results || []).map((job: any) => ({
+      id: `adzuna-${country}-${job.id}`,
+      title: job.title || '',
+      company: job.company?.display_name || 'Company',
+      location: job.location?.display_name || country.toUpperCase(),
+      description: (job.description || '').substring(0, 200) + '...',
+      url: job.redirect_url || '#',
+      created: '',
+      salary: job.salary_min ? `${Math.round(job.salary_min)}${job.salary_max ? `–${Math.round(job.salary_max)}` : ''}` : '',
+      category: job.category?.label || 'General',
+      level: job.contract_time || 'full_time',
     }));
   } catch {
     return [];
@@ -97,17 +133,18 @@ export async function GET(request: NextRequest) {
   // ── No location filter: return global results ────────────────────────────
   if (!location) {
     try {
-      const [museRes, jsearchJobs] = await Promise.all([
+      const [museRes, jsearchJobs, adzunaJobs] = await Promise.all([
         fetch(
           `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
           { headers: { Accept: 'application/json' }, next: { revalidate: 300 } }
         ),
         fetchJSearch(query, page),
+        fetchAdzuna(query, 'gb'),
       ]);
       if (!museRes.ok) throw new Error(`Muse API error: ${museRes.status}`);
       const museData = await museRes.json();
       const museJobs = (museData.results || []).map(mapJob);
-      const jobs = dedupe([...museJobs, ...jsearchJobs]).slice(0, 30);
+      const jobs = dedupe([...museJobs, ...jsearchJobs, ...adzunaJobs]).slice(0, 40);
       return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
     } catch (error) {
       return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
@@ -131,11 +168,19 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Map location names to Adzuna country codes
+  const ADZUNA_COUNTRY: Record<string, string> = {
+    'South Africa': 'za', 'United Kingdom': 'gb', 'United States': 'us',
+    'Australia': 'au', 'Canada': 'ca', 'India': 'in', 'Singapore': 'sg',
+  };
+  const adzunaCountry = ADZUNA_COUNTRY[location] || null;
+
   try {
-    // Fetch Muse + JSearch in parallel
-    const [pageResults, jsearchJobs] = await Promise.all([
+    // Fetch Muse + JSearch + Adzuna in parallel
+    const [pageResults, jsearchJobs, adzunaJobs] = await Promise.all([
       Promise.all(cities.map(city => fetchMusePage(city, 1))),
       fetchJSearch(`${query} in ${location}`, page),
+      adzunaCountry ? fetchAdzuna(query, adzunaCountry) : Promise.resolve([]),
     ]);
 
     const allRaw = pageResults.flat().map(mapJob);
@@ -158,8 +203,8 @@ export async function GET(request: NextRequest) {
       combined = [...onTarget, ...page2OnTarget, ...remote, ...page2Remote];
     }
 
-    // Merge JSearch results — they are already location-matched by query
-    const jobs = dedupe([...combined, ...jsearchJobs]).slice(0, 30);
+    // Adzuna and JSearch are location-matched — add them
+    const jobs = dedupe([...adzunaJobs, ...combined, ...jsearchJobs]).slice(0, 40);
     return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
   } catch (error) {
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });

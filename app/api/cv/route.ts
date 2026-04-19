@@ -8,19 +8,34 @@ export async function POST(request: NextRequest) {
     const file = formData.get('cv') as File;
 
     if (!file) {
+      console.error('CV API error: no file in request');
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
+    console.log('File received:', file.name, 'size:', file.size, 'type:', file.type);
+
+    if (file.type !== 'application/pdf') {
+      console.error('CV API error: wrong file type:', file.type);
+      return NextResponse.json({ error: 'Please upload a PDF file' }, { status: 400 });
+    }
+
+    console.log('Converting to base64...');
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const base64 = buffer.toString('base64');
+    console.log('Base64 length:', base64.length);
 
-    const client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('CV API error: ANTHROPIC_API_KEY not set');
+      return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
+    }
 
+    const client = new Anthropic({ apiKey });
+
+    console.log('Calling Anthropic API with model claude-sonnet-4-6...');
     const response = await client.messages.create({
-      model: 'claude-opus-4-5-20251101',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [
         {
@@ -33,7 +48,7 @@ export async function POST(request: NextRequest) {
                 media_type: 'application/pdf',
                 data: base64,
               },
-            },
+            } as any,
             {
               type: 'text',
               text: `Extract information from this CV and return ONLY valid JSON with no other text or markdown.
@@ -69,26 +84,31 @@ Return this exact shape:
       ],
     });
 
+    console.log('Anthropic response received, stop_reason:', response.stop_reason);
+
     const content = response.content[0];
     if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
+      throw new Error(`Unexpected response type: ${content.type}`);
     }
 
+    console.log('Parsing CV JSON...');
     const cleanText = content.text.replace(/```json|```/g, '').trim();
     const cvData = JSON.parse(cleanText);
 
-    console.log('CV API success');
+    console.log('CV API success — extracted name:', cvData.name);
     return NextResponse.json({
       success: true,
       cvData,
       message: 'CV uploaded and analysed successfully',
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('CV upload error — full error object:', error);
+    console.error('CV upload error — message:', error?.message);
+    console.error('CV upload error — status:', error?.status);
     console.error('CV upload error — stringified:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return NextResponse.json(
-      { error: 'Failed to process CV', details: String(error) },
+      { error: 'Failed to process CV', details: error?.message || String(error) },
       { status: 500 }
     );
   }
