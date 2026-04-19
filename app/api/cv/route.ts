@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
 export async function POST(request: NextRequest) {
+  console.log('CV API called');
   try {
     const formData = await request.formData();
     const file = formData.get('cv') as File;
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     });
 
     const response = await client.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-4-5-20251101',
       max_tokens: 2000,
       messages: [
         {
@@ -70,12 +71,13 @@ Return this exact shape:
 
     const content = response.content[0];
     if (content.type !== 'text') {
-      throw new Error('Unexpected response type');
+      throw new Error('Unexpected response type from Claude');
     }
 
     const cleanText = content.text.replace(/```json|```/g, '').trim();
     const cvData = JSON.parse(cleanText);
 
+    console.log('CV API success');
     return NextResponse.json({
       success: true,
       cvData,
@@ -83,7 +85,8 @@ Return this exact shape:
     });
 
   } catch (error) {
-    console.error('CV upload error:', error);
+    console.error('CV upload error — full error object:', error);
+    console.error('CV upload error — stringified:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     return NextResponse.json(
       { error: 'Failed to process CV', details: String(error) },
       { status: 500 }
