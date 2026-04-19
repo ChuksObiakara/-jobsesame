@@ -24,7 +24,8 @@ interface QuickApplyProps {
 export function isAutoApply(url: string): boolean {
   const complexPortals = [
     'linkedin', 'indeed', 'workday', 'greenhouse', 'lever',
-    'smartrecruiters', 'taleo', 'icims', 'successfactors', 'jobvite'
+    'smartrecruiters', 'taleo', 'icims', 'successfactors', 'jobvite',
+    'myworkdayjobs', 'ultipro', 'kronos',
   ];
   return !complexPortals.some(portal => url.toLowerCase().includes(portal));
 }
@@ -57,6 +58,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   const [autoEmailSending, setAutoEmailSending] = useState(false);
   const [autoEmailSent, setAutoEmailSent] = useState(false);
   const [autoEmailError, setAutoEmailError] = useState('');
+  const [autoApplyStatus, setAutoApplyStatus] = useState<'idle' | 'trying' | 'success' | 'manual'>('idle');
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -321,14 +323,9 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
     }
   };
 
-  const handleApply = async () => {
-    if (applyCount >= FREE_LIMIT) { setStep('paywall'); return; }
-    setApplying(true);
-    await downloadCVAsPDF(rewrittenCV);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    window.open(job.url, '_blank');
-    const newCount = applyCount + 1;
-    localStorage.setItem('jobsesame_apply_count', String(newCount));
+  const logApplication = (status: string) => {
+    const currentCount = parseInt(localStorage.getItem('jobsesame_apply_count') || '0');
+    localStorage.setItem('jobsesame_apply_count', String(currentCount + 1));
     const applications = JSON.parse(localStorage.getItem('jobsesame_applications') || '[]');
     applications.push({
       id: Date.now().toString(),
@@ -336,10 +333,49 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       company: job.company,
       location: job.location,
       dateApplied: new Date().toISOString(),
-      status: 'Applied',
+      status,
       jobUrl: job.url,
     });
     localStorage.setItem('jobsesame_applications', JSON.stringify(applications));
+  };
+
+  const handleApply = async () => {
+    if (applyCount >= FREE_LIMIT) { setStep('paywall'); return; }
+    setApplying(true);
+
+    if (autoApply && autoApplyStatus === 'idle') {
+      setAutoApplyStatus('trying');
+      try {
+        const candidateName = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || rewrittenCV?.name || '';
+        const candidateEmail = user?.emailAddresses[0]?.emailAddress || rewrittenCV?.email || '';
+        const candidatePhone = rewrittenCV?.phone || '';
+        const res = await fetch('/api/auto-apply-form', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jobUrl: job.url, candidateName, candidateEmail, candidatePhone, cvData: rewrittenCV }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setAutoApplyStatus('success');
+          logApplication('Auto-Applied');
+          setApplying(false);
+          setStep('done');
+          return;
+        } else {
+          setAutoApplyStatus('manual');
+        }
+      } catch {
+        setAutoApplyStatus('manual');
+      }
+      setApplying(false);
+      return;
+    }
+
+    // Manual / assisted apply
+    await downloadCVAsPDF(rewrittenCV);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    window.open(job.url, '_blank');
+    logApplication('Applied');
     setApplying(false);
     setStep('done');
   };
@@ -511,7 +547,26 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
               📥 <strong style={{color:"#C8E600"}}>Your rewritten CV downloads automatically</strong> when you click Apply — ready to upload on the employer site.
             </div>
 
-            {!autoApply && (
+            {autoApplyStatus === 'trying' && (
+              <div style={{background:"rgba(200,230,0,0.08)",border:"1.5px solid rgba(200,230,0,0.4)",borderRadius:12,padding:16,marginBottom:16,textAlign:"center"}}>
+                <div style={{fontSize:24,marginBottom:8}}>⚙️</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#C8E600",marginBottom:4}}>Attempting auto-apply...</div>
+                <div style={{fontSize:12,color:"#5A9A6A"}}>Filling in the employer&apos;s application form automatically</div>
+              </div>
+            )}
+            {autoApplyStatus === 'manual' && (
+              <div style={{background:"rgba(255,165,0,0.08)",border:"1px solid rgba(255,165,0,0.3)",borderRadius:10,padding:12,marginBottom:16}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#FFA500",marginBottom:6}}>⚠️ Auto-apply could not complete — assisted apply ready</div>
+                <div style={{fontSize:12,color:"#90C898",marginBottom:8}}>The employer site requires manual submission. Your CV is ready to download.</div>
+                {["CV downloads automatically to your device","Employer portal opens in a new tab","Upload your downloaded CV and submit"].map((s,i) => (
+                  <div key={i} style={{display:"flex",gap:8,marginBottom:5,alignItems:"flex-start"}}>
+                    <span style={{background:"#FFA500",color:"#052A14",fontSize:10,fontWeight:800,width:18,height:18,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}}>{i+1}</span>
+                    <span style={{fontSize:12,color:"#90C898"}}>{s}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!autoApply && autoApplyStatus === 'idle' && (
               <div style={{background:"rgba(255,165,0,0.08)",border:"1px solid rgba(255,165,0,0.3)",borderRadius:10,padding:12,marginBottom:16}}>
                 <div style={{fontSize:12,fontWeight:700,color:"#FFA500",marginBottom:8}}>🎯 Assisted apply — 3 steps</div>
                 {["CV downloads automatically to your device","Employer portal opens in a new tab","Upload your downloaded CV and submit"].map((s,i) => (
@@ -551,9 +606,17 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
             <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
               <button
                 onClick={handleApply}
-                disabled={applying}
-                style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"13px 20px",borderRadius:99,border:"none",cursor:applying?"default":"pointer",opacity:applying?0.8:1}}>
-                {applying ? '📥 Downloading CV + Opening job...' : autoApply ? '⚡ Apply now — CV downloads automatically' : '🎯 Apply + Download CV'}
+                disabled={applying || autoApplyStatus === 'trying'}
+                style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"13px 20px",borderRadius:99,border:"none",cursor:(applying||autoApplyStatus==='trying')?"default":"pointer",opacity:(applying||autoApplyStatus==='trying')?0.7:1}}>
+                {autoApplyStatus === 'trying'
+                  ? '⚙️ Attempting auto-apply...'
+                  : applying
+                    ? '📥 Downloading CV + Opening job...'
+                    : autoApplyStatus === 'manual'
+                      ? '🎯 Apply manually — Download CV + Open job'
+                      : autoApply
+                        ? '⚡ Auto-apply now'
+                        : '🎯 Apply + Download CV'}
               </button>
             </div>
             <div style={{marginTop:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -569,11 +632,24 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
 
         {step === 'done' && (
           <div style={{textAlign:"center",padding:"24px 0"}}>
-            <div style={{fontSize:48,marginBottom:16}}>🎉</div>
-            <h3 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>CV downloaded — Application opened</h3>
-            <p style={{fontSize:14,color:"#5A9A6A",marginBottom:20,lineHeight:1.7}}>
-              Your rewritten CV has been saved to your device. Upload it on the employer site to complete your application.
-            </p>
+            {autoApplyStatus === 'success' ? (
+              <>
+                <div style={{fontSize:48,marginBottom:16}}>✅</div>
+                <h3 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Application submitted automatically</h3>
+                <p style={{fontSize:14,color:"#5A9A6A",marginBottom:8,lineHeight:1.7}}>
+                  No further action needed. Your application was submitted directly to <strong style={{color:"#FFFFFF"}}>{job.company}</strong>.
+                </p>
+                <p style={{fontSize:13,color:"#3A7A4A",marginBottom:20}}>Check your email for any confirmation from the employer.</p>
+              </>
+            ) : (
+              <>
+                <div style={{fontSize:48,marginBottom:16}}>🎉</div>
+                <h3 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>CV downloaded — Application opened</h3>
+                <p style={{fontSize:14,color:"#5A9A6A",marginBottom:20,lineHeight:1.7}}>
+                  Your rewritten CV has been saved to your device. Upload it on the employer site to complete your application.
+                </p>
+              </>
+            )}
             <button onClick={onClose} style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px 28px",borderRadius:99,border:"none",cursor:"pointer"}}>
               Back to jobs
             </button>

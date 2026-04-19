@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
-import QuickApply from '../components/QuickApply';
+import QuickApply, { isAutoApply } from '../components/QuickApply';
 
 interface Job {
   id: number;
@@ -398,6 +398,7 @@ export default function JobsPage() {
                         {activeTab === 'remote' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Remote</span>}
                         {activeTab === 'relocation' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Relocation</span>}
                         {activeTab === 'teaching' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>🎓 Teaching</span>}
+                        {isAutoApply(job.url) && <span style={{fontSize:10,padding:"3px 9px",borderRadius:99,fontWeight:800,background:"rgba(200,230,0,0.12)",color:"#C8E600",border:"1px solid rgba(200,230,0,0.4)",whiteSpace:"nowrap"}}>⚡ Auto-apply</span>}
 
                       </div>
                       <p style={{fontSize:12,color:"#666",lineHeight:1.55,margin:0,display:"-webkit-box" as any,WebkitLineClamp:2,WebkitBoxOrient:"vertical" as any,overflow:"hidden"}}>{job.description}</p>
