@@ -123,6 +123,20 @@ export default function JobsPage() {
     fetchJobs(activeTab, query, location);
   };
 
+  const locationKeywords: Record<string, string[]> = {
+    'South Africa': ['South Africa', 'Johannesburg', 'Cape Town', 'Durban', 'Pretoria'],
+    'United Kingdom': ['London', 'UK', 'United Kingdom', 'England'],
+    'Australia': ['Australia', 'Sydney', 'Melbourne', 'Brisbane'],
+    'Canada': ['Canada', 'Toronto', 'Vancouver', 'Montreal'],
+  };
+
+  const filteredJobs = (() => {
+    if (!location || activeTab !== 'all') return jobs;
+    const keywords = locationKeywords[location];
+    if (!keywords) return jobs.filter(j => j.location.toLowerCase().includes(location.toLowerCase()));
+    return jobs.filter(j => keywords.some(kw => j.location.toLowerCase().includes(kw.toLowerCase())));
+  })();
+
   const calcMatch = (job: Job): number | null => {
     if (!cvSkills.length) return null;
     const text = (job.title + ' ' + job.description).toLowerCase();
@@ -144,7 +158,7 @@ export default function JobsPage() {
   } as React.CSSProperties);
 
   return (
-    <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#F4FCF4",margin:0,padding:0}}>
+    <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#F4FCF4",margin:0,padding:0,overflowX:"hidden",maxWidth:"100vw"}}>
 
       {/* QUICK APPLY MODAL */}
       {selectedJob && (
@@ -229,16 +243,16 @@ export default function JobsPage() {
           <p style={{fontSize:12,color:"#5A9A6A",marginBottom:14,fontStyle:"italic"}}>
             {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : activeTab === 'teaching' ? 'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
           </p>
-          <form onSubmit={handleSearch} style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          <form onSubmit={handleSearch} style={{display:"flex",gap:8,flexDirection:isMobile?"column":"row",flexWrap:isMobile?"nowrap":"wrap"}}>
             <input
               value={query}
               onChange={e=>setQuery(e.target.value)}
               placeholder={activeTab === 'remote' ? "Remote job title or skill..." : activeTab === 'relocation' ? "Job title for abroad..." : activeTab === 'teaching' ? "Teaching subject or country..." : "Job title, skill or keyword..."}
-              style={{flex:1,minWidth:140,padding:"13px 18px",border:"2px solid #C8E600",borderRadius:11,fontSize:14,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}
+              style={{flex:1,minWidth:140,width:isMobile?"100%":"auto",padding:"13px 18px",border:"2px solid #C8E600",borderRadius:11,fontSize:14,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}
             />
             {activeTab === 'all' && (
               <select value={location} onChange={e=>setLocation(e.target.value)}
-                style={{padding:"13px 14px",border:"2px solid #C8E600",borderRadius:11,fontSize:13,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}>
+                style={{padding:"13px 14px",border:"2px solid #C8E600",borderRadius:11,fontSize:13,color:"#052A14",fontWeight:600,outline:"none",background:"#fff",width:isMobile?"100%":"auto"}}>
                 <option value="">Worldwide</option>
                 <option value="South Africa">South Africa</option>
                 <option value="Nigeria">Nigeria</option>
@@ -254,7 +268,7 @@ export default function JobsPage() {
             )}
             {activeTab === 'relocation' && (
               <select value={location} onChange={e=>setLocation(e.target.value)}
-                style={{padding:"13px 14px",border:"2px solid #C8E600",borderRadius:11,fontSize:13,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}>
+                style={{padding:"13px 14px",border:"2px solid #C8E600",borderRadius:11,fontSize:13,color:"#052A14",fontWeight:600,outline:"none",background:"#fff",width:isMobile?"100%":"auto"}}>
                 <option value="">All countries</option>
                 <option value="London">London, UK</option>
                 <option value="Toronto">Toronto, Canada</option>
@@ -266,7 +280,7 @@ export default function JobsPage() {
                 <option value="India">India</option>
               </select>
             )}
-            <button type="submit" style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"13px 28px",borderRadius:11,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+            <button type="submit" style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"13px 28px",borderRadius:11,border:"none",cursor:"pointer",whiteSpace:"nowrap",width:isMobile?"100%":"auto"}}>
               {loading ? 'Searching...' : 'Search jobs'}
             </button>
           </form>
@@ -313,6 +327,12 @@ export default function JobsPage() {
             </span>
           </div>
 
+          {location && activeTab === 'all' && !loading && (
+            <div style={{fontSize:13,color:"#1A5A2A",fontWeight:600,marginBottom:12,padding:"8px 14px",background:"#EAF5EA",borderRadius:99,display:"inline-block"}}>
+              Showing jobs in {location}
+            </div>
+          )}
+
           {loading ? (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               {[...Array(6)].map((_,i)=>(
@@ -337,14 +357,16 @@ export default function JobsPage() {
                 </div>
               ))}
             </div>
-          ) : jobs.length === 0 ? (
+          ) : filteredJobs.length === 0 ? (
             <div style={{textAlign:"center",padding:"60px 0"}}>
-              <div style={{fontSize:16,color:"#2A6A3A",fontWeight:700,marginBottom:8}}>No jobs found — try a different search</div>
+              <div style={{fontSize:16,color:"#2A6A3A",fontWeight:700,marginBottom:8}}>
+                {location && jobs.length > 0 ? `No jobs found in ${location}. Try a different search.` : 'No jobs found — try a different search'}
+              </div>
               <div style={{fontSize:13,color:"#4A8A5A"}}>Change keywords, location or tab</div>
             </div>
           ) : (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              {jobs.map((job,i)=>(
+              {filteredJobs.map((job,i)=>(
                 <div key={job.id} style={{
                   background:i===0?"#FDFFF5":"#fff",
                   border:`1.5px solid ${i===0?"#C8E600":"#D8EED8"}`,
@@ -354,6 +376,8 @@ export default function JobsPage() {
                   flexDirection:isMobile?"column":"row",
                   gap:16,
                   alignItems:"flex-start",
+                  overflow:"hidden",
+                  width:"100%",
                 }}>
                   <div style={{display:"flex",gap:12,flex:1,minWidth:0}}>
                     <div style={{width:44,height:44,borderRadius:11,background:"#EAF5EA",color:"#1A5A2A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0}}>
@@ -381,16 +405,18 @@ export default function JobsPage() {
                   </div>
 
                   {isMobile ? (
-                    <div style={{display:"flex",gap:8,width:"100%",marginTop:4}}>
-                      <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"9px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%",marginTop:4}}>
+                      <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"10px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
                         ⚡ Quick Apply
                       </button>
-                      <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 0",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
-                        View job
-                      </button>
-                      <button onClick={()=>toggleSaveJob(job)} style={{background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 14px",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer",flexShrink:0}}>
-                        🔖
-                      </button>
+                      <div style={{display:"flex",gap:8,width:"100%"}}>
+                        <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 0",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+                          View job
+                        </button>
+                        <button onClick={()=>toggleSaveJob(job)} style={{flex:1,background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 0",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer"}}>
+                          {savedJobs.includes(job.id) ? '🔖 Saved' : '🔖 Save'}
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div style={{display:"flex",flexDirection:"column",gap:7,width:120,flexShrink:0}}>
