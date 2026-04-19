@@ -21,7 +21,7 @@ export default function BlogPage() {
     try {
       const stored = localStorage.getItem('jobsesame_blog_posts');
       if (stored) {
-        const extra = JSON.parse(stored);
+        const extra = JSON.parse(stored).filter((p: any) => !p.status || p.status === 'published');
         setAllPosts([...extra, ...POSTS]);
       }
     } catch {}

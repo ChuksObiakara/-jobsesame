@@ -6,6 +6,7 @@ export interface Post {
   category: string;
   readTime: string;
   content: string;
+  status?: 'published' | 'draft';
 }
 
 export const POSTS: Post[] = [
