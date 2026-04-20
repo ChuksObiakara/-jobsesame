@@ -4,7 +4,7 @@ import { useAuth, UserButton } from '@clerk/nextjs';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
 
 interface Job {
-  id: number;
+  id: string;
   title: string;
   company: string;
   location: string;
@@ -30,13 +30,16 @@ export default function JobsPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const jobsSectionRef = useRef<HTMLDivElement>(null);
   const jobsFetchedRef = useRef(false);
-  const [savedJobs, setSavedJobs] = useState<number[]>(() => {
+  const [savedJobs, setSavedJobs] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('jobsesame_saved_jobs');
-      if (saved) return JSON.parse(saved).map((j: Job) => j.id);
+      if (saved) return JSON.parse(saved).map((j: Job) => String(j.id));
     }
     return [];
   });
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [cvSkills] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -49,15 +52,15 @@ export default function JobsPage() {
   const toggleSaveJob = (job: Job) => {
     const saved = localStorage.getItem('jobsesame_saved_jobs');
     const savedList: Job[] = saved ? JSON.parse(saved) : [];
-    const isAlreadySaved = savedList.some(j => j.id === job.id);
+    const isAlreadySaved = savedList.some(j => String(j.id) === String(job.id));
     let updated: Job[];
     if (isAlreadySaved) {
-      updated = savedList.filter(j => j.id !== job.id);
+      updated = savedList.filter(j => String(j.id) !== String(job.id));
     } else {
       updated = [...savedList, job];
     }
     localStorage.setItem('jobsesame_saved_jobs', JSON.stringify(updated));
-    setSavedJobs(updated.map(j => j.id));
+    setSavedJobs(updated.map(j => String(j.id)));
   };
 
   useEffect(() => {
@@ -74,26 +77,35 @@ export default function JobsPage() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  const fetchJobs = async (tab = 'all', searchQuery = '', loc = '') => {
-    setLoading(true);
+  const fetchJobs = async (tab = 'all', searchQuery = '', loc = '', pageNum = 1, append = false) => {
+    if (append) setLoadingMore(true); else setLoading(true);
     try {
       let url = '';
       if (tab === 'remote') {
-        url = `/api/remote?query=${encodeURIComponent(searchQuery || 'developer')}`;
+        url = `/api/remote?query=${encodeURIComponent(searchQuery || 'developer')}&page=${pageNum}`;
       } else if (tab === 'relocation') {
-        url = `/api/relocation?query=${encodeURIComponent(searchQuery || 'engineer')}`;
+        url = `/api/relocation?query=${encodeURIComponent(searchQuery || 'engineer')}&page=${pageNum}`;
       } else if (tab === 'teaching') {
-        url = `/api/teaching`;
+        url = `/api/teaching?page=${pageNum}`;
       } else {
-        url = `/api/jobs?query=${encodeURIComponent(searchQuery || 'software engineer')}&location=${encodeURIComponent(loc)}`;
+        url = `/api/jobs?query=${encodeURIComponent(searchQuery || 'software engineer')}&location=${encodeURIComponent(loc)}&page=${pageNum}`;
       }
       const res = await fetch(url);
       const data = await res.json();
-      setJobs(data.jobs || []);
+      const newJobs: Job[] = data.jobs || [];
+      if (append) {
+        setJobs(prev => {
+          const existingIds = new Set(prev.map(j => j.id));
+          return [...prev, ...newJobs.filter(j => !existingIds.has(j.id))];
+        });
+      } else {
+        setJobs(newJobs);
+      }
       setTotal(data.total || 0);
+      setHasMore(newJobs.length >= 20);
     } catch {
     }
-    setLoading(false);
+    if (append) setLoadingMore(false); else setLoading(false);
   };
 
   useEffect(() => {
@@ -103,7 +115,7 @@ export default function JobsPage() {
       ([entry]) => {
         if (entry.isIntersecting && !jobsFetchedRef.current) {
           jobsFetchedRef.current = true;
-          fetchJobs('all');
+          fetchJobs('all', '', '', 1, false);
         }
       },
       { rootMargin: '300px' }
@@ -115,12 +127,20 @@ export default function JobsPage() {
 
   const handleTabChange = (tab: 'all' | 'remote' | 'relocation' | 'teaching') => {
     setActiveTab(tab);
-    fetchJobs(tab, query, location);
+    setPage(1);
+    fetchJobs(tab, query, location, 1, false);
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchJobs(activeTab, query, location);
+    setPage(1);
+    fetchJobs(activeTab, query, location, 1, false);
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchJobs(activeTab, query, location, nextPage, true);
   };
 
   const locationKeywords: Record<string, string[]> = {
@@ -434,6 +454,17 @@ export default function JobsPage() {
                   )}
                 </div>
               ))}
+              {hasMore && !loading && filteredJobs.length > 0 && (
+                <div style={{textAlign:"center",paddingTop:16}}>
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    style={{background:"#052A14",color:"#C8E600",fontSize:13,fontWeight:800,padding:"12px 36px",borderRadius:99,border:"2px solid #C8E600",cursor:loadingMore?"not-allowed":"pointer",opacity:loadingMore?0.7:1}}
+                  >
+                    {loadingMore ? 'Loading...' : 'Load More Jobs'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

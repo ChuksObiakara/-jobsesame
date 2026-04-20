@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 
 interface Job {
-  id: number;
+  id: string | number;
   title: string;
   company: string;
   location: string;
