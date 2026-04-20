@@ -3,12 +3,12 @@ import Anthropic from '@anthropic-ai/sdk';
 
 export const dynamic = 'force-dynamic';
 
-const CV_PROMPT = 'Extract information from this CV and return ONLY valid JSON with no markdown or extra text. Use this exact structure: {"name":"full name","email":"email","phone":"phone","location":"city country","title":"current job title","summary":"2 sentence professional summary","skills":["skill1","skill2"],"experience_years":5,"education":"highest qualification","languages":["English"],"experience":[{"title":"exact job title","company":"exact company name","duration":"X years","bullets":["key achievement"]}],"job_search_keywords":["keyword1","keyword2"]}';
+const CV_PROMPT =
+  'Extract information from this CV and return ONLY valid JSON with no markdown or extra text. Use this exact structure:\n{"name":"full name","email":"email","phone":"phone","location":"city country","title":"current job title","summary":"2 sentence professional summary","skills":["skill1","skill2"],"experience_years":5,"education":"highest qualification","languages":["English"],"experience":[{"title":"exact job title","company":"exact company name","duration":"X years","bullets":["key achievement"]}],"job_search_keywords":["keyword1","keyword2"]}';
 
 export async function POST(request: NextRequest) {
   console.log('=== CV UPLOAD CALLED ===');
-  console.log('ANTHROPIC_API_KEY exists:', !!process.env.ANTHROPIC_API_KEY);
-  console.log('ANTHROPIC_API_KEY length:', process.env.ANTHROPIC_API_KEY?.length);
+  console.log('API key present:', !!process.env.ANTHROPIC_API_KEY, 'len:', process.env.ANTHROPIC_API_KEY?.length);
 
   try {
     const formData = await request.formData();
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    console.log('File received:', file.name, file.size, 'bytes, type:', file.type);
+    console.log('File:', file.name, file.size, 'bytes, type:', file.type);
 
     const isPdf =
       file.type === 'application/pdf' ||
@@ -38,23 +38,25 @@ export async function POST(request: NextRequest) {
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    // ── Strategy 1: extract text with pdf-parse, send as plain text ──────────
+    // ── Strategy 1: extract text via internal pdf-parse (no test-file side-effect) ──
     let pdfText = '';
     try {
-      // Dynamic require avoids ESM/CJS import conflicts at build time
-      const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
-      const parsed = await pdfParse(buffer);
+      // Use internal module directly to avoid the ENOENT test-data loading bug in pdf-parse@1.x
+      const pdfParseInternal = require('pdf-parse/lib/pdf-parse.js') as (
+        buf: Buffer
+      ) => Promise<{ text: string; numpages: number }>;
+      const parsed = await pdfParseInternal(buffer);
       pdfText = (parsed.text || '').trim();
-      console.log('pdf-parse extracted', pdfText.length, 'chars from', parsed.numpages, 'pages');
+      console.log('pdf-parse extracted', pdfText.length, 'chars,', parsed.numpages, 'pages');
     } catch (parseErr: any) {
-      console.warn('pdf-parse failed:', parseErr.message, '— will use document API');
+      console.warn('pdf-parse failed:', parseErr.message);
     }
 
     let response;
 
     if (pdfText.length >= 100) {
-      // Enough text — send directly, no document API needed
-      console.log('Using text extraction path');
+      // Sufficient text — send to Claude as plain text (fastest, most reliable)
+      console.log('Path: text extraction →', pdfText.length, 'chars');
       response = await client.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
@@ -64,8 +66,8 @@ export async function POST(request: NextRequest) {
         }],
       });
     } else {
-      // Fallback: send raw PDF via Anthropic document API (handles scanned/image PDFs)
-      console.log('Using document API fallback (text too short or extraction failed)');
+      // Fallback: send raw PDF via document API (handles scanned/image PDFs)
+      console.log('Path: document API (text too short:', pdfText.length, ')');
       const base64 = buffer.toString('base64');
       response = await client.messages.create({
         model: 'claude-sonnet-4-6',
@@ -83,40 +85,43 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log('Claude response received');
-
     const content = response.content[0];
     if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
 
-    const cleanText = content.text.replace(/```json|```/g, '').trim();
-    console.log('Response preview:', cleanText.substring(0, 120));
+    const rawText = content.text.replace(/```json|```/g, '').trim();
+    console.log('Claude response preview:', rawText.substring(0, 120));
 
-    const cvData = JSON.parse(cleanText);
-    console.log('CV parsed successfully for:', cvData.name);
+    const cvData = JSON.parse(rawText);
+    console.log('Parsed successfully:', cvData.name);
 
     return NextResponse.json({ success: true, cvData });
 
   } catch (error: any) {
-    console.error('CV upload error:', error?.message, 'status:', error?.status);
+    const msg = error?.message || '';
+    const status = error?.status;
+    console.error('CV upload error — message:', msg, '| status:', status, '| type:', error?.error?.type);
 
-    if (error?.message?.includes('not valid') || error?.message?.includes('Invalid PDF')) {
+    if (msg.includes('not valid') || msg.includes('Invalid PDF') || msg.includes('bad XRef')) {
       return NextResponse.json(
-        { error: 'Could not read this PDF. Try re-exporting it from Word or Google Docs.' },
+        { error: 'Could not read this PDF. Try re-exporting it from Word or Google Docs as a new PDF.' },
         { status: 400 }
       );
     }
-    if (error?.message?.includes('JSON') || error?.message?.includes('parse')) {
+    if (msg.includes('JSON') || msg.includes('Unexpected token') || msg.includes('parse')) {
       return NextResponse.json(
-        { error: 'AI could not extract CV data. Please ensure your CV has clear text sections.' },
+        { error: 'AI could not extract data from your CV. Ensure the PDF has selectable text (not a scanned image).' },
         { status: 500 }
       );
     }
-    if (error?.status === 401) {
+    if (status === 401) {
       return NextResponse.json({ error: 'API configuration error. Contact support.' }, { status: 500 });
+    }
+    if (status === 529 || msg.includes('overloaded')) {
+      return NextResponse.json({ error: 'AI is busy right now. Please try again in a moment.' }, { status: 503 });
     }
 
     return NextResponse.json(
-      { error: 'Failed to process CV. Please try again.', details: error?.message },
+      { error: 'Failed to process CV. Please try again.', details: msg },
       { status: 500 }
     );
   }
