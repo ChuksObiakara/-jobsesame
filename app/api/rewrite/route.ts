@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     // ── Cover letter mode ─────────────────────────────────────────────────────
     if (coverLetter) {
       const response = await client.messages.create({
-        model: 'claude-opus-4-6',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         messages: [
           {
@@ -58,7 +58,7 @@ Description: ${jobDescription || 'Not provided'}`,
 
     // ── CV rewrite mode ───────────────────────────────────────────────────────
     const response = await client.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [
         {
