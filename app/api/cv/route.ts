@@ -10,16 +10,15 @@ export async function POST(request: NextRequest) {
     const file = formData.get('cv') as File;
 
     if (!file) {
-      console.log('No file received');
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
     console.log('File received:', file.name, file.size, file.type);
 
-    // Accept PDFs by extension too — Windows often sends application/octet-stream
-    const isPdf = file.type === 'application/pdf' ||
-                  file.type === 'application/octet-stream' ||
-                  file.name.toLowerCase().endsWith('.pdf');
+    const isPdf =
+      file.type === 'application/pdf' ||
+      file.type === 'application/octet-stream' ||
+      file.name.toLowerCase().endsWith('.pdf');
 
     if (!isPdf) {
       return NextResponse.json({ error: 'Please upload a PDF file' }, { status: 400 });
@@ -33,13 +32,11 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     const base64 = buffer.toString('base64');
 
-    console.log('Base64 conversion done, length:', base64.length);
+    console.log('Base64 length:', base64.length);
 
-    const client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    console.log('Calling Anthropic API...');
+    console.log('Calling Claude API...');
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
@@ -65,38 +62,31 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    console.log('Anthropic response received');
+    console.log('Claude response received');
 
     const content = response.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Anthropic');
-    }
+    if (content.type !== 'text') throw new Error('Unexpected response type');
 
     const cleanText = content.text.replace(/```json|```/g, '').trim();
-    console.log('Clean text preview:', cleanText.substring(0, 100));
+    console.log('Response preview:', cleanText.substring(0, 100));
 
     const cvData = JSON.parse(cleanText);
     console.log('CV parsed successfully:', cvData.name);
 
-    return NextResponse.json({
-      success: true,
-      cvData,
-    });
+    return NextResponse.json({ success: true, cvData });
 
   } catch (error: any) {
-    console.error('CV upload error:', error?.message, error?.status, error?.error);
+    console.error('CV upload error:', error?.message, error?.status);
 
-    // Specific error messages for known failure modes
     if (error?.message?.includes('not valid') || error?.message?.includes('invalid')) {
       return NextResponse.json(
-        { error: 'Could not read this PDF. Try re-saving it or converting to PDF again.' },
+        { error: 'Could not read this PDF. Please try re-saving it as a PDF and uploading again.' },
         { status: 400 }
       );
     }
     if (error?.status === 401) {
-      return NextResponse.json({ error: 'API key error. Contact support.' }, { status: 500 });
+      return NextResponse.json({ error: 'API configuration error. Contact support.' }, { status: 500 });
     }
-
     return NextResponse.json(
       { error: 'Failed to process CV. Please try again.', details: error?.message },
       { status: 500 }
