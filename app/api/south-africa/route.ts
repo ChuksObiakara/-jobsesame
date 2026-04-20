@@ -112,23 +112,26 @@ async function fetchMuse(): Promise<any[]> {
   return jobs;
 }
 
-// ── Source 3: Adzuna ZA ───────────────────────────────────────────────────────
+// ── Source 3: Adzuna ZA (pages 1 + 2) ────────────────────────────────────────
 
 async function fetchAdzunaZA(query: string): Promise<any[]> {
   const appId = process.env.ADZUNA_APP_ID;
   const apiKey = process.env.ADZUNA_API_KEY;
   if (!appId || !apiKey) return [];
   try {
-    const params = new URLSearchParams({
+    const makeParams = () => new URLSearchParams({
       app_id: appId,
       app_key: apiKey,
-      results_per_page: '20',
+      results_per_page: '50',
       what: query,
-    });
-    const res = await fetch(`https://api.adzuna.com/v1/api/jobs/za/search/1?${params}`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.results || []).map((job: any) => ({
+    }).toString();
+    const [res1, res2] = await Promise.all([
+      fetch(`https://api.adzuna.com/v1/api/jobs/za/search/1?${makeParams()}`),
+      fetch(`https://api.adzuna.com/v1/api/jobs/za/search/2?${makeParams()}`),
+    ]);
+    const d1 = res1.ok ? await res1.json() : { results: [] };
+    const d2 = res2.ok ? await res2.json() : { results: [] };
+    return [...(d1.results || []), ...(d2.results || [])].map((job: any) => ({
       id: `adzuna-za-${job.id}`,
       title: job.title || '',
       company: job.company?.display_name || 'Company',
@@ -145,23 +148,62 @@ async function fetchAdzunaZA(query: string): Promise<any[]> {
   }
 }
 
+// ── Source 4: JSearch — "query South Africa" (3 pages) ───────────────────────
+
+async function fetchJSearchSA(query: string): Promise<any[]> {
+  const apiKey = process.env.RAPIDAPI_KEY;
+  if (!apiKey) return [];
+  const searchQuery = `${query} South Africa`;
+  const fetchPage = async (page: number) => {
+    try {
+      const params = new URLSearchParams({ query: searchQuery, page: String(page), num_pages: '1' });
+      const res = await fetch(`https://jsearch.p.rapidapi.com/search?${params}`, {
+        headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'jsearch.p.rapidapi.com' },
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data || []).map((job: any) => ({
+        id: `jsearch-sa-${job.job_id}`,
+        title: job.job_title || '',
+        company: job.employer_name || 'Company',
+        location: [job.job_city, job.job_country].filter(Boolean).join(', ') || 'South Africa',
+        description: (job.job_description || '').substring(0, 220) + '...',
+        url: job.job_apply_link || job.job_google_link || '#',
+        salary: job.job_min_salary ? `R${Math.round(job.job_min_salary)}` : '',
+        category: 'General',
+        level: job.job_employment_type || 'FULLTIME',
+        type: 'south-africa',
+      }));
+    } catch {
+      return [];
+    }
+  };
+  const [p1, p2, p3] = await Promise.all([fetchPage(1), fetchPage(2), fetchPage(3)]);
+  return [...p1, ...p2, ...p3];
+}
+
 // ── Handler ──────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('query') || 'software engineer';
 
   try {
-    const [remotiveJobs, museJobs, adzunaJobs] = await Promise.all([
+    const [remotiveJobs, museJobs, adzunaJobs, jsearchJobs] = await Promise.all([
       fetchRemotive(query),
       fetchMuse(),
       fetchAdzunaZA(query),
+      fetchJSearchSA(query),
     ]);
 
-    // Combine, deduplicate, then filter strictly to African jobs only
-    const combined = dedupe([...adzunaJobs, ...museJobs, ...remotiveJobs]);
-    const africanJobs = combined.filter(isAfricanJob);
+    // Adzuna and JSearch results are already SA-specific — no need to filter them
+    const saJobs = dedupe([...adzunaJobs, ...jsearchJobs]);
 
-    return NextResponse.json({ jobs: africanJobs, total: africanJobs.length, source: 'Multi-source' });
+    // Remotive/Muse still go through the African keyword filter
+    const filtered = dedupe([...museJobs, ...remotiveJobs]).filter(isAfricanJob);
+
+    const all = dedupe([...saJobs, ...filtered]).slice(0, 150);
+
+    return NextResponse.json({ jobs: all, total: all.length, source: 'Multi-source' });
   } catch (err) {
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch African jobs' });
   }

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import QuickApply from '../components/QuickApply';
 import CoverLetter from '../components/CoverLetter';
+import { jsPDF } from 'jspdf';
 
 interface Application {
   id: string;
@@ -244,6 +245,124 @@ export default function Dashboard() {
       else { setRewriteError(data.error || 'Failed to rewrite CV'); }
     } catch { setRewriteError('Something went wrong. Please try again.'); }
     finally { setRewriting(false); }
+  };
+
+  const downloadCV = () => {
+    const cv = rewrittenCV;
+    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const margin = 18;
+    const contentW = pageW - margin * 2;
+    let y = 0;
+
+    // Dark green header bar
+    doc.setFillColor(5, 42, 20);
+    doc.rect(0, 0, pageW, 44, 'F');
+
+    // Name — white
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.text(cv.name || '', margin, 17);
+
+    // Title — lemon yellow
+    doc.setFontSize(12);
+    doc.setTextColor(200, 230, 0);
+    doc.text(cv.title || '', margin, 27);
+
+    // Contact row — soft green
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(160, 210, 170);
+    const contact = [cv.location, cv.email, cv.phone].filter(Boolean).join('   ·   ');
+    doc.text(contact, margin, 37);
+
+    y = 54;
+
+    const sectionHeader = (title: string) => {
+      if (y > 268) { doc.addPage(); y = 18; }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(5, 42, 20);
+      doc.text(title.toUpperCase(), margin, y);
+      doc.setDrawColor(5, 42, 20);
+      doc.line(margin, y + 1.5, pageW - margin, y + 1.5);
+      y += 7;
+    };
+
+    // Summary
+    if (cv.summary) {
+      sectionHeader('Professional Summary');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      const lines = doc.splitTextToSize(cv.summary, contentW);
+      doc.text(lines, margin, y);
+      y += (lines as string[]).length * 5.2 + 8;
+    }
+
+    // Skills
+    if (cv.skills?.length) {
+      sectionHeader('Skills');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      const skillLines = doc.splitTextToSize((cv.skills as string[]).join('   ·   '), contentW);
+      doc.text(skillLines, margin, y);
+      y += (skillLines as string[]).length * 5.2 + 8;
+    }
+
+    // Experience
+    if (cv.experience?.length) {
+      sectionHeader('Experience');
+      (cv.experience as any[]).forEach((exp) => {
+        if (y > 268) { doc.addPage(); y = 18; }
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(5, 42, 20);
+        doc.text(exp.title || '', margin, y);
+        y += 5.5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`${exp.company || ''}   ·   ${exp.duration || ''}`, margin, y);
+        y += 5;
+        (exp.bullets || []).forEach((b: string) => {
+          if (y > 275) { doc.addPage(); y = 18; }
+          doc.setFontSize(9);
+          doc.setTextColor(50, 50, 50);
+          const bLines = doc.splitTextToSize(`\u2022  ${b}`, contentW - 4);
+          doc.text(bLines, margin + 2, y);
+          y += (bLines as string[]).length * 4.6;
+        });
+        y += 6;
+      });
+    }
+
+    // Education
+    if (cv.education) {
+      if (y > 262) { doc.addPage(); y = 18; }
+      sectionHeader('Education');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      doc.text(cv.education, margin, y);
+      y += 11;
+    }
+
+    // Languages
+    if (cv.languages?.length) {
+      if (y > 268) { doc.addPage(); y = 18; }
+      sectionHeader('Languages');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      doc.text((cv.languages as string[]).join('   ·   '), margin, y);
+    }
+
+    const safeName = (cv.name || 'CV').replace(/\s+/g, '_');
+    const safeJob = (jobTitle || 'rewritten').replace(/\s+/g, '_');
+    doc.save(`${safeName}_${safeJob}.pdf`);
   };
 
   const copyReferralLink = () => {
@@ -779,12 +898,12 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
-                <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-                  <div>
-                    <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Unlock Pro to download as PDF</div>
-                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. {currency==='ZAR'?'R249':'$14'}/month.</div>
-                  </div>
-                  <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                  <button onClick={downloadCV} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="#052A14" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    Download PDF
+                  </button>
+                  <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"11px 24px",borderRadius:99,border:"1px solid #1A5A2A",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
                     {paying?'Loading...':'Upgrade to Pro'}
                   </button>
                 </div>

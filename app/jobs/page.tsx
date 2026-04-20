@@ -87,6 +87,8 @@ export default function JobsPage() {
         url = `/api/relocation?query=${encodeURIComponent(searchQuery || 'engineer')}&page=${pageNum}`;
       } else if (tab === 'teaching') {
         url = `/api/teaching?page=${pageNum}`;
+      } else if (tab === 'all' && loc === 'South Africa') {
+        url = `/api/south-africa?query=${encodeURIComponent(searchQuery || 'software engineer')}`;
       } else {
         url = `/api/jobs?query=${encodeURIComponent(searchQuery || 'software engineer')}&location=${encodeURIComponent(loc)}&page=${pageNum}`;
       }
@@ -102,7 +104,7 @@ export default function JobsPage() {
         setJobs(newJobs);
       }
       setTotal(data.total || 0);
-      setHasMore(newJobs.length >= 20);
+      setHasMore(newJobs.length >= 20 && loc !== 'South Africa');
     } catch {
     }
     if (append) setLoadingMore(false); else setLoading(false);
@@ -129,6 +131,12 @@ export default function JobsPage() {
     setActiveTab(tab);
     setPage(1);
     fetchJobs(tab, query, location, 1, false);
+  };
+
+  const handleLocationChange = (newLoc: string) => {
+    setLocation(newLoc);
+    setPage(1);
+    fetchJobs(activeTab, query, newLoc, 1, false);
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -271,7 +279,7 @@ export default function JobsPage() {
               style={{flex:1,minWidth:140,width:isMobile?"100%":"auto",padding:"13px 18px",border:"2px solid #C8E600",borderRadius:11,fontSize:14,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}
             />
             {activeTab === 'all' && (
-              <select value={location} onChange={e=>setLocation(e.target.value)}
+              <select value={location} onChange={e=>handleLocationChange(e.target.value)}
                 style={{padding:"13px 14px",border:"2px solid #C8E600",borderRadius:11,fontSize:13,color:"#052A14",fontWeight:600,outline:"none",background:"#fff",width:isMobile?"100%":"auto"}}>
                 <option value="">Worldwide</option>
                 <option value="South Africa">South Africa</option>
