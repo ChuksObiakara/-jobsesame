@@ -200,8 +200,9 @@ export default function Dashboard() {
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
-    if (file.type !== 'application/pdf') { setError('Please upload a PDF file only'); return; }
-    if (file.size > 10 * 1024 * 1024) { setError('File too large. Maximum 10MB'); return; }
+    const isPdf = file.type === 'application/pdf' || file.type === 'application/octet-stream' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) { setError('Please upload a PDF file only'); return; }
+    if (file.size > 15 * 1024 * 1024) { setError('File too large. Maximum 15MB'); return; }
     setUploading(true); setError('');
     try {
       const formData = new FormData();

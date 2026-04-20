@@ -16,8 +16,17 @@ export async function POST(request: NextRequest) {
 
     console.log('File received:', file.name, file.size, file.type);
 
-    if (file.type !== 'application/pdf') {
+    // Accept PDFs by extension too — Windows often sends application/octet-stream
+    const isPdf = file.type === 'application/pdf' ||
+                  file.type === 'application/octet-stream' ||
+                  file.name.toLowerCase().endsWith('.pdf');
+
+    if (!isPdf) {
       return NextResponse.json({ error: 'Please upload a PDF file' }, { status: 400 });
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large. Maximum 15MB.' }, { status: 400 });
     }
 
     const bytes = await file.arrayBuffer();
@@ -75,7 +84,19 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('CV upload error details:', error?.message, error?.status, error?.error);
+    console.error('CV upload error:', error?.message, error?.status, error?.error);
+
+    // Specific error messages for known failure modes
+    if (error?.message?.includes('not valid') || error?.message?.includes('invalid')) {
+      return NextResponse.json(
+        { error: 'Could not read this PDF. Try re-saving it or converting to PDF again.' },
+        { status: 400 }
+      );
+    }
+    if (error?.status === 401) {
+      return NextResponse.json({ error: 'API key error. Contact support.' }, { status: 500 });
+    }
+
     return NextResponse.json(
       { error: 'Failed to process CV. Please try again.', details: error?.message },
       { status: 500 }
