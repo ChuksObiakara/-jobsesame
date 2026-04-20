@@ -184,6 +184,9 @@ export default function Home() {
           {!isMobile && !isSignedIn && (
             <a href="/sign-in" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500, textDecoration: "none", padding: "8px 12px" }}>Sign in</a>
           )}
+          {!isMobile && isSignedIn && (
+            <a href="/dashboard" style={{ fontSize: 13, color: "#C8E600", fontWeight: 700, textDecoration: "none", padding: "8px 16px", background: "rgba(200,230,0,0.1)", borderRadius: 99, border: "1px solid rgba(200,230,0,0.3)" }}>Dashboard</a>
+          )}
           {isSignedIn
             ? <UserButton afterSignOutUrl="/" />
             : <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: 13, fontWeight: 800, padding: "9px 22px", borderRadius: 99, textDecoration: "none", whiteSpace: "nowrap", boxShadow: "0 2px 16px rgba(200,230,0,0.3)" }}>Get started free</a>

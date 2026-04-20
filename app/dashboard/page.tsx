@@ -16,7 +16,7 @@ interface Application {
 }
 
 interface Job {
-  id: number;
+  id: string | number;
   title: string;
   company: string;
   location: string;
@@ -388,12 +388,28 @@ export default function Dashboard() {
                 {rewriting && <div style={{marginTop:12,fontSize:13,color:"#5A9A6A",fontStyle:"italic"}}>AI is rewriting your CV... ~15 seconds</div>}
               </div>
             )}
-            {showAiModal === 'cover' && cvData && (
-              <CoverLetter
-                cvData={cvData}
-                userName={user?.firstName || ''}
-                onClose={() => setShowAiModal(null)}
-              />
+            {showAiModal === 'cover' && (
+              cvData
+                ? <CoverLetter
+                    cvData={cvData}
+                    userName={user?.firstName || ''}
+                    onClose={() => setShowAiModal(null)}
+                  />
+                : <div style={{textAlign:"center",padding:"32px 20px"}}>
+                    <div style={{fontSize:40,marginBottom:16}}>📄</div>
+                    <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV first</h3>
+                    <p style={{fontSize:13,color:"#5A9A6A",marginBottom:20,lineHeight:1.7}}>
+                      To generate a cover letter, we need your CV so the AI can personalise it for you.
+                    </p>
+                    <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+                      <button onClick={()=>{ setShowAiModal(null); setActiveSection('cv'); }} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 24px",borderRadius:99,border:"none",cursor:"pointer"}}>
+                        Upload CV →
+                      </button>
+                      <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"11px 20px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
             )}
           </div>
         </div>
@@ -446,13 +462,18 @@ export default function Dashboard() {
             {[
               {label:"Applications sent",value:applications.length,color:"#90C898",icon:"📤"},
               {label:"Interviews",value:applications.filter(a=>a.status==='Interview').length,color:"#FFA500",icon:"📞"},
-              {label:"Saved jobs",value:(() => { try { const s = localStorage.getItem('jobsesame_saved_jobs'); return s ? JSON.parse(s).length : 0; } catch { return 0; } })(),color:"#A8D8B0",icon:"🔖"},
+              {label:"Saved jobs",value:(() => { try { const s = localStorage.getItem('jobsesame_saved_jobs'); return s ? JSON.parse(s).length : 0; } catch { return 0; } })(),color:"#A8D8B0",icon:"🔖",href:"/saved-jobs"},
               {label:"CV score",value:cvData?`${displayAts}%`:"—",color:"#C8E600",icon:"📊"},
             ].map(s=>(
-              <div key={s.label} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px"}}>
-                <div style={{fontSize:10,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>{s.icon} {s.label}</div>
-                <div style={{fontSize:24,fontWeight:800,color:s.color,lineHeight:1}}>{s.value}</div>
-              </div>
+              (s as any).href
+                ? <a key={s.label} href={(s as any).href} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px",textDecoration:"none",display:"block"}}>
+                    <div style={{fontSize:10,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>{s.icon} {s.label}</div>
+                    <div style={{fontSize:24,fontWeight:800,color:s.color,lineHeight:1}}>{s.value}</div>
+                  </a>
+                : <div key={s.label} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px"}}>
+                    <div style={{fontSize:10,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>{s.icon} {s.label}</div>
+                    <div style={{fontSize:24,fontWeight:800,color:s.color,lineHeight:1}}>{s.value}</div>
+                  </div>
             ))}
           </div>
         </div>
@@ -618,6 +639,7 @@ export default function Dashboard() {
                 {[
                   {label:"🌍 View all jobs",href:"/jobs"},
                   {label:"📋 My Applications",onClick:()=>setActiveSection('applications')},
+                  {label:"🔖 Saved Jobs",href:"/saved-jobs"},
                   {label:"🎁 Free rewrites",onClick:()=>setActiveSection('referral')},
                   {label:"📄 Edit CV",onClick:()=>setActiveSection('cv')},
                   {label:"⚡ CV Optimiser",href:"/optimise"},
