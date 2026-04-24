@@ -14,7 +14,8 @@ export default function OptimisePage() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.type !== 'application/pdf') { setError('Please upload a PDF file only'); return; }
+    const isPdf = file.type === 'application/pdf' || file.type === 'application/octet-stream' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) { setError('Please upload a PDF file only'); return; }
     if (!jobTitle) { setError('Please enter the job title first'); return; }
     if (!jobDescription) { setError('Please paste the job description first'); return; }
 

@@ -1,7 +1,10 @@
 'use client';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import QuickApply from '../components/QuickApply';
+import CoverLetter from '../components/CoverLetter';
+import { jsPDF } from 'jspdf';
 
 interface Application {
   id: string;
@@ -13,9 +16,28 @@ interface Application {
   jobUrl?: string;
 }
 
+interface Job {
+  id: string | number;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  url: string;
+  category: string;
+  level: string;
+  salary?: string;
+  type?: string;
+}
+
 export default function Dashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
+
+  // ── Section state ──────────────────────────────────────────────
+  const [activeSection, setActiveSection] = useState<'overview' | 'cv' | 'referral' | 'applications'>('overview');
+  const [isMobile, setIsMobile] = useState(false);
+
+  // ── CV state ───────────────────────────────────────────────────
   const [uploading, setUploading] = useState(false);
   const [cvData, setCvData] = useState<any>(null);
   const [error, setError] = useState('');
@@ -27,41 +49,121 @@ export default function Dashboard() {
   const [rewriting, setRewriting] = useState(false);
   const [rewrittenCV, setRewrittenCV] = useState<any>(null);
   const [rewriteError, setRewriteError] = useState('');
+
+  // ── Referral state ────────────────────────────────────────────
   const [referralLink, setReferralLink] = useState('');
   const [copied, setCopied] = useState(false);
-  const [activeSection, setActiveSection] = useState<'cv' | 'referral' | 'applications'>('cv');
   const [referralsCount] = useState(0);
+
+  // ── Applications state ────────────────────────────────────────
   const [applications, setApplications] = useState<Application[]>([]);
+
+  // ── Payment state ─────────────────────────────────────────────
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('USD');
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const freeRewrites = 3;
 
+  // ── ATS score display (animated) ──────────────────────────────────
+  const [displayAts, setDisplayAts] = useState(0);
+
+  // ── Recommended jobs ──────────────────────────────────────────
+  const [recommendedJobs, setRecommendedJobs] = useState<Job[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+
+  // ── Profile from onboarding ───────────────────────────────────
+  const [profile, setProfile] = useState<any>(null);
+
+  // ── AI actions modal ──────────────────────────────────────────
+  const [showAiModal, setShowAiModal] = useState<'tailor' | 'cover' | null>(null);
+
   useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.push('/sign-in');
-    }
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded && !isSignedIn) router.push('/sign-in');
   }, [isLoaded, isSignedIn, router]);
 
   useEffect(() => {
     if (isSignedIn && user) {
       sendWelcomeEmailOnce();
-      // Defer referral link so it doesn't block initial render
-      setTimeout(() => generateReferralLink(), 500);
+      // Defer referral link — non-critical, load after main content
+      setTimeout(() => generateReferralLink(), 2000);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, user]);
 
   useEffect(() => {
     const stored = localStorage.getItem('jobsesame_applications');
     if (stored) setApplications(JSON.parse(stored));
+    const storedCv = localStorage.getItem('jobsesame_cv_data');
+    if (storedCv) setCvData(JSON.parse(storedCv));
+    const storedProfile = localStorage.getItem('jobsesame_profile');
+    if (storedProfile) setProfile(JSON.parse(storedProfile));
   }, []);
 
   useEffect(() => {
     fetch('https://ipapi.co/json/')
       .then(r => r.json())
       .then(data => { if (data.country_code === 'ZA') setCurrency('ZAR'); })
-      .catch(() => setCurrency('USD'));
+      .catch(() => {});
   }, []);
+
+  // Fetch recommended jobs lazily — 1 second after mount so main content renders first
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const p = profile || {};
+      const titleQuery = p.preferredJobTitle || p.jobTitle || cvData?.title || 'software engineer';
+      setLoadingJobs(true);
+      fetch(`/api/jobs?query=${encodeURIComponent(titleQuery)}&location=`)
+        .then(r => r.json())
+        .then(data => setRecommendedJobs((data.jobs || []).slice(0, 6)))
+        .catch(() => {})
+        .finally(() => setLoadingJobs(false));
+    }, 1000);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile]);
+
+  const atsScore = useMemo(() => {
+    if (!cvData) return 0;
+    let score = 25;
+    if (cvData.summary) score += 10;
+    if ((cvData.skills?.length || 0) >= 5) score += 10;
+    if (cvData.experience_years || cvData.experience?.length) score += 10;
+    if (cvData.education) score += 10;
+    if ((cvData.languages?.length || 0) > 0) score += 10;
+    const text = [cvData.summary, ...(cvData.skills || []), cvData.title].filter(Boolean).join(' ').toLowerCase();
+    ['management', 'leadership', 'strategy', 'communication', 'analytics'].forEach(kw => {
+      if (text.includes(kw)) score += 5;
+    });
+    return Math.min(100, score);
+  }, [cvData]);
+
+  useEffect(() => {
+    if (!atsScore) { setDisplayAts(0); return; }
+    let current = 0;
+    const inc = atsScore / 30;
+    const interval = setInterval(() => {
+      current += inc;
+      if (current >= atsScore) { setDisplayAts(atsScore); clearInterval(interval); }
+      else setDisplayAts(Math.round(current));
+    }, 50);
+    return () => clearInterval(interval);
+  }, [atsScore]);
+
+  const calcJobMatch = (job: Job): number | null => {
+    if (!cvData?.skills?.length) return null;
+    const text = (job.title + ' ' + job.description).toLowerCase();
+    const skills = cvData.skills as string[];
+    const matches = skills.filter(s => text.includes(s.toLowerCase())).length;
+    return Math.min(95, 50 + matches * 3);
+  };
 
   const updateApplicationStatus = (id: string, status: Application['status']) => {
     const updated = applications.map(a => a.id === id ? { ...a, status } : a);
@@ -81,79 +183,40 @@ export default function Dashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name, userId }),
       });
-    } catch {
-      // Non-critical — do not surface errors to the user
-    }
+    } catch { /* Non-critical */ }
     localStorage.setItem('jobsesame_welcome_sent', 'true');
   };
 
   const generateReferralLink = async () => {
     try {
-      const response = await fetch('/api/referral', {
+      const res = await fetch('/api/referral', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id, action: 'get' }),
       });
-      const data = await response.json();
-      if (data.success) {
-        setReferralLink(data.referralLink);
-      }
-    } catch (err) {
-      console.error('Failed to generate referral link');
-    }
+      const data = await res.json();
+      if (data.success) setReferralLink(data.referralLink);
+    } catch { /* Non-critical */ }
   };
-
-  if (!isLoaded) {
-    return (
-      <div style={{background:"#052A14",minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:32}}>
-        {/* Logo */}
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:40,height:40,background:"#C8E600",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <circle cx="9" cy="9" r="5.5" stroke="#052A14" strokeWidth="2.2"/>
-              <circle cx="9" cy="9" r="2.5" fill="#052A14" opacity="0.4"/>
-              <line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#052A14" strokeWidth="2.8" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <span style={{fontSize:22,fontWeight:800}}>
-            <span style={{color:"#FFFFFF"}}>job</span>
-            <span style={{color:"#C8E600"}}>sesame</span>
-          </span>
-        </div>
-        {/* Spinner */}
-        <div style={{width:40,height:40,border:"3px solid #1A5A2A",borderTop:"3px solid #C8E600",borderRadius:"50%",animation:"spin 0.8s linear infinite"}} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        {/* Skeleton rows */}
-        <div style={{width:"min(440px,90vw)",display:"flex",flexDirection:"column",gap:12}}>
-          {[80,60,70].map((w,i) => (
-            <div key={i} style={{height:14,background:"#1A4A2A",borderRadius:8,width:`${w}%`,opacity:0.6}} />
-          ))}
-          <div style={{height:80,background:"#1A4A2A",borderRadius:12,marginTop:8,opacity:0.4}} />
-          <div style={{display:"flex",gap:10,marginTop:4}}>
-            {[45,40].map((w,i) => (
-              <div key={i} style={{height:36,background:"#1A4A2A",borderRadius:99,width:`${w}%`,opacity:0.5}} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isSignedIn) return null;
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
-    if (file.type !== 'application/pdf') { setError('Please upload a PDF file only'); return; }
-    if (file.size > 10 * 1024 * 1024) { setError('File too large. Maximum 10MB'); return; }
-    setUploading(true);
-    setError('');
+    const isPdf = file.type === 'application/pdf' || file.type === 'application/octet-stream' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) { setError('Please upload a PDF file only'); return; }
+    if (file.size > 15 * 1024 * 1024) { setError('File too large. Maximum 15MB'); return; }
+    setUploading(true); setError('');
     try {
       const formData = new FormData();
       formData.append('cv', file);
-      const response = await fetch('/api/cv', { method: 'POST', body: formData });
-      const data = await response.json();
-      if (data.success) { setCvData(data.cvData); } else { setError(data.error || 'Failed to process CV'); }
-    } catch (err) { setError('Something went wrong. Please try again.'); }
+      const res = await fetch('/api/cv', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        setCvData(data.cvData);
+        localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.cvData));
+      } else {
+        setError(data.error || 'Failed to process CV');
+      }
+    } catch { setError('Something went wrong. Please try again.'); }
     finally { setUploading(false); }
   };
 
@@ -172,16 +235,134 @@ export default function Dashboard() {
     if (!jobTitle) { setRewriteError('Please enter a job title'); return; }
     setRewriting(true); setRewriteError('');
     try {
-      const response = await fetch('/api/rewrite', {
+      const res = await fetch('/api/rewrite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cvData, jobTitle, jobCompany, jobDescription }),
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.success) { setRewrittenCV(data.rewrittenCV); setShowRewrite(false); }
       else { setRewriteError(data.error || 'Failed to rewrite CV'); }
-    } catch (err) { setRewriteError('Something went wrong. Please try again.'); }
+    } catch { setRewriteError('Something went wrong. Please try again.'); }
     finally { setRewriting(false); }
+  };
+
+  const downloadCV = () => {
+    const cv = rewrittenCV;
+    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const margin = 18;
+    const contentW = pageW - margin * 2;
+    let y = 0;
+
+    // Dark green header bar
+    doc.setFillColor(5, 42, 20);
+    doc.rect(0, 0, pageW, 44, 'F');
+
+    // Name — white
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.text(cv.name || '', margin, 17);
+
+    // Title — lemon yellow
+    doc.setFontSize(12);
+    doc.setTextColor(200, 230, 0);
+    doc.text(cv.title || '', margin, 27);
+
+    // Contact row — soft green
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(160, 210, 170);
+    const contact = [cv.location, cv.email, cv.phone].filter(Boolean).join('   ·   ');
+    doc.text(contact, margin, 37);
+
+    y = 54;
+
+    const sectionHeader = (title: string) => {
+      if (y > 268) { doc.addPage(); y = 18; }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(5, 42, 20);
+      doc.text(title.toUpperCase(), margin, y);
+      doc.setDrawColor(5, 42, 20);
+      doc.line(margin, y + 1.5, pageW - margin, y + 1.5);
+      y += 7;
+    };
+
+    // Summary
+    if (cv.summary) {
+      sectionHeader('Professional Summary');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      const lines = doc.splitTextToSize(cv.summary, contentW);
+      doc.text(lines, margin, y);
+      y += (lines as string[]).length * 5.2 + 8;
+    }
+
+    // Skills
+    if (cv.skills?.length) {
+      sectionHeader('Skills');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      const skillLines = doc.splitTextToSize((cv.skills as string[]).join('   ·   '), contentW);
+      doc.text(skillLines, margin, y);
+      y += (skillLines as string[]).length * 5.2 + 8;
+    }
+
+    // Experience
+    if (cv.experience?.length) {
+      sectionHeader('Experience');
+      (cv.experience as any[]).forEach((exp) => {
+        if (y > 268) { doc.addPage(); y = 18; }
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(5, 42, 20);
+        doc.text(exp.title || '', margin, y);
+        y += 5.5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(80, 80, 80);
+        doc.text(`${exp.company || ''}   ·   ${exp.duration || ''}`, margin, y);
+        y += 5;
+        (exp.bullets || []).forEach((b: string) => {
+          if (y > 275) { doc.addPage(); y = 18; }
+          doc.setFontSize(9);
+          doc.setTextColor(50, 50, 50);
+          const bLines = doc.splitTextToSize(`\u2022  ${b}`, contentW - 4);
+          doc.text(bLines, margin + 2, y);
+          y += (bLines as string[]).length * 4.6;
+        });
+        y += 6;
+      });
+    }
+
+    // Education
+    if (cv.education) {
+      if (y > 262) { doc.addPage(); y = 18; }
+      sectionHeader('Education');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      doc.text(cv.education, margin, y);
+      y += 11;
+    }
+
+    // Languages
+    if (cv.languages?.length) {
+      if (y > 268) { doc.addPage(); y = 18; }
+      sectionHeader('Languages');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(40, 40, 40);
+      doc.text((cv.languages as string[]).join('   ·   '), margin, y);
+    }
+
+    const safeName = (cv.name || 'CV').replace(/\s+/g, '_');
+    const safeJob = (jobTitle || 'rewritten').replace(/\s+/g, '_');
+    doc.save(`${safeName}_${safeJob}.pdf`);
   };
 
   const copyReferralLink = () => {
@@ -191,21 +372,20 @@ export default function Dashboard() {
   };
 
   const shareWhatsApp = () => {
-    const message = `I found this amazing AI job platform that rewrites your CV in 30 seconds and applies to jobs for you! Get 3 free rewrites here: ${referralLink}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+    const msg = `I found this amazing AI job platform that rewrites your CV in 30 seconds! Get 3 free rewrites: ${referralLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const shareEmail = () => {
     const subject = 'You need to try Jobsesame — free AI CV rewriter';
-    const body = `Hi!\n\nI have been using Jobsesame to find jobs and it is incredible. AI rewrites your CV for any job in 30 seconds.\n\nSign up free here: ${referralLink}\n\nYou get 3 free CV rewrites — no card needed.`;
+    const body = `Hi!\n\nI have been using Jobsesame to find jobs and it is incredible. AI rewrites your CV for any job in 30 seconds.\n\nSign up free: ${referralLink}\n\nYou get 3 free CV rewrites — no card needed.`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
   const handlePayment = async (plan: 'credits' | 'pro') => {
     const email = user?.emailAddresses[0]?.emailAddress;
     if (!email) { router.push('/sign-in'); return; }
-    setPaying(true);
-    setPaymentError('');
+    setPaying(true); setPaymentError('');
     try {
       const res = await fetch('/api/payment', {
         method: 'POST',
@@ -225,234 +405,452 @@ export default function Dashboard() {
     }
   };
 
-  const navBtnStyle = (section: string) => ({
-    padding: '8px 18px',
+  // ── Loading skeleton — shows immediately, no layout shift ─────
+  if (!isLoaded) {
+    return (
+      <div style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#052A14",minHeight:"100vh"}}>
+        <style>{`@keyframes shimmer{0%{opacity:0.4}50%{opacity:0.8}100%{opacity:0.4}}`}</style>
+        {/* Nav skeleton */}
+        <div style={{background:"#052A14",borderBottom:"1px solid #0D4A20",height:64,display:"flex",alignItems:"center",padding:"0 20px",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}>
+            <div style={{width:36,height:36,borderRadius:9,background:"#C8E600"}}/>
+            <div style={{width:100,height:16,borderRadius:6,background:"#1A4A2A",animation:"shimmer 1.5s ease infinite"}}/>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            {[80,90,100,36].map((w,i)=>(
+              <div key={i} style={{width:w,height:32,borderRadius:99,background:"#1A4A2A",animation:"shimmer 1.5s ease infinite"}}/>
+            ))}
+          </div>
+        </div>
+        {/* Body skeleton */}
+        <div style={{padding:"32px 28px",maxWidth:960,margin:"0 auto"}}>
+          {/* Welcome + stats */}
+          <div style={{width:220,height:28,borderRadius:8,background:"#1A4A2A",marginBottom:8,animation:"shimmer 1.5s ease infinite"}}/>
+          <div style={{width:140,height:14,borderRadius:6,background:"#0D3A1A",marginBottom:20,animation:"shimmer 1.5s ease infinite"}}/>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
+            {[1,2,3,4].map(i=>(
+              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px",height:72,animation:"shimmer 1.5s ease infinite"}}/>
+            ))}
+          </div>
+          {/* CV panel */}
+          <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:24,marginBottom:20,height:160,animation:"shimmer 1.5s ease infinite"}}/>
+          {/* AI actions */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
+            {[1,2,3].map(i=>(
+              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,height:90,animation:"shimmer 1.5s ease infinite"}}/>
+            ))}
+          </div>
+          {/* Job cards */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))",gap:10,width:"100%",overflow:"hidden"}}>
+            {[1,2,3,4,5,6].map(i=>(
+              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,height:130,animation:"shimmer 1.5s ease infinite"}}/>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (!isSignedIn) return null;
+
+  const firstName = profile?.name?.split(' ')[0] || user?.firstName || user?.emailAddresses[0]?.emailAddress?.split('@')[0] || 'there';
+  const today = new Date().toLocaleDateString('en-ZA', {weekday:'long',day:'numeric',month:'long'});
+  const navBtnStyle = (s: string) => ({
+    padding: '8px 16px',
     borderRadius: 99,
-    fontSize: 13,
+    fontSize: isMobile ? 12 : 13,
     fontWeight: 700,
     cursor: 'pointer',
     border: 'none',
-    background: activeSection === section ? '#C8E600' : 'transparent',
-    color: activeSection === section ? '#052A14' : '#A8D8B0',
+    background: activeSection === s ? '#C8E600' : 'transparent',
+    color: activeSection === s ? '#052A14' : '#A8D8B0',
+    whiteSpace: 'nowrap',
   } as React.CSSProperties);
 
   return (
     <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#052A14",minHeight:"100vh"}}>
-      <nav style={{background:"#052A14",padding:"0 24px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #0D4A20"}}>
-        <div style={{display:"flex",alignItems:"center",gap:11}}>
-          <div style={{width:38,height:38,background:"#C8E600",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+
+      {/* QUICK APPLY MODAL */}
+      {selectedJob && (
+        <QuickApply job={selectedJob} onClose={() => setSelectedJob(null)} currency={currency} />
+      )}
+
+      {/* AI ACTIONS MODAL */}
+      {showAiModal && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:18,padding:28,width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto"}}>
+            {showAiModal === 'tailor' && (
+              <div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+                  <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF"}}>Tailor CV for a job</h3>
+                  <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",border:"none",color:"#5A9A6A",fontSize:20,cursor:"pointer"}}>✕</button>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+                  <div>
+                    <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job title *</label>
+                    <input value={jobTitle} onChange={e=>setJobTitle(e.target.value)} placeholder="e.g. Senior Product Manager" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+                  </div>
+                  <div>
+                    <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Company</label>
+                    <input value={jobCompany} onChange={e=>setJobCompany(e.target.value)} placeholder="e.g. Standard Bank" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+                  </div>
+                  <div>
+                    <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job description</label>
+                    <textarea value={jobDescription} onChange={e=>setJobDescription(e.target.value)} placeholder="Paste the job description..." rows={4} style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:13,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",resize:"vertical",boxSizing:"border-box"}}/>
+                  </div>
+                </div>
+                {rewriteError && <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginBottom:16}}>{rewriteError}</div>}
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={handleRewrite} disabled={rewriting||!cvData} style={{flex:1,background:rewriting||!cvData?"#1A4A2A":"#C8E600",color:rewriting||!cvData?"#3A7A4A":"#052A14",fontSize:14,fontWeight:800,padding:"12px",borderRadius:99,border:"none",cursor:rewriting||!cvData?"default":"pointer"}}>
+                    {rewriting ? 'Rewriting...' : !cvData ? 'Upload CV first' : 'Rewrite my CV'}
+                  </button>
+                  <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"12px 20px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Cancel</button>
+                </div>
+                {rewriting && <div style={{marginTop:12,fontSize:13,color:"#5A9A6A",fontStyle:"italic"}}>AI is rewriting your CV... ~15 seconds</div>}
+              </div>
+            )}
+            {showAiModal === 'cover' && (
+              cvData
+                ? <CoverLetter
+                    cvData={cvData}
+                    userName={user?.firstName || ''}
+                    onClose={() => setShowAiModal(null)}
+                  />
+                : <div style={{textAlign:"center",padding:"32px 20px"}}>
+                    <div style={{fontSize:40,marginBottom:16}}>📄</div>
+                    <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV first</h3>
+                    <p style={{fontSize:13,color:"#5A9A6A",marginBottom:20,lineHeight:1.7}}>
+                      To generate a cover letter, we need your CV so the AI can personalise it for you.
+                    </p>
+                    <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+                      <button onClick={()=>{ setShowAiModal(null); setActiveSection('cv'); }} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 24px",borderRadius:99,border:"none",cursor:"pointer"}}>
+                        Upload CV →
+                      </button>
+                      <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"11px 20px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* NAV */}
+      <nav style={{background:"#052A14",padding:"0 20px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #0D4A20",position:"sticky",top:0,zIndex:100}}>
+        <a href="/" style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none"}}>
+          <div style={{width:36,height:36,background:"#C8E600",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
               <circle cx="9" cy="9" r="5.5" stroke="#052A14" strokeWidth="2.2"/>
               <circle cx="9" cy="9" r="2.5" fill="#052A14" opacity="0.4"/>
               <line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#052A14" strokeWidth="2.8" strokeLinecap="round"/>
-              <line x1="16" y1="14" x2="14.5" y2="17" stroke="#052A14" strokeWidth="2" strokeLinecap="round"/>
-              <line x1="19" y1="17" x2="17.5" y2="20" stroke="#052A14" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </div>
-          <span style={{fontSize:20,fontWeight:800,letterSpacing:-0.5}}>
+          <span style={{fontSize:18,fontWeight:800}}>
             <span style={{color:"#FFFFFF"}}>job</span>
             <span style={{color:"#C8E600"}}>sesame</span>
           </span>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
+        </a>
+        <div style={{display:"flex",alignItems:"center",gap:isMobile?6:10,overflowX:"auto"}}>
+          <button style={navBtnStyle('overview')} onClick={()=>setActiveSection('overview')}>Dashboard</button>
           <button style={navBtnStyle('cv')} onClick={()=>setActiveSection('cv')}>My CV</button>
-          <button style={navBtnStyle('referral')} onClick={()=>setActiveSection('referral')}>Free rewrites</button>
-          <button style={navBtnStyle('applications')} onClick={()=>setActiveSection('applications')}>My Applications</button>
-          <a href="/" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",marginLeft:6}}>Jobs</a>
+          {!isMobile && <button style={navBtnStyle('referral')} onClick={()=>setActiveSection('referral')}>Free rewrites</button>}
+          <button style={navBtnStyle('applications')} onClick={()=>setActiveSection('applications')}>Applications</button>
+          {!isMobile && <a href="/jobs" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>Find Jobs</a>}
+          {!isMobile && <a href="/optimise" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>CV Optimiser</a>}
           <UserButton afterSignOutUrl="/" />
         </div>
       </nav>
 
-      <div style={{padding:"40px 24px",maxWidth:900,margin:"0 auto"}}>
+      <div style={{padding:isMobile?"16px 16px 32px":"32px 28px",maxWidth:960,margin:"0 auto"}}>
 
-        <div style={{marginBottom:28}}>
-          <h1 style={{fontSize:26,fontWeight:800,color:"#FFFFFF",marginBottom:6}}>
-            Welcome, <span style={{color:"#C8E600"}}>{user?.firstName || user?.emailAddresses[0]?.emailAddress?.split('@')[0]}</span>
-          </h1>
-          <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>
-            <span style={{fontSize:12,color:"#5A9A6A"}}>
-              Free rewrites remaining: <strong style={{color:"#C8E600"}}>{freeRewrites}</strong>
-            </span>
-            <span style={{fontSize:12,color:"#5A9A6A"}}>
-              Referrals: <strong style={{color:"#C8E600"}}>{referralsCount}/3</strong> to unlock 10 more
-            </span>
+        {/* ── WELCOME HEADER (always visible) ─────────────────────── */}
+        <div style={{marginBottom:24}}>
+          <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16}}>
+            <div>
+              <h1 style={{fontSize:isMobile?20:26,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>
+                Welcome back, <span style={{color:"#C8E600"}}>{firstName}</span> 👋
+              </h1>
+              <p style={{fontSize:13,color:"#5A9A6A"}}>{today}</p>
+            </div>
+            <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 22px",borderRadius:99,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
+              Browse Jobs →
+            </a>
+          </div>
+
+          {/* Quick stats row */}
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:10}}>
+            {[
+              {label:"Applications sent",value:applications.length,color:"#90C898",icon:"📤"},
+              {label:"Interviews",value:applications.filter(a=>a.status==='Interview').length,color:"#FFA500",icon:"📞"},
+              {label:"Saved jobs",value:(() => { try { const s = localStorage.getItem('jobsesame_saved_jobs'); return s ? JSON.parse(s).length : 0; } catch { return 0; } })(),color:"#A8D8B0",icon:"🔖",href:"/saved-jobs"},
+              {label:"CV score",value:cvData?`${displayAts}%`:"—",color:"#C8E600",icon:"📊"},
+            ].map(s=>(
+              (s as any).href
+                ? <a key={s.label} href={(s as any).href} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px",textDecoration:"none",display:"block"}}>
+                    <div style={{fontSize:10,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>{s.icon} {s.label}</div>
+                    <div style={{fontSize:24,fontWeight:800,color:s.color,lineHeight:1}}>{s.value}</div>
+                  </a>
+                : <div key={s.label} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px"}}>
+                    <div style={{fontSize:10,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>{s.icon} {s.label}</div>
+                    <div style={{fontSize:24,fontWeight:800,color:s.color,lineHeight:1}}>{s.value}</div>
+                  </div>
+            ))}
           </div>
         </div>
 
-        {activeSection === 'referral' && (
-          <div>
-            <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:16,padding:28,marginBottom:20}}>
-              <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:6}}>
-                Unlock 10 free CV rewrites
-              </h2>
-              <p style={{fontSize:14,color:"#5A9A6A",marginBottom:24,lineHeight:1.7}}>
-                Share Jobsesame with 3 friends. When they sign up using your link you unlock 10 free AI CV rewrites — permanently.
-              </p>
+        {/* ──────────────────────────────────────────────────────────── */}
+        {/* OVERVIEW TAB */}
+        {/* ──────────────────────────────────────────────────────────── */}
+        {activeSection === 'overview' && (
+          <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
-              <div style={{display:"flex",gap:0,marginBottom:24,border:"1px solid #1A5A2A",borderRadius:12,overflow:"hidden"}}>
-                {[1,2,3].map(n=>(
-                  <div key={n} style={{flex:1,padding:"16px 10px",textAlign:"center",borderRight:n<3?"1px solid #1A5A2A":"none",background:referralsCount>=n?"rgba(200,230,0,0.1)":"transparent"}}>
-                    <div style={{fontSize:24,marginBottom:4}}>{referralsCount>=n?"✅":"👤"}</div>
-                    <div style={{fontSize:11,color:referralsCount>=n?"#C8E600":"#3A7A4A",fontWeight:600}}>Friend {n}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{background:"#0D3A1A",borderRadius:12,padding:16,marginBottom:20}}>
-                <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,marginBottom:8,letterSpacing:"1px",textTransform:"uppercase"}}>Your unique referral link</div>
-                <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                  <div style={{flex:1,background:"#072E16",border:"1px solid #1A5A2A",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#90C898",fontFamily:"monospace",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                    {referralLink || 'Generating your link...'}
-                  </div>
-                  <button
-                    onClick={copyReferralLink}
-                    style={{background:copied?"#1A6A2A":"#C8E600",color:copied?"#C8E600":"#052A14",fontSize:12,fontWeight:800,padding:"10px 18px",borderRadius:8,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
-                    {copied ? 'Copied!' : 'Copy link'}
-                  </button>
+            {/* B. CV Analysis Panel */}
+            {cvData ? (
+              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:isMobile?20:24}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18,flexWrap:"wrap",gap:10}}>
+                  <h2 style={{fontSize:16,fontWeight:800,color:"#FFFFFF"}}>CV Analysis</h2>
+                  <button onClick={()=>setActiveSection('cv')} style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"7px 16px",borderRadius:99,border:"none",cursor:"pointer"}}>Improve my CV</button>
                 </div>
-              </div>
-
-              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                <button
-                  onClick={shareWhatsApp}
-                  style={{background:"#25D366",color:"#fff",fontSize:13,fontWeight:700,padding:"11px 22px",borderRadius:99,border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:7}}>
-                  Share on WhatsApp
-                </button>
-                <button
-                  onClick={shareEmail}
-                  style={{background:"#072E16",color:"#C8E600",fontSize:13,fontWeight:700,padding:"11px 22px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
-                  Share via Email
-                </button>
-              </div>
-            </div>
-
-            <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-              <div>
-                <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Want unlimited rewrites now?</div>
-                <div style={{fontSize:12,color:"#5A9A6A"}}>Upgrade to Pro for {currency === 'ZAR' ? 'R370' : '$20'}/month — unlimited everything.</div>
-              </div>
-              <button
-                onClick={() => handlePayment('pro')}
-                disabled={paying}
-                style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
-                {paying ? 'Loading...' : 'Upgrade to Pro'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {activeSection === 'applications' && (
-          <div>
-            <div style={{marginBottom:20}}>
-              <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>My Applications</h2>
-              <p style={{fontSize:13,color:"#5A9A6A"}}>Every job you applied to with Quick Apply — tracked automatically.</p>
-            </div>
-            {applications.length === 0 ? (
-              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:48,textAlign:"center"}}>
-                <div style={{fontSize:40,marginBottom:16}}>📋</div>
-                <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>No applications yet</h3>
-                <p style={{fontSize:13,color:"#5A9A6A",marginBottom:24}}>Use Quick Apply on any job and it will appear here automatically.</p>
-                <a href="/" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Browse jobs</a>
+                <div style={{display:"flex",gap:20,alignItems:"flex-start",flexWrap:"wrap"}}>
+                  {/* Circular ATS score */}
+                  <div style={{textAlign:"center",flexShrink:0}}>
+                    <div style={{position:"relative",width:100,height:100,margin:"0 auto 8px"}}>
+                      <svg width="100" height="100" style={{transform:"rotate(-90deg)"}}>
+                        <circle cx="50" cy="50" r="40" fill="none" stroke="#1A4A2A" strokeWidth="9"/>
+                        <circle cx="50" cy="50" r="40" fill="none" stroke={atsScore>=80?"#C8E600":atsScore>=60?"#FFA500":"#F09595"} strokeWidth="9"
+                          strokeDasharray={`${2*Math.PI*40}`}
+                          strokeDashoffset={`${2*Math.PI*40*(1-displayAts/100)}`}
+                          strokeLinecap="round"/>
+                      </svg>
+                      <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+                        <span style={{fontSize:20,fontWeight:800,color:"#C8E600",lineHeight:1}}>{displayAts}%</span>
+                        <span style={{fontSize:9,color:"#5A9A6A",lineHeight:1.3,marginTop:2}}>ATS score</span>
+                      </div>
+                    </div>
+                    <div style={{fontSize:11,color:atsScore>=80?"#C8E600":atsScore>=60?"#FFA500":"#F09595",fontWeight:700}}>
+                      {atsScore>=80?"Excellent":atsScore>=60?"Good":"Needs work"}
+                    </div>
+                  </div>
+                  <div style={{flex:1,minWidth:200}}>
+                    <div style={{marginBottom:12}}>
+                      <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:2}}>{cvData.name}</div>
+                      <div style={{fontSize:13,color:"#C8E600",fontWeight:600}}>{cvData.title}</div>
+                    </div>
+                    <div style={{fontSize:12,color:"#5A9A6A",marginBottom:10}}>
+                      <strong style={{color:"#A8D8B0"}}>Suggestions:</strong>
+                    </div>
+                    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                      {atsScore < 90 && (
+                        <div style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:12,color:"#90C898"}}>
+                          <span style={{color:"#FFA500",flexShrink:0}}>•</span>
+                          Add more measurable achievements (numbers, percentages)
+                        </div>
+                      )}
+                      {(!cvData.skills || cvData.skills.length < 5) && (
+                        <div style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:12,color:"#90C898"}}>
+                          <span style={{color:"#FFA500",flexShrink:0}}>•</span>
+                          Expand your skills section with relevant keywords
+                        </div>
+                      )}
+                      <div style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:12,color:"#90C898"}}>
+                        <span style={{color:"#C8E600",flexShrink:0}}>✓</span>
+                        Use &ldquo;Tailor CV for a job&rdquo; to boost your score for each role
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
-              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,overflow:"hidden"}}>
-                <div style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"12px 20px",borderBottom:"1px solid #1A4A2A",background:"#0D3A1A"}}>
-                  {["Job","Company","Location","Date","Status"].map(h=>(
-                    <div key={h} style={{fontSize:10,color:"#5A9A6A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase"}}>{h}</div>
+              <div style={{background:"linear-gradient(135deg,#072E16 0%,#0D3A1A 100%)",border:"2px dashed #C8E600",borderRadius:16,padding:"32px 28px",textAlign:"center"}}>
+                <div style={{fontSize:48,marginBottom:16}}>📄</div>
+                <h3 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV to get started</h3>
+                <p style={{fontSize:14,color:"#5A9A6A",marginBottom:8,maxWidth:400,margin:"0 auto 8px",lineHeight:1.7}}>
+                  Upload your CV once. AI reads everything, builds your career profile, and matches you to the best jobs worldwide.
+                </p>
+                <p style={{fontSize:12,color:"#3A7A4A",marginBottom:24,fontStyle:"italic"}}>Takes about 15 seconds. Free.</p>
+                <button
+                  onClick={()=>setActiveSection('cv')}
+                  style={{background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:800,padding:"14px 36px",borderRadius:99,border:"none",cursor:"pointer",boxShadow:"0 4px 20px rgba(200,230,0,0.25)"}}>
+                  Upload my CV →
+                </button>
+              </div>
+            )}
+
+            {/* C. AI Actions Row */}
+            <div>
+              <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF",marginBottom:12}}>AI actions</h2>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
+                {[
+                  {icon:"🧬",title:"Tailor CV for a job",desc:"AI rewrites your CV for any role in 30 seconds",action:()=>setShowAiModal('tailor'),color:"#C8E600"},
+                  {icon:"✉️",title:"Generate cover letter",desc:"Personalised cover letter in seconds",action:()=>setShowAiModal('cover'),color:"#90C898"},
+                  {icon:"⚡",title:"Optimise my CV",desc:"Full AI optimisation on the CV Optimiser tool",action:()=>window.location.href='/optimise',color:"#A8D8B0"},
+                ].map(a=>(
+                  <button key={a.title} onClick={a.action} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:18,textAlign:"left",cursor:"pointer",transition:"border-color 0.15s"}}
+                    onMouseEnter={e=>(e.currentTarget.style.borderColor="#C8E600")}
+                    onMouseLeave={e=>(e.currentTarget.style.borderColor="#1A4A2A")}>
+                    <div style={{fontSize:24,marginBottom:8}}>{a.icon}</div>
+                    <div style={{fontSize:13,fontWeight:800,color:a.color,marginBottom:4}}>{a.title}</div>
+                    <div style={{fontSize:11,color:"#3A7A4A",lineHeight:1.5}}>{a.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* D. Recommended Jobs */}
+            <div>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF"}}>
+                  Recommended for you
+                  {profile?.preferredJobTitle && <span style={{fontSize:12,color:"#5A9A6A",fontWeight:400,marginLeft:8}}>based on: {profile.preferredJobTitle}</span>}
+                </h2>
+                <a href="/jobs" style={{fontSize:12,color:"#C8E600",fontWeight:700,textDecoration:"none"}}>View all jobs →</a>
+              </div>
+              {loadingJobs ? (
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))",gap:10,width:"100%",overflow:"hidden"}}>
+                  {[1,2,3,4,5,6].map(i=>(
+                    <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:16,height:130}}/>
                   ))}
                 </div>
-                {applications.map((app, i) => (
-                  <div key={app.id} style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"14px 20px",borderBottom:i<applications.length-1?"1px solid #0D3A1A":"none",alignItems:"center"}}>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",marginBottom:2}}>{app.jobTitle}</div>
-                      {app.jobUrl && (
-                        <a href={app.jobUrl} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#3A7A4A",textDecoration:"none"}}>View posting ↗</a>
-                      )}
+              ) : (
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))",gap:10,width:"100%",overflow:"hidden"}}>
+                  {recommendedJobs.map(job=>{
+                    const matchPct = calcJobMatch(job);
+                    return (
+                      <div key={job.id} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:16,display:"flex",flexDirection:"column",minHeight:130}}>
+                        <div style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:10}}>
+                          <div style={{width:36,height:36,borderRadius:8,background:"#0D3A1A",color:"#C8E600",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>
+                            {job.company.charAt(0).toUpperCase()}
+                          </div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
+                              <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,minWidth:0}}>{job.title}</div>
+                              {matchPct !== null && (
+                                <span style={{fontSize:9,fontWeight:800,color:"#1A5A2A",background:"#EAF5EA",padding:"1px 6px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{matchPct}%</span>
+                              )}
+                            </div>
+                            <div style={{fontSize:11,color:"#5A9A6A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{job.company} · {job.location}</div>
+                          </div>
+                        </div>
+                        <div style={{display:"flex",gap:8,marginTop:"auto"}}>
+                          <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"7px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
+                            ⚡ Quick Apply
+                          </button>
+                          <button onClick={()=>window.open(job.url,'_blank')} style={{background:"transparent",color:"#5A9A6A",fontSize:11,fontWeight:600,padding:"7px 12px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+                            View
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {recommendedJobs.length === 0 && !loadingJobs && (
+                    <div style={{gridColumn:"1/-1",textAlign:"center",padding:"32px 0"}}>
+                      <div style={{fontSize:13,color:"#5A9A6A",marginBottom:12}}>No recommended jobs yet</div>
+                      <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"9px 22px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Browse all jobs</a>
                     </div>
-                    <div style={{fontSize:12,color:"#90C898"}}>{app.company}</div>
-                    <div style={{fontSize:12,color:"#5A9A6A"}}>{app.location}</div>
-                    <div style={{fontSize:11,color:"#3A7A4A"}}>{new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
-                    <div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* E. Quick Actions */}
+            <div>
+              <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF",marginBottom:12}}>Quick actions</h2>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                {[
+                  {label:"🌍 View all jobs",href:"/jobs"},
+                  {label:"📋 My Applications",onClick:()=>setActiveSection('applications')},
+                  {label:"🔖 Saved Jobs",href:"/saved-jobs"},
+                  {label:"🎁 Free rewrites",onClick:()=>setActiveSection('referral')},
+                  {label:"📄 Edit CV",onClick:()=>setActiveSection('cv')},
+                  {label:"⚡ CV Optimiser",href:"/optimise"},
+                ].map(a=>(
+                  a.href
+                    ? <a key={a.label} href={a.href} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:10,padding:"10px 18px",fontSize:13,color:"#A8D8B0",fontWeight:600,textDecoration:"none"}}>{a.label}</a>
+                    : <button key={a.label} onClick={a.onClick} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:10,padding:"10px 18px",fontSize:13,color:"#A8D8B0",fontWeight:600,cursor:"pointer",border:"1.5px solid #1A4A2A"} as React.CSSProperties}>{a.label}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* F. Application Tracker (mini) */}
+            {applications.length > 0 && (
+              <div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+                  <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF"}}>Recent applications</h2>
+                  <button onClick={()=>setActiveSection('applications')} style={{background:"transparent",border:"none",fontSize:12,color:"#C8E600",fontWeight:700,cursor:"pointer"}}>View all →</button>
+                </div>
+                <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,overflow:"hidden"}}>
+                  {applications.slice(0,4).map((app,i)=>(
+                    <div key={app.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderBottom:i<Math.min(3,applications.length-1)?"1px solid #0D3A1A":"none",flexWrap:"wrap"}}>
+                      <div style={{flex:1,minWidth:140}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",marginBottom:1}}>{app.jobTitle}</div>
+                        <div style={{fontSize:11,color:"#5A9A6A"}}>{app.company} · {new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
+                      </div>
                       <select
                         value={app.status}
-                        onChange={e => updateApplicationStatus(app.id, e.target.value as Application['status'])}
-                        style={{
-                          padding:"5px 10px",
-                          borderRadius:99,
-                          border:"1.5px solid",
-                          fontSize:11,
-                          fontWeight:700,
-                          cursor:"pointer",
-                          outline:"none",
-                          background:"#0D3A1A",
-                          borderColor: app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#A32D2D':'#1A5A2A',
-                          color: app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#F09595':'#90C898',
-                        }}
-                      >
+                        onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])}
+                        style={{padding:"4px 10px",borderRadius:99,border:"1.5px solid",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none",background:"#0D3A1A",borderColor:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#A32D2D':'#1A5A2A',color:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#F09595':'#90C898'}}>
                         <option value="Applied">Applied</option>
                         <option value="Interview">Interview</option>
                         <option value="Offer">Offer</option>
                         <option value="Rejected">Rejected</option>
                       </select>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
-            <div style={{display:"flex",gap:12,marginTop:16,flexWrap:"wrap"}}>
-              {[
-                {label:"Total applied",value:applications.length,color:"#90C898"},
-                {label:"Interviews",value:applications.filter(a=>a.status==='Interview').length,color:"#FFA500"},
-                {label:"Offers",value:applications.filter(a=>a.status==='Offer').length,color:"#C8E600"},
-              ].map(stat=>(
-                <div key={stat.label} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 20px",flex:1,minWidth:120}}>
-                  <div style={{fontSize:22,fontWeight:800,color:stat.color,marginBottom:2}}>{stat.value}</div>
-                  <div style={{fontSize:11,color:"#5A9A6A",fontWeight:600}}>{stat.label}</div>
-                </div>
-              ))}
-            </div>
+
           </div>
         )}
 
+        {/* ──────────────────────────────────────────────────────────── */}
+        {/* MY CV TAB                                                    */}
+        {/* ──────────────────────────────────────────────────────────── */}
         {activeSection === 'cv' && (
           <div>
             {!cvData ? (
-              <div>
-                <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:32,marginBottom:20,textAlign:"center"}}>
-                  <div style={{fontSize:40,marginBottom:16}}>📄</div>
-                  <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV</h2>
-                  <p style={{fontSize:14,color:"#5A9A6A",marginBottom:24,maxWidth:400,margin:"0 auto 24px"}}>
-                    Upload your CV once. AI reads everything and builds your complete career profile in seconds.
-                  </p>
+              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:32,textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:16}}>📄</div>
+                <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV</h2>
+                <p style={{fontSize:14,color:"#5A9A6A",marginBottom:24,maxWidth:400,margin:"0 auto 24px"}}>
+                  Upload your CV once. AI reads everything and builds your complete career profile in seconds.
+                </p>
+                {uploading ? (
+                  <div style={{border:"2px dashed #C8E600",borderRadius:14,padding:"48px 24px",marginBottom:16,background:"rgba(200,230,0,0.03)",textAlign:"center"}}>
+                    <div style={{fontSize:36,marginBottom:16}}>🤖</div>
+                    <div style={{fontSize:16,fontWeight:800,color:"#C8E600",marginBottom:8}}>AI is reading your CV...</div>
+                    <div style={{fontSize:13,color:"#5A9A6A",marginBottom:20}}>Extracting skills, experience and achievements — about 15 seconds</div>
+                    <div style={{width:200,height:4,background:"#1A4A2A",borderRadius:99,margin:"0 auto",overflow:"hidden"}}>
+                      <div style={{height:4,background:"#C8E600",borderRadius:99,animation:"cvprogress 2s ease-in-out infinite"}}/>
+                    </div>
+                    <style>{`@keyframes cvprogress{0%{width:5%}50%{width:75%}100%{width:95%}}`}</style>
+                  </div>
+                ) : (
                   <div
                     onDrop={handleDrop}
                     onDragOver={e=>{e.preventDefault();setDragOver(true);}}
                     onDragLeave={()=>setDragOver(false)}
                     style={{border:`2px dashed ${dragOver?'#C8E600':'#1A5A2A'}`,borderRadius:14,padding:"40px 24px",marginBottom:16,background:dragOver?'rgba(200,230,0,0.05)':'transparent',transition:"all 0.2s",cursor:"pointer"}}>
-                    <div style={{fontSize:13,color:"#5A9A6A",marginBottom:12}}>
-                      {uploading ? 'AI is reading your CV...' : 'Drag and drop your CV here'}
-                    </div>
-                    {!uploading && (
-                      <div>
-                        <div style={{fontSize:12,color:"#3A7A4A",marginBottom:16}}>or</div>
-                        <label style={{cursor:"pointer"}}>
-                          <input type="file" accept=".pdf" onChange={handleFileInput} style={{display:"none"}}/>
-                          <span style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,cursor:"pointer"}}>
-                            Choose PDF file
-                          </span>
-                        </label>
-                      </div>
-                    )}
-                    {uploading && (
-                      <div style={{marginTop:16}}>
-                        <div style={{fontSize:14,color:"#C8E600",fontWeight:700,marginBottom:8}}>Reading your CV...</div>
-                        <div style={{fontSize:12,color:"#5A9A6A"}}>About 10 seconds</div>
-                      </div>
-                    )}
+                    <div style={{fontSize:32,marginBottom:12}}>📄</div>
+                    <div style={{fontSize:14,fontWeight:700,color:"#FFFFFF",marginBottom:6}}>Drag your PDF CV here</div>
+                    <div style={{fontSize:12,color:"#3A7A4A",marginBottom:16}}>or</div>
+                    <label style={{cursor:"pointer",display:"inline-block"}}>
+                      <input type="file" accept=".pdf" onChange={handleFileInput} style={{display:"none"}}/>
+                      <span style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,cursor:"pointer",display:"inline-block"}}>
+                        Choose PDF file
+                      </span>
+                    </label>
                   </div>
-                  {error && <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginBottom:16}}>{error}</div>}
-                  <div style={{fontSize:11,color:"#3A7A4A"}}>PDF only · Maximum 10MB · Processed securely</div>
-                </div>
+                )}
+                {error && (
+                  <div style={{background:"rgba(163,45,45,0.2)",border:"1.5px solid #A32D2D",borderRadius:10,padding:"12px 16px",fontSize:13,color:"#F09595",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                    <span>⚠️ {error}</span>
+                    <button onClick={()=>setError('')} style={{background:"#A32D2D",color:"#fff",fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                      Retry
+                    </button>
+                  </div>
+                )}
+                <div style={{fontSize:11,color:"#3A7A4A"}}>PDF only · Maximum 10MB · Processed securely by AI</div>
               </div>
             ) : rewrittenCV ? (
               <div>
@@ -473,8 +871,8 @@ export default function Dashboard() {
                   <div style={{marginBottom:16}}>
                     <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:8}}>Skills matched</div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                      {rewrittenCV.skills?.map((skill: string) => (
-                        <span key={skill} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{skill}</span>
+                      {rewrittenCV.skills?.map((s: string) => (
+                        <span key={s} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{s}</span>
                       ))}
                     </div>
                   </div>
@@ -492,24 +890,21 @@ export default function Dashboard() {
                     <div key={i} style={{marginBottom:12,padding:14,background:"#0D3A1A",borderRadius:10}}>
                       <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",marginBottom:2}}>{exp.title}</div>
                       <div style={{fontSize:12,color:"#C8E600",marginBottom:8}}>{exp.company} · {exp.duration}</div>
-                      {exp.bullets?.map((bullet: string, j: number) => (
+                      {exp.bullets?.map((b: string, j: number) => (
                         <div key={j} style={{fontSize:12,color:"#90C898",lineHeight:1.7,paddingLeft:12,position:"relative"}}>
-                          <span style={{position:"absolute",left:0,color:"#C8E600"}}>·</span>{bullet}
+                          <span style={{position:"absolute",left:0,color:"#C8E600"}}>·</span>{b}
                         </div>
                       ))}
                     </div>
                   ))}
                 </div>
-                <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
-                  <div>
-                    <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Unlock Pro to download as PDF or Word</div>
-                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Everything for {currency === 'ZAR' ? 'R370' : '$20'}/month.</div>
-                  </div>
-                  <button
-                    onClick={() => handlePayment('pro')}
-                    disabled={paying}
-                    style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
-                    {paying ? 'Loading...' : 'Upgrade to Pro'}
+                <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
+                  <button onClick={downloadCV} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="#052A14" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    Download PDF
+                  </button>
+                  <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"11px 24px",borderRadius:99,border:"1px solid #1A5A2A",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                    {paying?'Loading...':'Upgrade to Pro'}
                   </button>
                 </div>
               </div>
@@ -523,8 +918,8 @@ export default function Dashboard() {
                       <div style={{fontSize:12,color:"#5A9A6A",marginTop:2}}>{cvData.location}</div>
                     </div>
                     <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                      <button onClick={()=>setCvData(null)} style={{background:"transparent",color:"#5A9A6A",fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Upload new CV</button>
-                      <a href="/" style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"7px 16px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Find matching jobs</a>
+                      <button onClick={()=>{setCvData(null);localStorage.removeItem('jobsesame_cv_data');}} style={{background:"transparent",color:"#5A9A6A",fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Upload new CV</button>
+                      <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"7px 16px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Find matching jobs</a>
                     </div>
                   </div>
                   {cvData.summary && <p style={{fontSize:13,color:"#A8D8B0",lineHeight:1.7,marginBottom:20,fontStyle:"italic"}}>&ldquo;{cvData.summary}&rdquo;</p>}
@@ -532,8 +927,8 @@ export default function Dashboard() {
                     <div>
                       <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:8}}>Skills</div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-                        {cvData.skills?.map((skill: string) => (
-                          <span key={skill} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{skill}</span>
+                        {cvData.skills?.map((s: string) => (
+                          <span key={s} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{s}</span>
                         ))}
                       </div>
                     </div>
@@ -550,25 +945,25 @@ export default function Dashboard() {
 
                 {showRewrite ? (
                   <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:16,padding:28,marginBottom:20}}>
-                    <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:20}}>Rewrite my CV for a specific job</h3>
+                    <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:20}}>Rewrite CV for a specific job</h3>
                     <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
                       <div>
                         <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job title *</label>
-                        <input value={jobTitle} onChange={e=>setJobTitle(e.target.value)} placeholder="e.g. Senior Project Manager" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit"}}/>
+                        <input value={jobTitle} onChange={e=>setJobTitle(e.target.value)} placeholder="e.g. Senior Project Manager" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box" as any}}/>
                       </div>
                       <div>
                         <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Company name</label>
-                        <input value={jobCompany} onChange={e=>setJobCompany(e.target.value)} placeholder="e.g. Standard Bank" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit"}}/>
+                        <input value={jobCompany} onChange={e=>setJobCompany(e.target.value)} placeholder="e.g. Standard Bank" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box" as any}}/>
                       </div>
                       <div>
                         <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job description (paste for best results)</label>
-                        <textarea value={jobDescription} onChange={e=>setJobDescription(e.target.value)} placeholder="Paste the job description here..." rows={5} style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:13,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",resize:"vertical"}}/>
+                        <textarea value={jobDescription} onChange={e=>setJobDescription(e.target.value)} placeholder="Paste the job description here..." rows={5} style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:13,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",resize:"vertical",boxSizing:"border-box" as any}}/>
                       </div>
                     </div>
                     {rewriteError && <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginBottom:16}}>{rewriteError}</div>}
                     <div style={{display:"flex",gap:10}}>
                       <button onClick={handleRewrite} disabled={rewriting} style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px 28px",borderRadius:99,border:"none",cursor:rewriting?"default":"pointer",opacity:rewriting?0.7:1}}>
-                        {rewriting ? 'Rewriting...' : 'Rewrite my CV now'}
+                        {rewriting?'Rewriting...':'Rewrite my CV now'}
                       </button>
                       <button onClick={()=>setShowRewrite(false)} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"12px 20px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Cancel</button>
                     </div>
@@ -577,7 +972,7 @@ export default function Dashboard() {
                 ) : (
                   <div style={{background:"#C8E600",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16}}>
                     <div>
-                      <div style={{fontSize:15,fontWeight:800,color:"#052A14",marginBottom:4}}>Ready to rewrite your CV for any job</div>
+                      <div style={{fontSize:15,fontWeight:800,color:"#052A14",marginBottom:4}}>Ready to rewrite for any job</div>
                       <div style={{fontSize:12,color:"#2A5A14"}}>AI rewrites in 30 seconds. You have {freeRewrites} free rewrites.</div>
                     </div>
                     <button onClick={()=>setShowRewrite(true)} style={{background:"#052A14",color:"#C8E600",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
@@ -589,24 +984,144 @@ export default function Dashboard() {
                 <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
                   <div>
                     <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Unlock Pro — all doors open</div>
-                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Cover letters. {currency === 'ZAR' ? 'R370' : '$20'}/month.</div>
+                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Cover letters. {currency==='ZAR'?'R249':'$14'}/month.</div>
                   </div>
-                  <button
-                    onClick={() => handlePayment('pro')}
-                    disabled={paying}
-                    style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
-                    {paying ? 'Loading...' : 'Upgrade to Pro'}
+                  <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                    {paying?'Loading...':'Upgrade to Pro'}
                   </button>
                 </div>
-                {paymentError && (
-                  <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginTop:12}}>
-                    {paymentError}
-                  </div>
-                )}
+                {paymentError && <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginTop:12}}>{paymentError}</div>}
               </div>
             )}
           </div>
         )}
+
+        {/* ──────────────────────────────────────────────────────────── */}
+        {/* REFERRAL TAB                                                 */}
+        {/* ──────────────────────────────────────────────────────────── */}
+        {activeSection === 'referral' && (
+          <div>
+            <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:16,padding:28,marginBottom:20}}>
+              <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:6}}>Unlock 10 free CV rewrites</h2>
+              <p style={{fontSize:14,color:"#5A9A6A",marginBottom:24,lineHeight:1.7}}>
+                Share Jobsesame with 3 friends. When they sign up using your link you unlock 10 free AI CV rewrites — permanently.
+              </p>
+              <div style={{display:"flex",gap:0,marginBottom:24,border:"1px solid #1A5A2A",borderRadius:12,overflow:"hidden"}}>
+                {[1,2,3].map(n=>(
+                  <div key={n} style={{flex:1,padding:"16px 10px",textAlign:"center",borderRight:n<3?"1px solid #1A5A2A":"none",background:referralsCount>=n?"rgba(200,230,0,0.1)":"transparent"}}>
+                    <div style={{fontSize:24,marginBottom:4}}>{referralsCount>=n?"✅":"👤"}</div>
+                    <div style={{fontSize:11,color:referralsCount>=n?"#C8E600":"#3A7A4A",fontWeight:600}}>Friend {n}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{background:"#0D3A1A",borderRadius:12,padding:16,marginBottom:20}}>
+                <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,marginBottom:8,letterSpacing:"1px",textTransform:"uppercase"}}>Your referral link</div>
+                <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                  <div style={{flex:1,background:"#072E16",border:"1px solid #1A5A2A",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#90C898",fontFamily:"monospace",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    {referralLink || 'Generating your link...'}
+                  </div>
+                  <button onClick={copyReferralLink} style={{background:copied?"#1A6A2A":"#C8E600",color:copied?"#C8E600":"#052A14",fontSize:12,fontWeight:800,padding:"10px 18px",borderRadius:8,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                    {copied?'Copied!':'Copy link'}
+                  </button>
+                </div>
+              </div>
+              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+                <button onClick={shareWhatsApp} style={{background:"#25D366",color:"#fff",fontSize:13,fontWeight:700,padding:"11px 22px",borderRadius:99,border:"none",cursor:"pointer"}}>Share on WhatsApp</button>
+                <button onClick={shareEmail} style={{background:"#072E16",color:"#C8E600",fontSize:13,fontWeight:700,padding:"11px 22px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Share via Email</button>
+              </div>
+            </div>
+            <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+              <div>
+                <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Want unlimited rewrites now?</div>
+                <div style={{fontSize:12,color:"#5A9A6A"}}>Upgrade to Pro for {currency==='ZAR'?'R249':'$14'}/month — unlimited everything.</div>
+              </div>
+              <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                {paying?'Loading...':'Upgrade to Pro'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ──────────────────────────────────────────────────────────── */}
+        {/* APPLICATIONS TAB                                             */}
+        {/* ──────────────────────────────────────────────────────────── */}
+        {activeSection === 'applications' && (
+          <div>
+            <div style={{marginBottom:20}}>
+              <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>My Applications</h2>
+              <p style={{fontSize:13,color:"#5A9A6A"}}>Every job you applied to — tracked automatically.</p>
+            </div>
+
+            {/* Stats */}
+            <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
+              {[
+                {label:"Total applied",value:applications.length,color:"#90C898"},
+                {label:"Interviews",value:applications.filter(a=>a.status==='Interview').length,color:"#FFA500"},
+                {label:"Offers",value:applications.filter(a=>a.status==='Offer').length,color:"#C8E600"},
+                {label:"Rejected",value:applications.filter(a=>a.status==='Rejected').length,color:"#F09595"},
+              ].map(s=>(
+                <div key={s.label} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 20px",flex:1,minWidth:100}}>
+                  <div style={{fontSize:22,fontWeight:800,color:s.color,marginBottom:2}}>{s.value}</div>
+                  <div style={{fontSize:11,color:"#5A9A6A",fontWeight:600}}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {applications.length === 0 ? (
+              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:48,textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:16}}>📋</div>
+                <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>No applications yet</h3>
+                <p style={{fontSize:13,color:"#5A9A6A",marginBottom:24}}>Use Quick Apply on any job and it will appear here automatically.</p>
+                <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Browse jobs</a>
+              </div>
+            ) : (
+              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,overflow:"hidden"}}>
+                {!isMobile && (
+                  <div style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"12px 20px",borderBottom:"1px solid #1A4A2A",background:"#0D3A1A"}}>
+                    {["Job","Company","Location","Date","Status"].map(h=>(
+                      <div key={h} style={{fontSize:10,color:"#5A9A6A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase"}}>{h}</div>
+                    ))}
+                  </div>
+                )}
+                {applications.map((app,i)=>(
+                  isMobile ? (
+                    <div key={app.id} style={{padding:"14px 16px",borderBottom:i<applications.length-1?"1px solid #0D3A1A":"none"}}>
+                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
+                        <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF"}}>{app.jobTitle}</div>
+                        <select value={app.status} onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])} style={{padding:"4px 8px",borderRadius:99,border:"1.5px solid",fontSize:10,fontWeight:700,cursor:"pointer",outline:"none",background:"#0D3A1A",borderColor:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#A32D2D':'#1A5A2A',color:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#F09595':'#90C898'}}>
+                          <option value="Applied">Applied</option>
+                          <option value="Interview">Interview</option>
+                          <option value="Offer">Offer</option>
+                          <option value="Rejected">Rejected</option>
+                        </select>
+                      </div>
+                      <div style={{fontSize:11,color:"#5A9A6A"}}>{app.company} · {app.location} · {new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
+                    </div>
+                  ) : (
+                    <div key={app.id} style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"14px 20px",borderBottom:i<applications.length-1?"1px solid #0D3A1A":"none",alignItems:"center"}}>
+                      <div>
+                        <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",marginBottom:2}}>{app.jobTitle}</div>
+                        {app.jobUrl && <a href={app.jobUrl} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#3A7A4A",textDecoration:"none"}}>View posting ↗</a>}
+                      </div>
+                      <div style={{fontSize:12,color:"#90C898"}}>{app.company}</div>
+                      <div style={{fontSize:12,color:"#5A9A6A"}}>{app.location}</div>
+                      <div style={{fontSize:11,color:"#3A7A4A"}}>{new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
+                      <div>
+                        <select value={app.status} onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])} style={{padding:"5px 10px",borderRadius:99,border:"1.5px solid",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none",background:"#0D3A1A",borderColor:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#A32D2D':'#1A5A2A',color:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#F09595':'#90C898'}}>
+                          <option value="Applied">Applied</option>
+                          <option value="Interview">Interview</option>
+                          <option value="Offer">Offer</option>
+                          <option value="Rejected">Rejected</option>
+                        </select>
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </main>
   );

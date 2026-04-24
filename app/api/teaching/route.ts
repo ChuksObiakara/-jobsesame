@@ -46,7 +46,6 @@ async function fetchJobicy(): Promise<any[]> {
     level: job.jobLevel || 'All levels',
     type: 'teaching',
   }));
-  console.log(`[Teaching] Jobicy: ${jobs.length} jobs`);
   return jobs;
 }
 
@@ -74,7 +73,6 @@ async function fetchRemotive(): Promise<any[]> {
       level: 'All levels',
       type: 'teaching',
     }));
-  console.log(`[Teaching] Remotive: ${jobs.length} teaching matches`);
   return jobs;
 }
 
@@ -118,7 +116,6 @@ async function fetchMuse(): Promise<any[]> {
     level: job.levels?.[0]?.name || 'All levels',
     type: 'teaching',
   }));
-  console.log(`[Teaching] Muse scan: ${jobs.length} teaching matches`);
   return jobs;
 }
 
@@ -132,10 +129,8 @@ export async function GET(_request: NextRequest) {
     ]);
 
     const jobs = dedupe([...jobicyJobs, ...remotiveJobs, ...museJobs]);
-    console.log(`[Teaching] Total unique jobs: ${jobs.length}`);
     return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
   } catch (error) {
-    console.error('[Teaching] Error:', error);
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch teaching jobs' });
   }
 }

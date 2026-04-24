@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import QuickApply from '../components/QuickApply';
 
 interface Job {
-  id: number;
+  id: string | number;
   title: string;
   company: string;
   location: string;
@@ -23,8 +23,8 @@ export default function SavedJobsPage() {
     if (saved) setSavedJobs(JSON.parse(saved));
   }, []);
 
-  const removeJob = (id: number) => {
-    const updated = savedJobs.filter(j => j.id !== id);
+  const removeJob = (id: string | number) => {
+    const updated = savedJobs.filter(j => String(j.id) !== String(id));
     setSavedJobs(updated);
     localStorage.setItem('jobsesame_saved_jobs', JSON.stringify(updated));
   };

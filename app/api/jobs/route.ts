@@ -1,6 +1,73 @@
 export const revalidate = 300;
 import { NextRequest, NextResponse } from 'next/server';
 
+async function fetchJSearch(query: string, page: string): Promise<any[]> {
+  const apiKey = process.env.RAPIDAPI_KEY;
+  if (!apiKey) return [];
+  try {
+    const params = new URLSearchParams({ query, page, num_pages: '1' });
+    const res = await fetch(`https://jsearch.p.rapidapi.com/search?${params}`, {
+      headers: {
+        'x-rapidapi-key': apiKey,
+        'x-rapidapi-host': 'jsearch.p.rapidapi.com',
+      },
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) {
+      console.warn(`JSearch error ${res.status}: ${res.statusText} — subscription may be inactive`);
+      return [];
+    }
+    const data = await res.json();
+    if (data.message) console.warn('JSearch API message:', data.message);
+    return (data.data || []).map((job: any) => ({
+      id: `jsearch-${job.job_id}`,
+      title: job.job_title || '',
+      company: job.employer_name || 'Company',
+      location: [job.job_city, job.job_country].filter(Boolean).join(', ') || 'Worldwide',
+      description: (job.job_description || '').substring(0, 200) + '...',
+      url: job.job_apply_link || job.job_google_link || '#',
+      created: '',
+      salary: '',
+      category: 'General',
+      level: job.job_employment_type || 'FULLTIME',
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function fetchAdzuna(query: string, country: string): Promise<any[]> {
+  const appId = process.env.ADZUNA_APP_ID;
+  const apiKey = process.env.ADZUNA_API_KEY;
+  if (!appId || !apiKey) return [];
+  try {
+    const params = new URLSearchParams({
+      app_id: appId, app_key: apiKey,
+      results_per_page: '20', what: query,
+    });
+    const res = await fetch(
+      `https://api.adzuna.com/v1/api/jobs/${country}/search/1?${params}`,
+      { next: { revalidate: 300 } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.results || []).map((job: any) => ({
+      id: `adzuna-${country}-${job.id}`,
+      title: job.title || '',
+      company: job.company?.display_name || 'Company',
+      location: job.location?.display_name || country.toUpperCase(),
+      description: (job.description || '').substring(0, 200) + '...',
+      url: job.redirect_url || '#',
+      created: '',
+      salary: job.salary_min ? `${Math.round(job.salary_min)}${job.salary_max ? `–${Math.round(job.salary_max)}` : ''}` : '',
+      category: job.category?.label || 'General',
+      level: job.contract_time || 'full_time',
+    }));
+  } catch {
+    return [];
+  }
+}
+
 // Maps homepage dropdown values to Muse city/region strings.
 const LOCATION_MAP: Record<string, string[]> = {
   'Australia':      ['Sydney, Australia', 'Melbourne, Australia', 'Brisbane, Australia'],
@@ -130,24 +197,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ jobs: deduped, total: deduped.length, source: 'Adzuna' });
   }
 
-  // ── No location filter: merge Adzuna ZA + The Muse global ────────────────
+  // ── No location filter: merge Adzuna ZA + The Muse + JSearch global ───────
   if (!location) {
     try {
-      const [adzunaZA, museRes] = await Promise.all([
+      const [adzunaZA, museData, jsearchJobs] = await Promise.all([
         fetchAdzunaPages('za', [1], query),
         fetch(
           `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
           { headers: { Accept: 'application/json' }, next: { revalidate: 300 } }
         ).then(r => r.ok ? r.json() : { results: [] }),
+        fetchJSearch(query, page),
       ]);
-
-      const museJobs = (museRes.results || []).map(mapMuseJob);
-      const jobs = dedupe([...adzunaZA, ...museJobs]);
-      const total = (museRes.total || 0) + adzunaZA.length;
-      console.log(`[Jobs] Global: adzuna=${adzunaZA.length} muse=${museJobs.length}`);
+      const museJobs = (museData.results || []).map(mapMuseJob);
+      const jobs = dedupe([...adzunaZA, ...museJobs, ...jsearchJobs]).slice(0, 50);
+      const total = (museData.total || 0) + adzunaZA.length;
+      console.log(`[Jobs] Global: adzuna=${adzunaZA.length} muse=${museJobs.length} jsearch=${jsearchJobs.length}`);
       return NextResponse.json({ jobs, total, source: 'Multi-source' });
     } catch (error) {
-      console.error('[Jobs] Error:', error);
       return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
     }
   }
@@ -168,10 +234,22 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  try {
-    const pageResults = await Promise.all(cities.map(city => fetchMusePage(city, 1)));
-    const allRaw = pageResults.flat().map(mapMuseJob);
+  // Map location names to Adzuna country codes
+  const ADZUNA_COUNTRY: Record<string, string> = {
+    'South Africa': 'za', 'United Kingdom': 'gb', 'United States': 'us',
+    'Australia': 'au', 'Canada': 'ca', 'India': 'in', 'Singapore': 'sg',
+  };
+  const adzunaCountry = ADZUNA_COUNTRY[location] || null;
 
+  try {
+    // Fetch Muse + JSearch + Adzuna in parallel
+    const [pageResults, jsearchJobs, adzunaJobs] = await Promise.all([
+      Promise.all(cities.map(city => fetchMusePage(city, 1))),
+      fetchJSearch(`${query} in ${location}`, page),
+      adzunaCountry ? fetchAdzunaPages(adzunaCountry, [1, 2], query) : Promise.resolve([]),
+    ]);
+
+    const allRaw = pageResults.flat().map(mapMuseJob);
     const onTarget = allRaw.filter(j => isOnTarget(j.location, cities));
     const remote   = allRaw.filter(j => !isOnTarget(j.location, cities));
 
@@ -185,11 +263,11 @@ export async function GET(request: NextRequest) {
       combined = [...onTarget, ...page2OnTarget, ...remote, ...page2Remote];
     }
 
-    const jobs = dedupe(combined).slice(0, 20);
-    console.log(`[Jobs] Location=${location}: on-target=${onTarget.length} total=${jobs.length}`);
-    return NextResponse.json({ jobs, total: jobs.length, source: 'The Muse' });
+    // Adzuna and JSearch are location-matched — prepend them
+    const jobs = dedupe([...adzunaJobs, ...combined, ...jsearchJobs]).slice(0, 40);
+    console.log(`[Jobs] Location=${location}: on-target=${onTarget.length} adzuna=${adzunaJobs.length} total=${jobs.length}`);
+    return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
   } catch (error) {
-    console.error('[Jobs] Location filter error:', error);
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
   }
 }

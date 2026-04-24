@@ -4,81 +4,102 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 
+function mapJob(job: any): any {
+  const city    = job.job_city || '';
+  const state   = job.job_state || '';
+  const country = job.job_country || '';
+  const location = [city, state, country].filter(Boolean).join(', ') || 'Worldwide';
+  const salaryMin = job.job_min_salary;
+  const salaryMax = job.job_max_salary;
+  const currency  = job.job_salary_currency || '$';
+  const salary    = salaryMin
+    ? `${currency}${Math.round(salaryMin)}${salaryMax ? `–${Math.round(salaryMax)}` : ''}`
+    : '';
+  return {
+    id: `jsearch-${job.job_id}`,
+    title: job.job_title || '',
+    company: job.employer_name || 'Company',
+    location,
+    description: (job.job_description || '').substring(0, 220) + '...',
+    url: job.job_apply_link || job.job_google_link || '#',
+    salary,
+    category: job.job_required_experience?.required_experience_in_months ? 'Experienced' : 'General',
+    level: job.job_employment_type || 'FULLTIME',
+    created: job.job_posted_at_datetime_utc || '',
+    source: 'JSearch',
+    type: 'jsearch',
+  };
+}
+
+async function fetchPage(query: string, page: string, apiKey: string): Promise<any[]> {
+  try {
+    const params = new URLSearchParams({ query, page, num_pages: '1' });
+    const res = await fetch(`https://jsearch.p.rapidapi.com/search?${params}`, {
+      headers: {
+        'x-rapidapi-key': apiKey,
+        'x-rapidapi-host': 'jsearch.p.rapidapi.com',
+      },
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) {
+      console.warn(`[JSearch] HTTP ${res.status}: ${res.statusText} — check subscription`);
+      return [];
+    }
+    const data = await res.json();
+    if (data.message) console.warn('[JSearch] API message:', data.message);
+    return (data.data || []).map(mapJob);
+  } catch {
+    return [];
+  }
+}
+
 function dedupe(jobs: any[]): any[] {
   const seen = new Set<string>();
   return jobs.filter(j => {
-    const key = `${(j.title || '').toLowerCase().trim()}|${(j.company || '').toLowerCase().trim()}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
+    if (seen.has(j.id)) return false;
+    seen.add(j.id);
     return true;
   });
 }
 
-async function fetchJSearch(query: string, numPages: number): Promise<any[]> {
-  const apiKey = process.env.RAPIDAPI_KEY;
+export async function GET(request: NextRequest) {
+  const rawQuery = request.nextUrl.searchParams.get('query') || 'software engineer';
+  const page     = request.nextUrl.searchParams.get('page') || '1';
+  const country  = (request.nextUrl.searchParams.get('country') || '').toLowerCase();
+  const apiKey   = process.env.RAPIDAPI_KEY;
+
   if (!apiKey) {
-    console.warn('[JSearch] RAPIDAPI_KEY not set');
-    return [];
+    return NextResponse.json({ jobs: [], total: 0, error: 'RAPIDAPI_KEY not configured' });
   }
 
-  const pages = Array.from({ length: numPages }, (_, i) => i + 1);
-  const results = await Promise.all(
-    pages.map(page =>
-      fetch(
-        `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&page=${page}&num_pages=1`,
-        {
-          headers: {
-            'x-rapidapi-host': 'jsearch.p.rapidapi.com',
-            'x-rapidapi-key': apiKey,
-          },
-        }
-      )
-        .then(r => r.json())
-        .then(d =>
-          (d.data || []).map((job: any) => ({
-            id: `jsearch-${job.job_id}`,
-            title: job.job_title || '',
-            company: job.employer_name || 'Company',
-            location: [job.job_city, job.job_state, job.job_country]
-              .filter(Boolean)
-              .join(', '),
-            description: (job.job_description || '').substring(0, 220) + '...',
-            url: job.job_apply_link || job.job_google_link || '#',
-            salary: job.job_min_salary
-              ? `${job.job_min_salary.toLocaleString()} – ${(job.job_max_salary || job.job_min_salary).toLocaleString()}`
-              : '',
-            category: job.job_required_experience?.required_experience_in_months
-              ? 'Experienced'
-              : 'General',
-            level: job.job_employment_type || 'All levels',
-            created: job.job_posted_at_datetime_utc || '',
-            source: 'JSearch',
-            type: 'south-africa',
-          }))
-        )
-        .catch(() => [])
-    )
-  );
-
-  return results.flat();
-}
-
-export async function GET(request: NextRequest) {
-  const query = request.nextUrl.searchParams.get('query') || '';
+  const isSA = country === 'za' || country === 'south africa';
 
   try {
-    const [saJobs, joburgJobs, capeJobs, durbanJobs] = await Promise.all([
-      fetchJSearch(query ? `${query} South Africa` : 'jobs in South Africa', 3),
-      fetchJSearch(query ? `${query} Johannesburg` : 'jobs in Johannesburg', 2),
-      fetchJSearch(query ? `${query} Cape Town` : 'jobs in Cape Town', 2),
-      fetchJSearch('jobs in Durban South Africa', 1),
-    ]);
+    let jobs: any[];
 
-    const allJobs = dedupe([...saJobs, ...joburgJobs, ...capeJobs, ...durbanJobs]).slice(0, 150);
-    console.log(`[JSearch] SA total: ${allJobs.length} jobs`);
-    return NextResponse.json({ jobs: allJobs, total: allJobs.length, source: 'JSearch' });
+    if (isSA) {
+      // Fetch multiple SA city queries in parallel for maximum coverage
+      const [saJobs, joburgJobs, capeJobs, durbanJobs] = await Promise.all([
+        fetchPage(rawQuery ? `${rawQuery} South Africa` : 'jobs in South Africa', '1', apiKey),
+        fetchPage(rawQuery ? `${rawQuery} Johannesburg`  : 'jobs in Johannesburg',  '1', apiKey),
+        fetchPage(rawQuery ? `${rawQuery} Cape Town`     : 'jobs in Cape Town',     '1', apiKey),
+        fetchPage('jobs in Durban South Africa', '1', apiKey),
+      ]);
+      // Also fetch pages 2 and 3 for SA
+      const [sa2, sa3] = await Promise.all([
+        fetchPage(rawQuery ? `${rawQuery} South Africa` : 'jobs in South Africa', '2', apiKey),
+        fetchPage(rawQuery ? `${rawQuery} South Africa` : 'jobs in South Africa', '3', apiKey),
+      ]);
+      jobs = dedupe([...saJobs, ...joburgJobs, ...capeJobs, ...durbanJobs, ...sa2, ...sa3]).slice(0, 150);
+    } else {
+      const searchQuery = country ? `${rawQuery} ${country}` : rawQuery;
+      jobs = await fetchPage(searchQuery, page, apiKey);
+    }
+
+    console.log(`[JSearch] country=${country || 'all'} → ${jobs.length} jobs`);
+    return NextResponse.json({ jobs, total: jobs.length, source: 'JSearch' });
   } catch (err) {
     console.error('[JSearch] Error:', err);
-    return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch JSearch jobs' });
+    return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
   }
 }
