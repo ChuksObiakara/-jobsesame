@@ -25,6 +25,7 @@ export default function Home() {
   const [total, setTotal] = useState(0);
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('USD');
   const [activeTab, setActiveTab] = useState<'all' | 'remote' | 'relocation' | 'teaching' | 'south-africa'>('all');
+  const [africaCity, setAfricaCity] = useState('');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -77,7 +78,8 @@ export default function Home() {
       } else if (tab === 'teaching') {
         url = `/api/teaching`;
       } else if (tab === 'south-africa') {
-        url = `/api/south-africa?query=${encodeURIComponent(searchQuery || 'software engineer')}`;
+        const cityParam = africaCity ? `&location=${encodeURIComponent(africaCity)}` : '';
+        url = `/api/africa?query=${encodeURIComponent(searchQuery || '')}${cityParam}`;
       } else {
         url = `/api/jobs?query=${encodeURIComponent(searchQuery || 'software engineer')}&location=${encodeURIComponent(loc)}`;
       }
@@ -119,6 +121,18 @@ export default function Home() {
   const handleTabChange = (tab: 'all' | 'remote' | 'relocation' | 'teaching' | 'south-africa') => {
     setActiveTab(tab);
     fetchJobs(tab, query, location);
+  };
+
+  const handleAfricaCityChange = (city: string) => {
+    setAfricaCity(city);
+    // Re-fetch with new city filter
+    setLoading(true);
+    const cityParam = city ? `&location=${encodeURIComponent(city)}` : '';
+    fetch(`/api/africa?query=${encodeURIComponent(query || '')}${cityParam}`)
+      .then(r => r.json())
+      .then(data => { setJobs(data.jobs || []); setTotal(data.total || 0); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -287,7 +301,7 @@ export default function Home() {
           </div>
         </div>
         <p style={{textAlign:"center",fontSize:12,color:"#5A9A6A",marginBottom:14,fontStyle:"italic"}}>
-          {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : activeTab === 'teaching' ? 'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free' : activeTab === 'south-africa' ? 'Live jobs across South Africa, Nigeria, Kenya and beyond' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
+          {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : activeTab === 'teaching' ? 'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free' : activeTab === 'south-africa' ? '200+ live jobs across South Africa, Nigeria and beyond — Adzuna, JSearch & more' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
         </p>
         <form onSubmit={handleSearch} style={{display:"flex",gap:8,flexWrap:"wrap",maxWidth:720,margin:"0 auto"}}>
           <input
@@ -348,15 +362,39 @@ export default function Home() {
             {total > 0 ? total.toLocaleString() : '...'} matches
           </span>
         </div>
-        {activeTab === 'south-africa' && !loading && (
-          <div style={{background:"#052A14",border:"1.5px solid #C8E600",borderRadius:14,padding:"14px 20px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{fontSize:18}}>🌍</span>
-              <span style={{fontSize:13,color:"#A8D8B0",fontWeight:600}}>
-                Jobs in <strong style={{color:"#FFFFFF"}}>South Africa, Nigeria, Kenya</strong> and across Africa — plus remote roles open to African applicants
-              </span>
+        {activeTab === 'south-africa' && (
+          <div style={{marginBottom:16}}>
+            <div style={{background:"#052A14",border:"1.5px solid #C8E600",borderRadius:14,padding:"14px 20px",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:18}}>🌍</span>
+                <span style={{fontSize:13,color:"#A8D8B0",fontWeight:600}}>
+                  Jobs across Africa — <strong style={{color:"#FFFFFF"}}>South Africa, Nigeria</strong> and beyond
+                </span>
+              </div>
+              {total > 0 && (
+                <span style={{fontSize:12,color:"#C8E600",fontWeight:700,whiteSpace:"nowrap"}}>{total.toLocaleString()} African jobs found</span>
+              )}
             </div>
-            <span style={{fontSize:11,color:"#3A7A4A",fontWeight:600,whiteSpace:"nowrap"}}>Live results</span>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {['', 'Johannesburg', 'Cape Town', 'Durban', 'Pretoria', 'Lagos', 'Nairobi'].map(city => (
+                <button
+                  key={city || 'all'}
+                  onClick={() => handleAfricaCityChange(city)}
+                  style={{
+                    padding:'6px 14px',
+                    borderRadius:99,
+                    fontSize:12,
+                    fontWeight:700,
+                    cursor:'pointer',
+                    border:'1.5px solid #C8E600',
+                    background: africaCity === city ? '#C8E600' : 'transparent',
+                    color: africaCity === city ? '#052A14' : '#C8E600',
+                    transition:'all 0.15s',
+                  }}>
+                  {city || 'All Africa'}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {activeTab === 'teaching' && !loading && (
@@ -451,6 +489,7 @@ export default function Home() {
                       {activeTab === 'remote' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Remote</span>}
                       {activeTab === 'relocation' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Relocation</span>}
                       {activeTab === 'teaching' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>🎓 Teaching</span>}
+                      {(job as any).source && <span style={{fontSize:10,padding:"2px 8px",borderRadius:99,fontWeight:600,background:"rgba(5,42,20,0.08)",color:"#3A7A4A",border:"1px solid #D8EED8",whiteSpace:"nowrap"}}>{(job as any).source}</span>}
                       {/* TASK 1 — auto-apply badge */}
                       {isAutoApply(job.url)
                         ? <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:700,background:"rgba(200,230,0,0.12)",color:"#C8E600",border:"1px solid rgba(200,230,0,0.35)",whiteSpace:"nowrap"}}>⚡ Auto-apply</span>
