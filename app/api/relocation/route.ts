@@ -1,4 +1,4 @@
-export const revalidate = 300;
+export const revalidate = 3600;
 import { NextRequest, NextResponse } from 'next/server';
 
 async function fetchAdzunaUK(query: string): Promise<any[]> {
