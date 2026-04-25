@@ -2,7 +2,7 @@
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import QuickApply from '../components/QuickApply';
+import QuickApply, { isAutoApply } from '../components/QuickApply';
 import CoverLetter from '../components/CoverLetter';
 import { jsPDF } from 'jspdf';
 
@@ -732,12 +732,15 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div style={{display:"flex",gap:8,marginTop:"auto"}}>
-                          <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"7px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
-                            ⚡ Quick Apply
-                          </button>
-                          <button onClick={()=>window.open(job.url,'_blank')} style={{background:"transparent",color:"#5A9A6A",fontSize:11,fontWeight:600,padding:"7px 12px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
-                            View
-                          </button>
+                          {isAutoApply(job.url, job.type) ? (
+                            <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"7px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
+                              ⚡ Quick Apply
+                            </button>
+                          ) : (
+                            <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"#052A14",color:"#C8E600",fontSize:11,fontWeight:800,padding:"7px 0",borderRadius:99,border:"2px solid #C8E600",cursor:"pointer"}}>
+                              Apply
+                            </button>
+                          )}
                         </div>
                       </div>
                     );

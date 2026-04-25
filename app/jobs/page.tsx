@@ -434,27 +434,31 @@ export default function JobsPage() {
                   </div>
 
                   {isMobile ? (
-                    <div style={{display:"flex",flexDirection:"column",gap:8,width:"100%",marginTop:4}}>
-                      <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"10px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
-                        ⚡ Quick Apply
+                    <div style={{display:"flex",gap:8,width:"100%",marginTop:4}}>
+                      {isAutoApply(job.url, job.type) ? (
+                        <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"10px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
+                          ⚡ Quick Apply
+                        </button>
+                      ) : (
+                        <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"#052A14",color:"#C8E600",fontSize:12,fontWeight:800,padding:"10px 0",borderRadius:99,border:"2px solid #C8E600",cursor:"pointer"}}>
+                          Apply
+                        </button>
+                      )}
+                      <button onClick={()=>toggleSaveJob(job)} style={{background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:12,fontWeight:600,padding:"10px 14px",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer",flexShrink:0}}>
+                        🔖
                       </button>
-                      <div style={{display:"flex",gap:8,width:"100%"}}>
-                        <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 0",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
-                          View job
-                        </button>
-                        <button onClick={()=>toggleSaveJob(job)} style={{flex:1,background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 0",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer"}}>
-                          {savedJobs.includes(job.id) ? '🔖 Saved' : '🔖 Save'}
-                        </button>
-                      </div>
                     </div>
                   ) : (
                     <div style={{display:"flex",flexDirection:"column",gap:7,width:120,flexShrink:0}}>
-                      <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"8px 0",borderRadius:99,border:"none",cursor:"pointer",textAlign:"center"}}>
-                        ⚡ Quick Apply
-                      </button>
-                      <button onClick={()=>window.open(job.url,'_blank')} style={{width:"100%",background:"transparent",color:"#5A9A6A",fontSize:11,fontWeight:600,padding:"7px 0",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer",textAlign:"center"}}>
-                        View job
-                      </button>
+                      {isAutoApply(job.url, job.type) ? (
+                        <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"8px 0",borderRadius:99,border:"none",cursor:"pointer",textAlign:"center"}}>
+                          ⚡ Quick Apply
+                        </button>
+                      ) : (
+                        <button onClick={()=>window.open(job.url,'_blank')} style={{width:"100%",background:"#052A14",color:"#C8E600",fontSize:11,fontWeight:800,padding:"8px 0",borderRadius:99,border:"2px solid #C8E600",cursor:"pointer",textAlign:"center"}}>
+                          Apply
+                        </button>
+                      )}
                       <button onClick={()=>toggleSaveJob(job)} style={{width:"100%",background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:11,fontWeight:600,padding:"7px 0",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer",textAlign:"center"}}>
                         {savedJobs.includes(job.id) ? '🔖 Saved' : '🔖 Save'}
                       </button>

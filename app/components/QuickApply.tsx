@@ -26,14 +26,8 @@ export function isGreenhouseJob(job: { type?: string; url: string }): boolean {
 }
 
 export function isAutoApply(url: string, type?: string): boolean {
-  // Greenhouse jobs use direct API apply — always auto-apply
-  if (type === 'greenhouse' || url.toLowerCase().includes('greenhouse.io')) return true;
-  const complexPortals = [
-    'linkedin', 'indeed', 'workday',
-    'lever', 'smartrecruiters', 'taleo', 'icims', 'successfactors', 'jobvite',
-    'myworkdayjobs', 'ultipro', 'kronos',
-  ];
-  return !complexPortals.some(portal => url.toLowerCase().includes(portal));
+  const u = url.toLowerCase();
+  return type === 'greenhouse' || u.includes('greenhouse.io') || u.includes('arbeitnow.com');
 }
 
 export default function QuickApply({ job, onClose, currency = 'USD' }: QuickApplyProps) {
