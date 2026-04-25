@@ -1,4 +1,4 @@
-export const revalidate = 3600;
+export const revalidate = 300;
 import { NextRequest, NextResponse } from 'next/server';
 
 async function fetchJSearch(query: string, page: string): Promise<any[]> {
@@ -11,7 +11,7 @@ async function fetchJSearch(query: string, page: string): Promise<any[]> {
         'x-rapidapi-key': apiKey,
         'x-rapidapi-host': 'jsearch.p.rapidapi.com',
       },
-      next: { revalidate: 300 },
+      next: { revalidate: 3600 },
     });
     if (!res.ok) {
       console.warn(`JSearch error ${res.status}: ${res.statusText} — subscription may be inactive`);
@@ -47,7 +47,7 @@ async function fetchAdzuna(query: string, country: string): Promise<any[]> {
     });
     const res = await fetch(
       `https://api.adzuna.com/v1/api/jobs/${country}/search/1?${params}`,
-      { next: { revalidate: 300 } }
+      { next: { revalidate: 3600 } }
     );
     if (!res.ok) return [];
     const data = await res.json();
@@ -69,7 +69,6 @@ async function fetchAdzuna(query: string, country: string): Promise<any[]> {
 }
 
 // Maps homepage dropdown values to Muse city/region strings.
-// Multiple entries per country are fetched in parallel then merged.
 const LOCATION_MAP: Record<string, string[]> = {
   'Australia':      ['Sydney, Australia', 'Melbourne, Australia', 'Brisbane, Australia'],
   'United Kingdom': ['London, United Kingdom', 'Manchester, United Kingdom', 'Edinburgh, United Kingdom'],
@@ -83,18 +82,69 @@ const LOCATION_MAP: Record<string, string[]> = {
   'Kenya':          ['Nairobi, Kenya'],
 };
 
+const ADZUNA_APP_ID = '73658bdc';
+
+// ── Adzuna helpers ────────────────────────────────────────────────────────────
+
+function mapAdzunaJob(job: any, country: string): any {
+  const location =
+    job.location?.display_name ||
+    (job.location?.area?.join(', ') ?? '') ||
+    (country === 'za' ? 'South Africa' : 'Nigeria');
+  return {
+    id: `adzuna-${job.id}`,
+    title: job.title || '',
+    company: job.company?.display_name || 'Company',
+    location,
+    description: (job.description || '').replace(/<[^>]*>/g, '').substring(0, 200) + '...',
+    url: job.redirect_url || '#',
+    salary: job.salary_min
+      ? `${job.salary_min.toLocaleString()} – ${(job.salary_max || job.salary_min).toLocaleString()}`
+      : '',
+    category: job.category?.label || 'General',
+    level: 'All levels',
+    created: job.created || '',
+    source: 'Adzuna',
+  };
+}
+
+async function fetchAdzunaPages(country: string, pages: number[], query?: string): Promise<any[]> {
+  const apiKey = process.env.ADZUNA_API_KEY;
+  if (!apiKey) return [];
+  const results = await Promise.all(
+    pages.map(page => {
+      const params = new URLSearchParams({
+        app_id: ADZUNA_APP_ID,
+        app_key: apiKey,
+        results_per_page: '50',
+      });
+      if (query) params.set('what', query);
+      return fetch(
+        `https://api.adzuna.com/v1/api/jobs/${country}/search/${page}?${params}`,
+        { next: { revalidate: 3600 } }
+      )
+        .then(r => r.ok ? r.json() : { results: [] })
+        .then(d => (d.results || []).map((j: any) => mapAdzunaJob(j, country)))
+        .catch(() => []);
+    })
+  );
+  return results.flat();
+}
+
+// ── The Muse helpers ──────────────────────────────────────────────────────────
+
 async function fetchMusePage(location: string, page: number): Promise<any[]> {
   const params = new URLSearchParams({ location, page: String(page) });
   const res = await fetch(`https://www.themuse.com/api/public/jobs?${params}`, {
     headers: { Accept: 'application/json' },
-    next: { revalidate: 300 },
+    next: { revalidate: 3600 },
   });
   if (!res.ok) return [];
   const data = await res.json();
   return data.results || [];
 }
 
-function mapJob(job: any): any {
+function mapMuseJob(job: any): any {
   return {
     id: job.id,
     title: job.name,
@@ -106,6 +156,7 @@ function mapJob(job: any): any {
     category: job.categories?.[0]?.name || 'General',
     level: job.levels?.[0]?.name || 'All levels',
     salary: '',
+    source: 'The Muse',
   };
 }
 
@@ -134,72 +185,57 @@ const GH_BOARDS = [
   { token: 'squarespace', name: 'Squarespace' },
   { token: 'pinterest',   name: 'Pinterest' },
   { token: 'impact',      name: 'Impact' },
+  { token: 'paystack',    name: 'Paystack' },
 ];
 
 async function fetchGreenhouse(): Promise<any[]> {
-  try {
-    const results = await Promise.all(
-      GH_BOARDS.map(async ({ token, name }) => {
-        try {
-          const res = await fetch(
-            `https://api.greenhouse.io/v1/boards/${token}/jobs`,
-            { next: { revalidate: 3600 } }
-          );
-          if (!res.ok) return [];
-          const data = await res.json();
-          return (data.jobs || []).slice(0, 15).map((job: any) => ({
-            id: `greenhouse-${token}-${job.id}`,
-            title: job.title || '',
-            company: name,
-            location: job.location?.name || 'Worldwide',
-            description: (job.content || '').replace(/<[^>]*>/g, '').substring(0, 200) + '...',
-            url: job.absolute_url || `https://boards.greenhouse.io/${token}/jobs/${job.id}`,
-            salary: '',
-            category: job.departments?.[0]?.name || 'General',
-            level: 'Full-time',
-            type: 'greenhouse',
-            boardToken: token,
-            jobId: String(job.id),
-          }));
-        } catch { return []; }
-      })
-    );
-    return results.flat();
-  } catch { return []; }
+  const results = await Promise.all(
+    GH_BOARDS.map(async ({ token, name }) => {
+      try {
+        const res = await fetch(
+          `https://api.greenhouse.io/v1/boards/${token}/jobs`,
+          { next: { revalidate: 3600 } }
+        );
+        if (!res.ok) return [];
+        const data = await res.json();
+        return (data.jobs || []).slice(0, 12).map((job: any) => ({
+          id: `greenhouse-${token}-${job.id}`,
+          title: job.title || '',
+          company: name,
+          location: job.location?.name || 'Worldwide',
+          description: '',
+          url: job.absolute_url || `https://boards.greenhouse.io/${token}/jobs/${job.id}`,
+          salary: '',
+          category: job.departments?.[0]?.name || 'General',
+          level: 'Full-time',
+          type: 'greenhouse',
+          boardToken: token,
+          jobId: String(job.id),
+        }));
+      } catch { return []; }
+    })
+  );
+  return results.flat();
 }
-
-const LEVER_COMPANIES = [
-  { slug: 'plaid', name: 'Plaid' },
-];
 
 async function fetchLever(): Promise<any[]> {
   try {
-    const results = await Promise.all(
-      LEVER_COMPANIES.map(async ({ slug, name }) => {
-        try {
-          const res = await fetch(
-            `https://api.lever.co/v0/postings/${slug}?mode=json`,
-            { next: { revalidate: 3600 } }
-          );
-          if (!res.ok) return [];
-          const data = await res.json();
-          if (!Array.isArray(data)) return [];
-          return data.map((job: any) => ({
-            id: `lever-${slug}-${job.id}`,
-            title: job.text || '',
-            company: name,
-            location: job.categories?.location || job.categories?.allLocations?.[0] || 'Worldwide',
-            description: (job.descriptionBody || job.description || '').replace(/<[^>]*>/g, '').substring(0, 200) + '...',
-            url: job.hostedUrl || job.applyUrl || '#',
-            salary: '',
-            category: job.categories?.team || 'General',
-            level: job.categories?.commitment || 'Full-time',
-            type: 'lever',
-          }));
-        } catch { return []; }
-      })
-    );
-    return results.flat();
+    const res = await fetch('https://api.lever.co/v0/postings/plaid?mode=json', { next: { revalidate: 3600 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (!Array.isArray(data)) return [];
+    return data.map((job: any) => ({
+      id: `lever-plaid-${job.id}`,
+      title: job.text || '',
+      company: 'Plaid',
+      location: job.categories?.location || 'Worldwide',
+      description: (job.descriptionBody || '').replace(/<[^>]*>/g, '').substring(0, 200) + '...',
+      url: job.hostedUrl || '#',
+      salary: '',
+      category: job.categories?.team || 'General',
+      level: job.categories?.commitment || 'Full-time',
+      type: 'lever',
+    }));
   } catch { return []; }
 }
 
@@ -215,44 +251,58 @@ function dedupe(jobs: any[]): any[] {
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const query = searchParams.get('query') || 'Software Engineer';
+  const query    = searchParams.get('query') || 'Software Engineer';
   const location = searchParams.get('location') || '';
-  const page = searchParams.get('page') || '1';
+  const page     = searchParams.get('page') || '1';
 
-  // ── No location filter: return global results ────────────────────────────
+  // ── South Africa → Adzuna ZA only ────────────────────────────────────────
+  if (location === 'South Africa') {
+    const jobs = await fetchAdzunaPages('za', [1, 2, 3], query);
+    const deduped = dedupe(jobs).slice(0, 100);
+    console.log(`[Jobs] South Africa (Adzuna): ${deduped.length}`);
+    return NextResponse.json({ jobs: deduped, total: deduped.length, source: 'Adzuna' });
+  }
+
+  // ── Nigeria → Adzuna NG only ──────────────────────────────────────────────
+  if (location === 'Nigeria') {
+    const jobs = await fetchAdzunaPages('ng', [1], query);
+    const deduped = dedupe(jobs).slice(0, 50);
+    console.log(`[Jobs] Nigeria (Adzuna): ${deduped.length}`);
+    return NextResponse.json({ jobs: deduped, total: deduped.length, source: 'Adzuna' });
+  }
+
+  // ── No location filter: Greenhouse + Lever + Adzuna + Muse + JSearch ─────
   if (!location) {
     try {
-      const [museRes, jsearchJobs, adzunaJobs, ghJobs, lvrJobs] = await Promise.all([
+      const [adzunaZA, museData, jsearchJobs, ghJobs, lvrJobs] = await Promise.all([
+        fetchAdzunaPages('za', [1], query),
         fetch(
           `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
           { headers: { Accept: 'application/json' }, next: { revalidate: 3600 } }
-        ),
+        ).then(r => r.ok ? r.json() : { results: [] }),
         fetchJSearch(query, page),
-        fetchAdzuna(query, 'gb'),
         fetchGreenhouse(),
         fetchLever(),
       ]);
-      const museData = museRes.ok ? await museRes.json() : { results: [] };
-      const museJobs = (museData.results || []).map(mapJob);
-      const jobs = dedupe([...ghJobs, ...lvrJobs, ...museJobs, ...jsearchJobs, ...adzunaJobs]).slice(0, 80);
+      const museJobs = (museData.results || []).map(mapMuseJob);
+      const jobs = dedupe([...ghJobs, ...lvrJobs, ...adzunaZA, ...museJobs, ...jsearchJobs]).slice(0, 80);
       return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
     } catch (error) {
       return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
     }
   }
 
-  // ── Location filter ──────────────────────────────────────────────────────
+  // ── Other location filter (The Muse) ─────────────────────────────────────
   const cities = LOCATION_MAP[location];
 
   if (!cities) {
-    // Unknown location — fall back to global
     try {
       const res = await fetch(
         `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
-        { headers: { Accept: 'application/json' }, next: { revalidate: 300 } }
+        { headers: { Accept: 'application/json' }, next: { revalidate: 3600 } }
       );
       const data = await res.json();
-      return NextResponse.json({ jobs: (data.results || []).map(mapJob), total: data.total || 0, source: 'The Muse' });
+      return NextResponse.json({ jobs: (data.results || []).map(mapMuseJob), total: data.total || 0, source: 'The Muse' });
     } catch {
       return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
     }
@@ -270,31 +320,26 @@ export async function GET(request: NextRequest) {
     const [pageResults, jsearchJobs, adzunaJobs] = await Promise.all([
       Promise.all(cities.map(city => fetchMusePage(city, 1))),
       fetchJSearch(`${query} in ${location}`, page),
-      adzunaCountry ? fetchAdzuna(query, adzunaCountry) : Promise.resolve([]),
+      adzunaCountry ? fetchAdzunaPages(adzunaCountry, [1, 2], query) : Promise.resolve([]),
     ]);
 
-    const allRaw = pageResults.flat().map(mapJob);
-
-    // Split: on-target (actually in that country) vs remote/flexible
+    const allRaw = pageResults.flat().map(mapMuseJob);
     const onTarget = allRaw.filter(j => isOnTarget(j.location, cities));
     const remote   = allRaw.filter(j => !isOnTarget(j.location, cities));
 
-    // If we have enough on-target jobs, show them; otherwise supplement with remote
-    let combined = onTarget.length >= 10
-      ? onTarget
-      : [...onTarget, ...remote];
+    let combined = onTarget.length >= 10 ? onTarget : [...onTarget, ...remote];
 
-    // If still thin, fetch page 2 for largest city and add more on-target
     if (onTarget.length < 10) {
       const page2 = await fetchMusePage(cities[0], 2);
-      const page2Mapped = page2.map(mapJob);
+      const page2Mapped = page2.map(mapMuseJob);
       const page2OnTarget = page2Mapped.filter(j => isOnTarget(j.location, cities));
       const page2Remote   = page2Mapped.filter(j => !isOnTarget(j.location, cities));
       combined = [...onTarget, ...page2OnTarget, ...remote, ...page2Remote];
     }
 
-    // Adzuna and JSearch are location-matched — add them
+    // Adzuna and JSearch are location-matched — prepend them
     const jobs = dedupe([...adzunaJobs, ...combined, ...jsearchJobs]).slice(0, 40);
+    console.log(`[Jobs] Location=${location}: on-target=${onTarget.length} adzuna=${adzunaJobs.length} total=${jobs.length}`);
     return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
   } catch (error) {
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });

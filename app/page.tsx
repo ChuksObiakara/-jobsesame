@@ -1,6 +1,20 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
+import QuickApply, { isAutoApply } from './components/QuickApply';
+
+interface Job {
+  id: number;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  url: string;
+  category: string;
+  level: string;
+  salary?: string;
+  type?: string;
+}
 
 const PHOTOS = [
   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face',
@@ -13,6 +27,23 @@ const PHOTOS = [
 
 export default function Home() {
   const { isSignedIn } = useAuth();
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState('');
+  const [location, setLocation] = useState('');
+  const [total, setTotal] = useState(0);
+  const [activeTab, setActiveTab] = useState<'all' | 'remote' | 'relocation' | 'teaching' | 'south-africa'>('all');
+  const [africaCity, setAfricaCity] = useState('');
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const jobsSectionRef = useRef<HTMLDivElement>(null);
+  const jobsFetchedRef = useRef(false);
+  const [savedJobs, setSavedJobs] = useState<number[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('jobsesame_saved_jobs');
+      if (saved) return JSON.parse(saved).map((j: Job) => j.id);
+    }
+    return [];
+  });
   const [isMobile, setIsMobile] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('ZAR');
@@ -33,6 +64,50 @@ export default function Home() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // Lazy-load jobs when the jobs section scrolls into view
+  useEffect(() => {
+    const el = jobsSectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !jobsFetchedRef.current) {
+          jobsFetchedRef.current = true;
+          fetchJobs('all');
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchJobs = async (tab = 'all', searchQuery = '', loc = '') => {
+    setLoading(true);
+    try {
+      let url = '';
+      if (tab === 'remote') {
+        url = `/api/remote?query=${encodeURIComponent(searchQuery || 'developer')}`;
+      } else if (tab === 'relocation') {
+        url = `/api/relocation?query=${encodeURIComponent(searchQuery || 'engineer')}`;
+      } else if (tab === 'teaching') {
+        url = `/api/teaching`;
+      } else if (tab === 'south-africa') {
+        const cityParam = africaCity ? `&location=${encodeURIComponent(africaCity)}` : '';
+        url = `/api/africa?query=${encodeURIComponent(searchQuery || '')}${cityParam}`;
+      } else {
+        url = `/api/jobs?query=${encodeURIComponent(searchQuery || 'software engineer')}&location=${encodeURIComponent(loc)}`;
+      }
+      const res = await fetch(url);
+      const data = await res.json();
+      setJobs(data.jobs || []);
+      setTotal(data.total || 0);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -83,6 +158,36 @@ export default function Home() {
         setDemoAts(n);
       }, 25);
     }, 1500);
+  };
+
+  const handleAfricaCityChange = (city: string) => {
+    setAfricaCity(city);
+    setLoading(true);
+    const cityParam = city ? `&location=${encodeURIComponent(city)}` : '';
+    fetch(`/api/africa?query=${encodeURIComponent(query || '')}${cityParam}`)
+      .then(r => r.json())
+      .then(data => { setJobs(data.jobs || []); setTotal(data.total || 0); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  const handleTabChange = (tab: 'all' | 'remote' | 'relocation' | 'teaching' | 'south-africa') => {
+    setActiveTab(tab);
+    fetchJobs(tab, query, location);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchJobs(activeTab, query, location);
+  };
+
+  const toggleSaveJob = (job: Job) => {
+    const saved = localStorage.getItem('jobsesame_saved_jobs');
+    const savedList: Job[] = saved ? JSON.parse(saved) : [];
+    const isAlreadySaved = savedList.some(j => j.id === job.id);
+    const updated = isAlreadySaved ? savedList.filter(j => j.id !== job.id) : [...savedList, job];
+    localStorage.setItem('jobsesame_saved_jobs', JSON.stringify(updated));
+    setSavedJobs(updated.map(j => j.id));
   };
 
   const scrollTo = (id: string) => {
@@ -402,6 +507,191 @@ export default function Home() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* JOBS — Search, Tabs and Listings */}
+      <div style={{background:"#052A14",padding:"24px",borderBottom:"4px solid #C8E600"}} id="jobs">
+        {selectedJob && (
+          <QuickApply job={selectedJob} onClose={() => setSelectedJob(null)} currency={currency} />
+        )}
+        <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",marginBottom:18}}>
+          <div style={{display:"flex",gap:8,justifyContent:isMobile?"flex-start":"center",flexWrap:isMobile?"nowrap":"wrap",minWidth:"fit-content",padding:isMobile?"0 4px":0}}>
+            {(['all','remote','relocation','teaching','south-africa'] as const).map(tab=>(
+              <button key={tab} onClick={()=>handleTabChange(tab)} style={{
+                padding:'10px 22px',borderRadius:99,fontSize:13,fontWeight:700,cursor:'pointer',border:'none',
+                background:activeTab===tab?'#C8E600':'transparent',
+                color:activeTab===tab?'#052A14':'#A8D8B0',transition:'all 0.15s',
+              }}>
+                {tab==='all'?'🌍 All Jobs':tab==='remote'?'💻 Remote Jobs':tab==='teaching'?'🎓 Teaching Jobs':tab==='south-africa'?'🌍 African Jobs':'✈️ Relocation Jobs'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p style={{textAlign:"center",fontSize:12,color:"#5A9A6A",marginBottom:14,fontStyle:"italic"}}>
+          {activeTab==='all'?'Browse millions of jobs worldwide':activeTab==='remote'?'Work from anywhere — worldwide remote positions':activeTab==='teaching'?'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free':activeTab==='south-africa'?'200+ live jobs across South Africa, Nigeria and beyond — Adzuna, JSearch & more':'Jobs in London, Dubai, Toronto, Singapore and more'}
+        </p>
+        <form onSubmit={handleSearch} style={{display:"flex",gap:8,flexWrap:"wrap",maxWidth:720,margin:"0 auto"}}>
+          <input value={query} onChange={e=>setQuery(e.target.value)}
+            placeholder={activeTab==='remote'?"Remote job title or skill...":activeTab==='relocation'?"Job title for abroad...":activeTab==='teaching'?"Teaching subject or country...":"Job title, skill or keyword..."}
+            style={{flex:1,minWidth:140,padding:"13px 18px",border:"2px solid #C8E600",borderRadius:11,fontSize:14,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}
+          />
+          {activeTab==='all' && (
+            <select value={location} onChange={e=>setLocation(e.target.value)}
+              style={{padding:"13px 14px",border:"2px solid #C8E600",borderRadius:11,fontSize:13,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}>
+              <option value="">Worldwide</option>
+              <option value="South Africa">South Africa</option>
+              <option value="Nigeria">Nigeria</option>
+              <option value="Kenya">Kenya</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="United States">United States</option>
+              <option value="Canada">Canada</option>
+              <option value="Australia">Australia</option>
+              <option value="India">India</option>
+              <option value="Singapore">Singapore</option>
+              <option value="Dubai">Dubai</option>
+            </select>
+          )}
+          {activeTab==='relocation' && (
+            <select value={location} onChange={e=>setLocation(e.target.value)}
+              style={{padding:"13px 14px",border:"2px solid #C8E600",borderRadius:11,fontSize:13,color:"#052A14",fontWeight:600,outline:"none",background:"#fff"}}>
+              <option value="">All countries</option>
+              <option value="London">London, UK</option>
+              <option value="Toronto">Toronto, Canada</option>
+              <option value="Dubai">Dubai, UAE</option>
+              <option value="Singapore">Singapore</option>
+              <option value="Berlin">Berlin, Germany</option>
+              <option value="Amsterdam">Amsterdam, Netherlands</option>
+              <option value="Sydney">Sydney, Australia</option>
+              <option value="India">India</option>
+            </select>
+          )}
+          <button type="submit" style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"13px 28px",borderRadius:11,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+            {loading?'Searching...':'Open the doors'}
+          </button>
+        </form>
+      </div>
+
+      {/* JOBS LIST */}
+      <section ref={jobsSectionRef} style={{background:"#F4FCF4",padding:24}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+          <div>
+            <span style={{fontSize:15,fontWeight:800,color:"#052A14"}}>
+              {activeTab==='remote'?'Remote doors open worldwide':activeTab==='relocation'?'International doors open for you':activeTab==='teaching'?'Teaching jobs open worldwide':activeTab==='south-africa'?'African jobs open now':'Doors open for your profile'}
+            </span>
+            {activeTab==='south-africa' && <div style={{fontSize:11,color:"#4A8A5A",marginTop:2,fontStyle:"italic"}}>South Africa, Nigeria, Kenya and across Africa</div>}
+          </div>
+          <span style={{fontSize:12,color:"#052A14",background:"#C8E600",padding:"3px 12px",borderRadius:99,fontWeight:800,whiteSpace:"nowrap"}}>
+            {total>0?total.toLocaleString():'...'} matches
+          </span>
+        </div>
+        {activeTab==='south-africa' && (
+          <div style={{marginBottom:16}}>
+            <div style={{background:"#052A14",border:"1.5px solid #C8E600",borderRadius:14,padding:"14px 20px",marginBottom:10,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <span style={{fontSize:18}}>🌍</span>
+                <span style={{fontSize:13,color:"#A8D8B0",fontWeight:600}}>
+                  Jobs across Africa — <strong style={{color:"#FFFFFF"}}>South Africa, Nigeria</strong> and beyond
+                </span>
+              </div>
+              {total>0 && <span style={{fontSize:12,color:"#C8E600",fontWeight:700,whiteSpace:"nowrap"}}>{total.toLocaleString()} African jobs found</span>}
+            </div>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+              {['','Johannesburg','Cape Town','Durban','Pretoria','Lagos','Nairobi'].map(city=>(
+                <button key={city||'all'} onClick={()=>handleAfricaCityChange(city)} style={{
+                  padding:'6px 14px',borderRadius:99,fontSize:12,fontWeight:700,cursor:'pointer',
+                  border:'1.5px solid #C8E600',
+                  background:africaCity===city?'#C8E600':'transparent',
+                  color:africaCity===city?'#052A14':'#C8E600',
+                  transition:'all 0.15s',
+                }}>
+                  {city||'All Africa'}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {activeTab==='teaching' && !loading && (
+          <div style={{background:"#052A14",border:"1.5px solid #C8E600",borderRadius:14,padding:20,marginBottom:16}}>
+            <div style={{fontSize:11,color:"#C8E600",fontWeight:700,letterSpacing:"1.5px",textTransform:"uppercase",marginBottom:8}}>🎓 TEACHING ABROAD</div>
+            <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Teach English in Asia & UAE — $2,000–$3,500/month tax-free</h3>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
+              {[["🇨🇳 China","$1,800–$3,000/mo"],["🇰🇷 South Korea","$1,800–$2,800/mo"],["🇯🇵 Japan","$2,000–$3,000/mo"],["🇦🇪 UAE","$2,500–$3,500/mo"]].map(([c,s])=>(
+                <div key={c} style={{background:"rgba(200,230,0,0.1)",border:"1px solid rgba(200,230,0,0.3)",borderRadius:10,padding:"8px 14px"}}>
+                  <span style={{fontSize:12,color:"#C8E600",fontWeight:700}}>{c}</span>
+                  <span style={{fontSize:11,color:"#90C898",marginLeft:6}}>{s} + housing & flights</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {loading ? (
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {[...Array(6)].map((_,i)=>(
+              <div key={i} style={{background:"#fff",border:"1.5px solid #D8EED8",borderRadius:14,padding:16,display:"flex",gap:16}}>
+                <div style={{width:44,height:44,borderRadius:11,background:"#D8EED8",flexShrink:0}}></div>
+                <div style={{flex:1}}>
+                  <div style={{height:14,background:"#D8EED8",borderRadius:6,marginBottom:10,width:"60%"}}></div>
+                  <div style={{height:11,background:"#E8F4E8",borderRadius:6,width:"45%"}}></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : jobs.length===0 ? (
+          <div style={{textAlign:"center",padding:"60px 0"}}>
+            <div style={{fontSize:16,color:"#2A6A3A",fontWeight:700,marginBottom:8}}>No jobs found</div>
+            <div style={{fontSize:13,color:"#4A8A5A"}}>Try a different keyword or city</div>
+          </div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {jobs.map((job,i)=>(
+              <div key={job.id} style={{
+                background:i===0?"#FDFFF5":"#fff",
+                border:`1.5px solid ${i===0?"#C8E600":"#D8EED8"}`,
+                borderRadius:14,padding:16,
+                display:"flex",flexDirection:isMobile?"column":"row",gap:16,alignItems:"flex-start",
+              }}>
+                <div style={{display:"flex",gap:12,flex:1,minWidth:0}}>
+                  <div style={{width:44,height:44,borderRadius:11,background:"#EAF5EA",color:"#1A5A2A",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:800,flexShrink:0}}>
+                    {job.company.charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:14,fontWeight:700,color:"#052A14",marginBottom:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{job.title}</div>
+                    <div style={{fontSize:12,color:"#666",marginBottom:8,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{job.company} · {job.location}</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>
+                      <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#EAF5EA",color:"#1A5A2A",whiteSpace:"nowrap"}}>{job.location}</span>
+                      <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#FDFFF5",color:"#5A7A00",border:"1px solid #C8E600",whiteSpace:"nowrap"}}>{job.level}</span>
+                      <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#FFF8EC",color:"#7A5000",whiteSpace:"nowrap"}}>{job.category}</span>
+                      {activeTab==='remote' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Remote</span>}
+                      {activeTab==='relocation' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>Relocation</span>}
+                      {activeTab==='teaching' && <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:600,background:"#052A14",color:"#C8E600",whiteSpace:"nowrap"}}>🎓 Teaching</span>}
+                      {(job as any).source && <span style={{fontSize:10,padding:"2px 8px",borderRadius:99,fontWeight:600,background:"rgba(5,42,20,0.08)",color:"#3A7A4A",border:"1px solid #D8EED8",whiteSpace:"nowrap"}}>{(job as any).source}</span>}
+                      {isAutoApply(job.url)
+                        ? <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:700,background:"rgba(200,230,0,0.12)",color:"#C8E600",border:"1px solid rgba(200,230,0,0.35)",whiteSpace:"nowrap"}}>⚡ Auto-apply</span>
+                        : <span style={{fontSize:11,padding:"3px 9px",borderRadius:99,fontWeight:700,background:"rgba(255,165,0,0.10)",color:"#FFA500",border:"1px solid rgba(255,165,0,0.35)",whiteSpace:"nowrap"}}>🎯 Assisted</span>
+                      }
+                    </div>
+                    <p style={{fontSize:12,color:"#666",lineHeight:1.55,margin:0,display:"-webkit-box" as any,WebkitLineClamp:2,WebkitBoxOrient:"vertical" as any,overflow:"hidden"}}>{job.description}</p>
+                  </div>
+                </div>
+                {isMobile ? (
+                  <div style={{display:"flex",gap:8,width:"100%",marginTop:4}}>
+                    <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"9px 0",borderRadius:99,border:"none",cursor:"pointer"}}>⚡ Quick Apply</button>
+                    <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 0",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>View job</button>
+                    <button onClick={()=>toggleSaveJob(job)} style={{background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 14px",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer",flexShrink:0}}>🔖</button>
+                  </div>
+                ) : (
+                  <div style={{display:"flex",flexDirection:"column",gap:7,width:120,flexShrink:0}}>
+                    <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"8px 0",borderRadius:99,border:"none",cursor:"pointer",textAlign:"center"}}>⚡ Quick Apply</button>
+                    <button onClick={()=>window.open(job.url,'_blank')} style={{width:"100%",background:"transparent",color:"#5A9A6A",fontSize:11,fontWeight:600,padding:"7px 0",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer",textAlign:"center"}}>View job</button>
+                    <button onClick={()=>toggleSaveJob(job)} style={{width:"100%",background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:11,fontWeight:600,padding:"7px 0",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer",textAlign:"center"}}>
+                      {savedJobs.includes(job.id)?'🔖 Saved':'🔖 Save'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* FEATURES */}
