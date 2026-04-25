@@ -182,21 +182,55 @@ async function fetchJSearchSA(query: string): Promise<any[]> {
   return [...p1, ...p2, ...p3];
 }
 
+// ── Source 5: Greenhouse SA companies ────────────────────────────────────────
+
+const GH_SA_BOARDS = [
+  { token: 'paystack', name: 'Paystack' },
+];
+
+async function fetchGreenhouseSA(): Promise<any[]> {
+  const results = await Promise.all(
+    GH_SA_BOARDS.map(async ({ token, name }) => {
+      try {
+        const res = await fetch(`https://api.greenhouse.io/v1/boards/${token}/jobs`, { next: { revalidate: 3600 } });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return (data.jobs || []).map((job: any) => ({
+          id: `greenhouse-${token}-${job.id}`,
+          title: job.title || '',
+          company: name,
+          location: job.location?.name || 'Africa',
+          description: (job.content || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+          url: job.absolute_url || `https://boards.greenhouse.io/${token}/jobs/${job.id}`,
+          salary: '',
+          category: job.departments?.[0]?.name || 'General',
+          level: 'Full-time',
+          type: 'greenhouse',
+          boardToken: token,
+          jobId: String(job.id),
+        }));
+      } catch { return []; }
+    })
+  );
+  return results.flat();
+}
+
 // ── Handler ──────────────────────────────────────────────────────────────────
 
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('query') || 'software engineer';
 
   try {
-    const [remotiveJobs, museJobs, adzunaJobs, jsearchJobs] = await Promise.all([
+    const [remotiveJobs, museJobs, adzunaJobs, jsearchJobs, ghSAJobs] = await Promise.all([
       fetchRemotive(query),
       fetchMuse(),
       fetchAdzunaZA(query),
       fetchJSearchSA(query),
+      fetchGreenhouseSA(),
     ]);
 
-    // Adzuna and JSearch results are already SA-specific — no need to filter them
-    const saJobs = dedupe([...adzunaJobs, ...jsearchJobs]);
+    // Adzuna, JSearch, Greenhouse SA are already SA-specific
+    const saJobs = dedupe([...adzunaJobs, ...jsearchJobs, ...ghSAJobs]);
 
     // Remotive/Muse still go through the African keyword filter
     const filtered = dedupe([...museJobs, ...remotiveJobs]).filter(isAfricanJob);

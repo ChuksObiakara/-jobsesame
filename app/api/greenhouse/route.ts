@@ -22,6 +22,7 @@ const BOARDS = [
   { token: 'squarespace', name: 'Squarespace' },
   { token: 'pinterest',   name: 'Pinterest' },
   { token: 'impact',      name: 'Impact' },
+  { token: 'paystack',    name: 'Paystack' },
 ];
 
 async function fetchBoard(token: string, companyName: string): Promise<any[]> {
