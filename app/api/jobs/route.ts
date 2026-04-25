@@ -114,6 +114,95 @@ function isOnTarget(jobLocation: string, targetCities: string[]): boolean {
   return targetCities.some(city => loc.includes(city.toLowerCase().split(',')[0]));
 }
 
+const GH_BOARDS = [
+  { token: 'anthropic',   name: 'Anthropic' },
+  { token: 'airbnb',      name: 'Airbnb' },
+  { token: 'stripe',      name: 'Stripe' },
+  { token: 'figma',       name: 'Figma' },
+  { token: 'vercel',      name: 'Vercel' },
+  { token: 'mongodb',     name: 'MongoDB' },
+  { token: 'twilio',      name: 'Twilio' },
+  { token: 'coinbase',    name: 'Coinbase' },
+  { token: 'databricks',  name: 'Databricks' },
+  { token: 'gitlab',      name: 'GitLab' },
+  { token: 'datadog',     name: 'Datadog' },
+  { token: 'cloudflare',  name: 'Cloudflare' },
+  { token: 'okta',        name: 'Okta' },
+  { token: 'asana',       name: 'Asana' },
+  { token: 'dropbox',     name: 'Dropbox' },
+  { token: 'robinhood',   name: 'Robinhood' },
+  { token: 'squarespace', name: 'Squarespace' },
+  { token: 'pinterest',   name: 'Pinterest' },
+  { token: 'impact',      name: 'Impact' },
+];
+
+async function fetchGreenhouse(): Promise<any[]> {
+  try {
+    const results = await Promise.all(
+      GH_BOARDS.map(async ({ token, name }) => {
+        try {
+          const res = await fetch(
+            `https://api.greenhouse.io/v1/boards/${token}/jobs`,
+            { next: { revalidate: 3600 } }
+          );
+          if (!res.ok) return [];
+          const data = await res.json();
+          return (data.jobs || []).slice(0, 15).map((job: any) => ({
+            id: `greenhouse-${token}-${job.id}`,
+            title: job.title || '',
+            company: name,
+            location: job.location?.name || 'Worldwide',
+            description: (job.content || '').replace(/<[^>]*>/g, '').substring(0, 200) + '...',
+            url: job.absolute_url || `https://boards.greenhouse.io/${token}/jobs/${job.id}`,
+            salary: '',
+            category: job.departments?.[0]?.name || 'General',
+            level: 'Full-time',
+            type: 'greenhouse',
+            boardToken: token,
+            jobId: String(job.id),
+          }));
+        } catch { return []; }
+      })
+    );
+    return results.flat();
+  } catch { return []; }
+}
+
+const LEVER_COMPANIES = [
+  { slug: 'plaid', name: 'Plaid' },
+];
+
+async function fetchLever(): Promise<any[]> {
+  try {
+    const results = await Promise.all(
+      LEVER_COMPANIES.map(async ({ slug, name }) => {
+        try {
+          const res = await fetch(
+            `https://api.lever.co/v0/postings/${slug}?mode=json`,
+            { next: { revalidate: 3600 } }
+          );
+          if (!res.ok) return [];
+          const data = await res.json();
+          if (!Array.isArray(data)) return [];
+          return data.map((job: any) => ({
+            id: `lever-${slug}-${job.id}`,
+            title: job.text || '',
+            company: name,
+            location: job.categories?.location || job.categories?.allLocations?.[0] || 'Worldwide',
+            description: (job.descriptionBody || job.description || '').replace(/<[^>]*>/g, '').substring(0, 200) + '...',
+            url: job.hostedUrl || job.applyUrl || '#',
+            salary: '',
+            category: job.categories?.team || 'General',
+            level: job.categories?.commitment || 'Full-time',
+            type: 'lever',
+          }));
+        } catch { return []; }
+      })
+    );
+    return results.flat();
+  } catch { return []; }
+}
+
 function dedupe(jobs: any[]): any[] {
   const seen = new Set<string>();
   return jobs.filter(j => {
@@ -133,18 +222,19 @@ export async function GET(request: NextRequest) {
   // ── No location filter: return global results ────────────────────────────
   if (!location) {
     try {
-      const [museRes, jsearchJobs, adzunaJobs] = await Promise.all([
+      const [museRes, jsearchJobs, adzunaJobs, ghJobs, lvrJobs] = await Promise.all([
         fetch(
           `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
-          { headers: { Accept: 'application/json' }, next: { revalidate: 300 } }
+          { headers: { Accept: 'application/json' }, next: { revalidate: 3600 } }
         ),
         fetchJSearch(query, page),
         fetchAdzuna(query, 'gb'),
+        fetchGreenhouse(),
+        fetchLever(),
       ]);
-      if (!museRes.ok) throw new Error(`Muse API error: ${museRes.status}`);
-      const museData = await museRes.json();
+      const museData = museRes.ok ? await museRes.json() : { results: [] };
       const museJobs = (museData.results || []).map(mapJob);
-      const jobs = dedupe([...museJobs, ...jsearchJobs, ...adzunaJobs]).slice(0, 40);
+      const jobs = dedupe([...ghJobs, ...lvrJobs, ...museJobs, ...jsearchJobs, ...adzunaJobs]).slice(0, 80);
       return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
     } catch (error) {
       return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
