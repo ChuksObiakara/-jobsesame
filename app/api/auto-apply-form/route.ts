@@ -4,6 +4,49 @@ import * as os from 'os';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// ── Greenhouse direct API apply (no scraping needed) ─────────────────────────
+
+function extractGreenhouseParams(url: string): { boardToken: string; jobId: string } | null {
+  // Formats:
+  //   https://boards.greenhouse.io/{token}/jobs/{id}
+  //   https://job-boards.greenhouse.io/{token}/jobs/{id}  (newer URLs)
+  const m = url.match(/greenhouse\.io\/([^/]+)\/jobs\/(\d+)/);
+  if (!m) return null;
+  return { boardToken: m[1], jobId: m[2] };
+}
+
+async function applyViaGreenhouse(
+  boardToken: string,
+  jobId: string,
+  firstName: string,
+  lastName: string,
+  email: string,
+  phone: string,
+  cvData: any
+): Promise<{ success: boolean; message: string }> {
+  const form = new FormData();
+  form.append('first_name', firstName);
+  form.append('last_name', lastName || firstName);
+  form.append('email', email);
+  if (phone) form.append('phone', phone);
+
+  // Attach a minimal PDF resume
+  const pdfBuf = buildTempPDF(cvData);
+  const blob = new Blob([pdfBuf], { type: 'application/pdf' });
+  form.append('resume', blob, `${firstName}_${lastName || 'CV'}.pdf`);
+
+  const res = await fetch(
+    `https://boards-api.greenhouse.io/v1/boards/${boardToken}/jobs/${jobId}`,
+    { method: 'POST', body: form }
+  );
+
+  if (res.ok || res.status === 201) {
+    return { success: true, message: 'Application submitted successfully. The employer will contact you directly.' };
+  }
+  const text = await res.text().catch(() => '');
+  return { success: false, message: `Greenhouse API returned ${res.status}: ${text.substring(0, 120)}` };
+}
+
 async function fillField(el: any, value: string) {
   await el.click({ clickCount: 3 });
   await el.type(value, { delay: 25 });
@@ -71,10 +114,32 @@ export async function POST(req: NextRequest) {
 
   const run = async () => {
     const body = await req.json();
-    const { jobUrl, candidateName, candidateEmail, candidatePhone, cvData } = body;
+    const { jobUrl, candidateName, candidateEmail, candidatePhone, cvData, jobType, boardToken: bodyToken, jobId: bodyJobId } = body;
 
     if (!jobUrl) {
       return NextResponse.json({ error: 'jobUrl required' }, { status: 400 });
+    }
+
+    // ── Fast path: Greenhouse API (no browser needed) ─────────────────────
+    const ghParams = (jobType === 'greenhouse' && bodyToken && bodyJobId)
+      ? { boardToken: bodyToken, jobId: bodyJobId }
+      : extractGreenhouseParams(jobUrl);
+
+    if (ghParams) {
+      const firstName = (candidateName || '').split(' ')[0] || 'Candidate';
+      const lastName = (candidateName || '').split(' ').slice(1).join(' ') || '';
+      const result = await applyViaGreenhouse(
+        ghParams.boardToken, ghParams.jobId,
+        firstName, lastName, candidateEmail || '', candidatePhone || '', cvData
+      );
+      return NextResponse.json({
+        success: result.success,
+        message: result.message,
+        requiresManual: !result.success,
+        jobUrl: result.success ? undefined : jobUrl,
+        filled: result.success ? ['first_name', 'last_name', 'email', 'phone', 'resume'] : [],
+        autoSubmitted: result.success,
+      });
     }
 
     let puppeteer: any;
