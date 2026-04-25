@@ -71,6 +71,7 @@ export default function Dashboard() {
   const [recommendedJobs, setRecommendedJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [jobQueryTitle, setJobQueryTitle] = useState('');
 
   // ── Profile from onboarding ───────────────────────────────────
   const [profile, setProfile] = useState<any>(null);
@@ -114,21 +115,22 @@ export default function Dashboard() {
       .catch(() => {});
   }, []);
 
-  // Fetch recommended jobs lazily — 1 second after mount so main content renders first
+  // Fetch recommended jobs — re-runs when profile or cvData changes
   useEffect(() => {
     const t = setTimeout(() => {
       const p = profile || {};
       const titleQuery = p.preferredJobTitle || p.jobTitle || cvData?.title || 'software engineer';
+      setJobQueryTitle(titleQuery);
       setLoadingJobs(true);
       fetch(`/api/jobs?query=${encodeURIComponent(titleQuery)}&location=`)
         .then(r => r.json())
         .then(data => setRecommendedJobs((data.jobs || []).slice(0, 6)))
         .catch(() => {})
         .finally(() => setLoadingJobs(false));
-    }, 1000);
+    }, 800);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile]);
+  }, [profile, cvData]);
 
   const atsScore = useMemo(() => {
     if (!cvData) return 0;
@@ -158,11 +160,22 @@ export default function Dashboard() {
   }, [atsScore]);
 
   const calcJobMatch = (job: Job): number | null => {
-    if (!cvData?.skills?.length) return null;
-    const text = (job.title + ' ' + job.description).toLowerCase();
-    const skills = cvData.skills as string[];
-    const matches = skills.filter(s => text.includes(s.toLowerCase())).length;
-    return Math.min(95, 50 + matches * 3);
+    if (!cvData) return null;
+    const skills: string[] = cvData.skills || [];
+    const cvTitle: string = cvData.title || '';
+    if (!skills.length && !cvTitle) return null;
+    const text = (job.title + ' ' + (job.description || '')).toLowerCase();
+    let score = 40;
+    skills.forEach(s => { if (s && text.includes(s.toLowerCase())) score += 5; });
+    if (cvTitle && job.title.toLowerCase().includes(cvTitle.toLowerCase())) score += 15;
+    return Math.min(98, score);
+  };
+
+  const matchBadge = (pct: number) => {
+    if (pct >= 80) return { bg: '#D4F5D4', color: '#1A5A2A' };
+    if (pct >= 60) return { bg: 'rgba(200,230,0,0.15)', color: '#8AAA00' };
+    if (pct >= 40) return { bg: 'rgba(255,165,0,0.12)', color: '#C87800' };
+    return { bg: 'rgba(150,150,150,0.15)', color: '#888' };
   };
 
   const updateApplicationStatus = (id: string, status: Application['status']) => {
@@ -701,7 +714,7 @@ export default function Dashboard() {
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
                 <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF"}}>
                   Recommended for you
-                  {profile?.preferredJobTitle && <span style={{fontSize:12,color:"#5A9A6A",fontWeight:400,marginLeft:8}}>based on: {profile.preferredJobTitle}</span>}
+                  {jobQueryTitle && jobQueryTitle !== 'software engineer' && <span style={{fontSize:12,color:"#5A9A6A",fontWeight:400,marginLeft:8}}>matching: {jobQueryTitle}</span>}
                 </h2>
                 <a href="/jobs" style={{fontSize:12,color:"#C8E600",fontWeight:700,textDecoration:"none"}}>View all jobs →</a>
               </div>
@@ -724,9 +737,9 @@ export default function Dashboard() {
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
                               <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,minWidth:0}}>{job.title}</div>
-                              {matchPct !== null && (
-                                <span style={{fontSize:9,fontWeight:800,color:"#1A5A2A",background:"#EAF5EA",padding:"1px 6px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{matchPct}%</span>
-                              )}
+                              {matchPct !== null && (() => { const b = matchBadge(matchPct); return (
+                                <span style={{fontSize:9,fontWeight:800,color:b.color,background:b.bg,padding:"1px 6px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{matchPct}%</span>
+                              ); })()}
                             </div>
                             <div style={{fontSize:11,color:"#5A9A6A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{job.company} · {job.location}</div>
                           </div>

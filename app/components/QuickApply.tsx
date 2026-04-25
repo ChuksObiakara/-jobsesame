@@ -59,6 +59,18 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   const [autoEmailSent, setAutoEmailSent] = useState(false);
   const [autoEmailError, setAutoEmailError] = useState('');
   const [autoApplyStatus, setAutoApplyStatus] = useState<'idle' | 'trying' | 'success' | 'manual'>('idle');
+  const [originalMatchPct, setOriginalMatchPct] = useState<number | null>(null);
+  const [rewrittenMatchPct, setRewrittenMatchPct] = useState<number | null>(null);
+
+  const calcScore = (cvD: any): number => {
+    const skills: string[] = cvD?.skills || [];
+    const title: string = cvD?.title || '';
+    const text = (job.title + ' ' + (job.description || '')).toLowerCase();
+    let score = 40;
+    skills.forEach((s: string) => { if (s && text.includes(s.toLowerCase())) score += 5; });
+    if (title && job.title.toLowerCase().includes(title.toLowerCase())) score += 15;
+    return Math.min(98, score);
+  };
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -196,6 +208,12 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       });
       const data = await response.json();
       if (data.success) {
+        const origScore = calcScore(cv);
+        const newScore = calcScore(data.rewrittenCV);
+        setOriginalMatchPct(origScore);
+        setRewrittenMatchPct(newScore);
+        // Persist rewritten CV so future job searches use improved skills
+        localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.rewrittenCV));
         setRewrittenCV(data.rewrittenCV);
         setStep('apply');
       } else {
@@ -553,6 +571,17 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
               )}
             </div>
 
+            {originalMatchPct !== null && rewrittenMatchPct !== null && (
+              <div style={{background:"rgba(200,230,0,0.07)",border:"1px solid rgba(200,230,0,0.25)",borderRadius:10,padding:"10px 14px",marginBottom:12,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+                <span style={{fontSize:11,color:"#90C898"}}>Match score:</span>
+                <span style={{fontSize:12,fontWeight:700,color:"#FFA500"}}>{originalMatchPct}% before</span>
+                <span style={{fontSize:12,color:"#5A9A6A"}}>→</span>
+                <span style={{fontSize:13,fontWeight:800,color:"#C8E600"}}>{rewrittenMatchPct}% after AI rewrite</span>
+                {rewrittenMatchPct > originalMatchPct && (
+                  <span style={{fontSize:11,fontWeight:700,color:"#00C864",background:"rgba(0,200,100,0.1)",padding:"2px 8px",borderRadius:99}}>+{rewrittenMatchPct - originalMatchPct}%</span>
+                )}
+              </div>
+            )}
             <div style={{background:"rgba(200,230,0,0.06)",border:"1px solid rgba(200,230,0,0.2)",borderRadius:10,padding:12,marginBottom:16,fontSize:12,color:"#90C898",lineHeight:1.7}}>
               📥 <strong style={{color:"#C8E600"}}>Your rewritten CV downloads automatically</strong> when you click Apply — ready to upload on the employer site.
             </div>

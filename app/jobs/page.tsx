@@ -40,14 +40,15 @@ export default function JobsPage() {
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [cvSkills] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
+  const [cvData] = useState<any>(() => {
+    if (typeof window === 'undefined') return null;
     try {
       const stored = localStorage.getItem('jobsesame_cv_data');
-      if (stored) return JSON.parse(stored).skills || [];
+      if (stored) return JSON.parse(stored);
     } catch {}
-    return [];
+    return null;
   });
+  const [strongMatchOnly, setStrongMatchOnly] = useState(false);
 
   const toggleSaveJob = (job: Job) => {
     const saved = localStorage.getItem('jobsesame_saved_jobs');
@@ -159,17 +160,35 @@ export default function JobsPage() {
   };
 
   const filteredJobs = (() => {
-    if (!location || activeTab !== 'all') return jobs;
-    const keywords = locationKeywords[location];
-    if (!keywords) return jobs.filter(j => j.location.toLowerCase().includes(location.toLowerCase()));
-    return jobs.filter(j => keywords.some(kw => j.location.toLowerCase().includes(kw.toLowerCase())));
+    let list = jobs;
+    if (location && activeTab === 'all') {
+      const keywords = locationKeywords[location];
+      if (keywords) list = list.filter(j => keywords.some(kw => j.location.toLowerCase().includes(kw.toLowerCase())));
+      else list = list.filter(j => j.location.toLowerCase().includes(location.toLowerCase()));
+    }
+    if (cvData) list = [...list].sort((a, b) => (calcMatch(b) ?? 0) - (calcMatch(a) ?? 0));
+    if (strongMatchOnly) list = list.filter(j => (calcMatch(j) ?? 0) >= 70);
+    return list;
   })();
 
   const calcMatch = (job: Job): number | null => {
-    if (!cvSkills.length) return null;
-    const text = (job.title + ' ' + job.description).toLowerCase();
-    const matches = cvSkills.filter(s => text.includes(s.toLowerCase())).length;
-    return Math.min(95, 50 + matches * 3);
+    if (!cvData) return null;
+    const skills: string[] = cvData.skills || [];
+    const cvTitle: string = cvData.title || '';
+    if (!skills.length && !cvTitle) return null;
+    const text = (job.title + ' ' + (job.description || '')).toLowerCase();
+    let score = 40;
+    skills.forEach(s => { if (s && text.includes(s.toLowerCase())) score += 5; });
+    if (cvTitle && job.title.toLowerCase().includes(cvTitle.toLowerCase())) score += 15;
+    if (location && job.location.toLowerCase().includes(location.toLowerCase())) score += 10;
+    return Math.min(98, score);
+  };
+
+  const matchBadge = (pct: number) => {
+    if (pct >= 80) return { bg: '#D4F5D4', color: '#1A5A2A', label: 'Strong match' };
+    if (pct >= 60) return { bg: '#FDFFF5', color: '#5A7A00', label: 'Good match' };
+    if (pct >= 40) return { bg: '#FFF5E0', color: '#8A5A00', label: 'Partial match' };
+    return { bg: '#F0F0F0', color: '#777', label: 'Low match' };
   };
 
   const tabStyle = (tab: string) => ({
@@ -360,6 +379,20 @@ export default function JobsPage() {
               Showing jobs in {location}
             </div>
           )}
+          {cvData && !loading && (
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+              <span style={{fontSize:12,color:"#4A8A5A",fontStyle:"italic"}}>
+                Ranked by match — {cvData.title ? `CV: ${cvData.title}` : 'based on your CV skills'}
+              </span>
+              <button onClick={() => setStrongMatchOnly(v => !v)} style={{
+                padding:"5px 14px",borderRadius:99,fontSize:12,fontWeight:700,cursor:"pointer",border:"1.5px solid #C8E600",
+                background: strongMatchOnly ? "#C8E600" : "transparent",
+                color: strongMatchOnly ? "#052A14" : "#5A9A6A",
+              }}>
+                {strongMatchOnly ? '✓ Strong matches only' : 'Show strong matches only (70%+)'}
+              </button>
+            </div>
+          )}
 
           {loading ? (
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -414,9 +447,9 @@ export default function JobsPage() {
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3,minWidth:0}}>
                         <div style={{fontSize:14,fontWeight:700,color:"#052A14",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flex:1,minWidth:0}}>{job.title}</div>
-                        {(() => { const pct = calcMatch(job); return pct !== null ? (
-                          <span style={{fontSize:10,fontWeight:800,color:"#1A5A2A",background:"#EAF5EA",padding:"2px 7px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{pct}% match</span>
-                        ) : null; })()}
+                        {(() => { const pct = calcMatch(job); if (pct === null) return null; const b = matchBadge(pct); return (
+                          <span style={{fontSize:10,fontWeight:800,color:b.color,background:b.bg,padding:"2px 7px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{pct}%</span>
+                        ); })()}
                       </div>
                       <div style={{fontSize:12,color:"#666",marginBottom:8,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{job.company} · {job.location}</div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:8}}>
