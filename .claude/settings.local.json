@@ -5,7 +5,24 @@
       "Bash(npm run:*)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(node -e ' *)",
+      "Bash(node -e *)",
+      "Bash(curl -s http://localhost:3000/api/cv-test)",
+      "Bash(curl -s -X POST http://localhost:3000/api/cv -F 'cv=@/tmp/test-cv.pdf;type=application/pdf' --max-time 60)",
+      "Bash(curl *)",
+      "Bash(npm install *)",
+      "Bash(npm list *)",
+      "Bash(taskkill /PID 18160 /F)",
+      "Bash(taskkill *)",
+      "Bash(git commit -m 'Add Arbeitnow API — merged with Remotive in Remote Jobs tab *)",
+      "Bash(git commit -m 'Add Greenhouse API — 19 major companies merged into All Jobs tab *)",
+      "Bash(git commit -m 'Add Lever API — Plaid \\(v0 API; most companies migrated off Lever v0\\) *)",
+      "Bash(git commit -m 'Real auto-apply for Greenhouse jobs via boards-api *)",
+      "Bash(git commit -m 'Quick Apply shows auto-apply status — Greenhouse direct employer submit *)",
+      "Bash(git commit -m 'Add SA companies on Greenhouse — Paystack with Cape Town jobs *)",
+      "Bash(git commit -m 'Cache all job API routes for 1 hour — revalidate = 3600 *)",
+      "Bash(git commit -m 'Launch ready — all job sources active, build clean, 1h caching *)"
     ]
   }
 }

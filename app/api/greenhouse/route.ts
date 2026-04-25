@@ -28,7 +28,7 @@ const BOARDS = [
 async function fetchBoard(token: string, companyName: string): Promise<any[]> {
   try {
     const res = await fetch(
-      `https://api.greenhouse.io/v1/boards/${token}/jobs?content=true`,
+      `https://api.greenhouse.io/v1/boards/${token}/jobs`,
       { next: { revalidate: 3600 } }
     );
     if (!res.ok) return [];
