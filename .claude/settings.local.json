@@ -22,7 +22,13 @@
       "Bash(git commit -m 'Quick Apply shows auto-apply status — Greenhouse direct employer submit *)",
       "Bash(git commit -m 'Add SA companies on Greenhouse — Paystack with Cape Town jobs *)",
       "Bash(git commit -m 'Cache all job API routes for 1 hour — revalidate = 3600 *)",
-      "Bash(git commit -m 'Launch ready — all job sources active, build clean, 1h caching *)"
+      "Bash(git commit -m 'Launch ready — all job sources active, build clean, 1h caching *)",
+      "Bash(git pull *)",
+      "Bash(git stash *)",
+      "Bash(git fetch *)",
+      "Bash(git merge *)",
+      "Bash(git checkout *)",
+      "Bash(git commit -m 'Merge remote — add Greenhouse + Lever to global jobs feed, all routes cached 1h *)"
     ]
   }
 }
