@@ -21,10 +21,16 @@ interface QuickApplyProps {
   currency?: 'ZAR' | 'USD';
 }
 
-export function isAutoApply(url: string): boolean {
+export function isGreenhouseJob(job: { type?: string; url: string }): boolean {
+  return job.type === 'greenhouse' || job.url.toLowerCase().includes('greenhouse.io');
+}
+
+export function isAutoApply(url: string, type?: string): boolean {
+  // Greenhouse jobs use direct API apply — always auto-apply
+  if (type === 'greenhouse' || url.toLowerCase().includes('greenhouse.io')) return true;
   const complexPortals = [
-    'linkedin', 'indeed', 'workday', 'greenhouse', 'lever',
-    'smartrecruiters', 'taleo', 'icims', 'successfactors', 'jobvite',
+    'linkedin', 'indeed', 'workday',
+    'lever', 'smartrecruiters', 'taleo', 'icims', 'successfactors', 'jobvite',
     'myworkdayjobs', 'ultipro', 'kronos',
   ];
   return !complexPortals.some(portal => url.toLowerCase().includes(portal));
@@ -70,7 +76,8 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   const employerEmail = job.description.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/)?.[0] || null;
 
   const FREE_LIMIT = 3;
-  const autoApply = isAutoApply(job.url);
+  const isGreenhouse = isGreenhouseJob(job);
+  const autoApply = isAutoApply(job.url, job.type);
 
   const handlePayment = async (plan: 'credits' | 'pro') => {
     const email = user?.emailAddresses[0]?.emailAddress;
@@ -352,7 +359,16 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
         const res = await fetch('/api/auto-apply-form', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobUrl: job.url, candidateName, candidateEmail, candidatePhone, cvData: rewrittenCV }),
+          body: JSON.stringify({
+            jobUrl: job.url,
+            candidateName,
+            candidateEmail,
+            candidatePhone,
+            cvData: rewrittenCV,
+            jobType: job.type,
+            boardToken: (job as any).boardToken,
+            jobId: (job as any).jobId,
+          }),
         });
         const data = await res.json();
         if (data.success) {
@@ -410,7 +426,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
         <div style={{marginBottom:20,paddingRight:24}}>
           <div style={{fontSize:11,fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:6,
             color: autoApply ? '#C8E600' : '#FFA500'}}>
-            {autoApply ? '⚡ Auto-apply available' : '🎯 Assisted apply'}
+            {isGreenhouse ? '🟢 Direct employer apply' : autoApply ? '⚡ Auto-apply available' : '🎯 Assisted apply'}
           </div>
           <h2 style={{fontSize:18,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>{job.title}</h2>
           <div style={{fontSize:13,color:"#5A9A6A"}}>{job.company} · {job.location}</div>
@@ -550,8 +566,12 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
             {autoApplyStatus === 'trying' && (
               <div style={{background:"rgba(200,230,0,0.08)",border:"1.5px solid rgba(200,230,0,0.4)",borderRadius:12,padding:16,marginBottom:16,textAlign:"center"}}>
                 <div style={{fontSize:24,marginBottom:8}}>⚙️</div>
-                <div style={{fontSize:14,fontWeight:700,color:"#C8E600",marginBottom:4}}>Attempting auto-apply...</div>
-                <div style={{fontSize:12,color:"#5A9A6A"}}>Filling in the employer&apos;s application form automatically</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#C8E600",marginBottom:4}}>
+                  {isGreenhouse ? 'Submitting application directly to employer...' : 'Attempting auto-apply...'}
+                </div>
+                <div style={{fontSize:12,color:"#5A9A6A"}}>
+                  {isGreenhouse ? 'Sending your details securely via the employer\'s API' : 'Filling in the employer\'s application form automatically'}
+                </div>
               </div>
             )}
             {autoApplyStatus === 'manual' && (
@@ -609,14 +629,16 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
                 disabled={applying || autoApplyStatus === 'trying'}
                 style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"13px 20px",borderRadius:99,border:"none",cursor:(applying||autoApplyStatus==='trying')?"default":"pointer",opacity:(applying||autoApplyStatus==='trying')?0.7:1}}>
                 {autoApplyStatus === 'trying'
-                  ? '⚙️ Attempting auto-apply...'
+                  ? (isGreenhouse ? '⚙️ Submitting to employer...' : '⚙️ Attempting auto-apply...')
                   : applying
                     ? '📥 Downloading CV + Opening job...'
                     : autoApplyStatus === 'manual'
                       ? '🎯 Apply manually — Download CV + Open job'
-                      : autoApply
-                        ? '⚡ Auto-apply now'
-                        : '🎯 Apply + Download CV'}
+                      : isGreenhouse
+                        ? '🟢 Submit application directly'
+                        : autoApply
+                          ? '⚡ Auto-apply now'
+                          : '🎯 Apply + Download CV'}
               </button>
             </div>
             <div style={{marginTop:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -635,9 +657,14 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
             {autoApplyStatus === 'success' ? (
               <>
                 <div style={{fontSize:48,marginBottom:16}}>✅</div>
-                <h3 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Application submitted automatically</h3>
+                <h3 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>
+                  {isGreenhouse ? 'Application submitted successfully' : 'Application submitted automatically'}
+                </h3>
                 <p style={{fontSize:14,color:"#5A9A6A",marginBottom:8,lineHeight:1.7}}>
-                  No further action needed. Your application was submitted directly to <strong style={{color:"#FFFFFF"}}>{job.company}</strong>.
+                  {isGreenhouse
+                    ? <>Application submitted successfully. <strong style={{color:"#FFFFFF"}}>{job.company}</strong> will contact you directly.</>
+                    : <>No further action needed. Your application was submitted directly to <strong style={{color:"#FFFFFF"}}>{job.company}</strong>.</>
+                  }
                 </p>
                 <p style={{fontSize:13,color:"#3A7A4A",marginBottom:20}}>Check your email for any confirmation from the employer.</p>
               </>
