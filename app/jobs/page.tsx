@@ -159,18 +159,6 @@ export default function JobsPage() {
     'Canada': ['Canada', 'Toronto', 'Vancouver', 'Montreal'],
   };
 
-  const filteredJobs = (() => {
-    let list = jobs;
-    if (location && activeTab === 'all') {
-      const keywords = locationKeywords[location];
-      if (keywords) list = list.filter(j => keywords.some(kw => j.location.toLowerCase().includes(kw.toLowerCase())));
-      else list = list.filter(j => j.location.toLowerCase().includes(location.toLowerCase()));
-    }
-    if (cvData) list = [...list].sort((a, b) => (calcMatch(b) ?? 0) - (calcMatch(a) ?? 0));
-    if (strongMatchOnly) list = list.filter(j => (calcMatch(j) ?? 0) >= 70);
-    return list;
-  })();
-
   const calcMatch = (job: Job): number | null => {
     if (!cvData) return null;
     const skills: string[] = cvData.skills || [];
@@ -183,6 +171,18 @@ export default function JobsPage() {
     if (location && job.location.toLowerCase().includes(location.toLowerCase())) score += 10;
     return Math.min(98, score);
   };
+
+  const filteredJobs = (() => {
+    let list = jobs;
+    if (location && activeTab === 'all') {
+      const keywords = locationKeywords[location];
+      if (keywords) list = list.filter(j => keywords.some(kw => j.location.toLowerCase().includes(kw.toLowerCase())));
+      else list = list.filter(j => j.location.toLowerCase().includes(location.toLowerCase()));
+    }
+    if (cvData) list = [...list].sort((a, b) => (calcMatch(b) ?? 0) - (calcMatch(a) ?? 0));
+    if (strongMatchOnly) list = list.filter(j => (calcMatch(j) ?? 0) >= 70);
+    return list;
+  })();
 
   const matchBadge = (pct: number) => {
     if (pct >= 80) return { bg: '#D4F5D4', color: '#1A5A2A', label: 'Strong match' };
