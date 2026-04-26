@@ -121,8 +121,10 @@ export default function Dashboard() {
       const p = profile || {};
       const titleQuery = p.preferredJobTitle || p.jobTitle || cvData?.title || 'software engineer';
       setJobQueryTitle(titleQuery);
+      const topSkills = (cvData?.skills || []).slice(0, 3).join(' ');
+      const fullQuery = topSkills ? `${titleQuery} ${topSkills}` : titleQuery;
       setLoadingJobs(true);
-      fetch(`/api/jobs?query=${encodeURIComponent(titleQuery)}&location=`)
+      fetch(`/api/jobs?query=${encodeURIComponent(fullQuery)}&location=`)
         .then(r => r.json())
         .then(data => setRecommendedJobs((data.jobs || []).slice(0, 6)))
         .catch(() => {})
@@ -713,8 +715,9 @@ export default function Dashboard() {
             <div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
                 <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF"}}>
-                  Recommended for you
-                  {jobQueryTitle && jobQueryTitle !== 'software engineer' && <span style={{fontSize:12,color:"#5A9A6A",fontWeight:400,marginLeft:8}}>matching: {jobQueryTitle}</span>}
+                  {cvData
+                    ? `Recommended for you based on your CV${cvData.title ? ` — ${cvData.title} roles` : ''}`
+                    : 'Recommended jobs'}
                 </h2>
                 <a href="/jobs" style={{fontSize:12,color:"#C8E600",fontWeight:700,textDecoration:"none"}}>View all jobs →</a>
               </div>
@@ -744,7 +747,7 @@ export default function Dashboard() {
                             <div style={{fontSize:11,color:"#5A9A6A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{job.company} · {job.location}</div>
                           </div>
                         </div>
-                        <div style={{display:"flex",gap:8,marginTop:"auto"}}>
+                        <div style={{display:"flex",gap:6,marginTop:"auto"}}>
                           {isAutoApply(job.url, job.type) ? (
                             <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"7px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
                               ⚡ Quick Apply
@@ -754,14 +757,28 @@ export default function Dashboard() {
                               Apply
                             </button>
                           )}
+                          <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:"#FFFFFF",fontSize:11,fontWeight:700,padding:"7px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer"}}>
+                            View Job
+                          </button>
                         </div>
                       </div>
                     );
                   })}
                   {recommendedJobs.length === 0 && !loadingJobs && (
                     <div style={{gridColumn:"1/-1",textAlign:"center",padding:"32px 0"}}>
-                      <div style={{fontSize:13,color:"#5A9A6A",marginBottom:12}}>No recommended jobs yet</div>
-                      <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"9px 22px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Browse all jobs</a>
+                      {cvData ? (
+                        <>
+                          <div style={{fontSize:13,color:"#5A9A6A",marginBottom:12}}>No recommended jobs yet</div>
+                          <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"9px 22px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Browse all jobs</a>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{fontSize:40,marginBottom:12}}>📄</div>
+                          <div style={{fontSize:14,fontWeight:700,color:"#FFFFFF",marginBottom:6}}>Upload your CV to see personalised job recommendations</div>
+                          <div style={{fontSize:12,color:"#5A9A6A",marginBottom:16}}>AI matches jobs to your exact skills and experience</div>
+                          <button onClick={()=>setActiveSection('cv')} style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"9px 22px",borderRadius:99,border:"none",cursor:"pointer",display:"inline-block"}}>Upload CV →</button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

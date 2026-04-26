@@ -49,6 +49,8 @@ export default function JobsPage() {
     return null;
   });
   const [strongMatchOnly, setStrongMatchOnly] = useState(false);
+  const [sortMode, setSortMode] = useState<'match' | 'date'>('match');
+  const [lastSearchQuery, setLastSearchQuery] = useState('');
 
   const toggleSaveJob = (job: Job) => {
     const saved = localStorage.getItem('jobsesame_saved_jobs');
@@ -91,7 +93,7 @@ export default function JobsPage() {
       } else if (tab === 'all' && loc === 'South Africa') {
         url = `/api/south-africa?query=${encodeURIComponent(searchQuery || 'software engineer')}`;
       } else {
-        url = `/api/jobs?query=${encodeURIComponent(searchQuery || 'software engineer')}&location=${encodeURIComponent(loc)}&page=${pageNum}`;
+        url = `/api/jobs?query=${encodeURIComponent(searchQuery || cvData?.title || 'software engineer')}&location=${encodeURIComponent(loc)}&page=${pageNum}`;
       }
       const res = await fetch(url);
       const data = await res.json();
@@ -106,6 +108,7 @@ export default function JobsPage() {
       }
       setTotal(data.total || 0);
       setHasMore(newJobs.length >= 20 && loc !== 'South Africa');
+      if (!append) setLastSearchQuery(searchQuery || cvData?.title || '');
     } catch {
     }
     if (append) setLoadingMore(false); else setLoading(false);
@@ -179,7 +182,7 @@ export default function JobsPage() {
       if (keywords) list = list.filter(j => keywords.some(kw => j.location.toLowerCase().includes(kw.toLowerCase())));
       else list = list.filter(j => j.location.toLowerCase().includes(location.toLowerCase()));
     }
-    if (cvData) list = [...list].sort((a, b) => (calcMatch(b) ?? 0) - (calcMatch(a) ?? 0));
+    if (cvData && sortMode === 'match') list = [...list].sort((a, b) => (calcMatch(b) ?? 0) - (calcMatch(a) ?? 0));
     if (strongMatchOnly) list = list.filter(j => (calcMatch(j) ?? 0) >= 70);
     return list;
   })();
@@ -379,17 +382,29 @@ export default function JobsPage() {
               Showing jobs in {location}
             </div>
           )}
+          {!loading && lastSearchQuery && (
+            <div style={{fontSize:13,color:"#1A5A2A",fontWeight:600,marginBottom:10,padding:"6px 14px",background:"#EAF5EA",borderRadius:99,display:"inline-block"}}>
+              Showing results for &ldquo;{lastSearchQuery}&rdquo;{cvData && sortMode === 'match' ? ' — sorted by CV match' : ''}
+            </div>
+          )}
           {cvData && !loading && (
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14,flexWrap:"wrap"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14,flexWrap:"wrap"}}>
               <span style={{fontSize:12,color:"#4A8A5A",fontStyle:"italic"}}>
-                Ranked by match — {cvData.title ? `CV: ${cvData.title}` : 'based on your CV skills'}
+                {cvData.title ? `CV: ${cvData.title}` : 'CV uploaded'}
               </span>
+              <button onClick={() => setSortMode(m => m === 'match' ? 'date' : 'match')} style={{
+                padding:"4px 12px",borderRadius:99,fontSize:12,fontWeight:700,cursor:"pointer",border:"1.5px solid #C8E600",
+                background: sortMode === 'match' ? "#C8E600" : "transparent",
+                color: sortMode === 'match' ? "#052A14" : "#5A9A6A",
+              }}>
+                {sortMode === 'match' ? '✓ Sort: CV match' : 'Sort: CV match'}
+              </button>
               <button onClick={() => setStrongMatchOnly(v => !v)} style={{
-                padding:"5px 14px",borderRadius:99,fontSize:12,fontWeight:700,cursor:"pointer",border:"1.5px solid #C8E600",
+                padding:"4px 12px",borderRadius:99,fontSize:12,fontWeight:700,cursor:"pointer",border:"1.5px solid #C8E600",
                 background: strongMatchOnly ? "#C8E600" : "transparent",
                 color: strongMatchOnly ? "#052A14" : "#5A9A6A",
               }}>
-                {strongMatchOnly ? '✓ Strong matches only' : 'Show strong matches only (70%+)'}
+                {strongMatchOnly ? '✓ Strong matches (70%+)' : 'Strong matches (70%+)'}
               </button>
             </div>
           )}
@@ -477,6 +492,9 @@ export default function JobsPage() {
                           Apply
                         </button>
                       )}
+                      <button onClick={()=>window.open(job.url,'_blank')} style={{background:"transparent",color:"#FFFFFF",fontSize:12,fontWeight:700,padding:"10px 12px",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
+                        View
+                      </button>
                       <button onClick={()=>toggleSaveJob(job)} style={{background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:12,fontWeight:600,padding:"10px 14px",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer",flexShrink:0}}>
                         🔖
                       </button>
@@ -492,6 +510,9 @@ export default function JobsPage() {
                           Apply
                         </button>
                       )}
+                      <button onClick={()=>window.open(job.url,'_blank')} style={{width:"100%",background:"transparent",color:"#FFFFFF",fontSize:11,fontWeight:700,padding:"7px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer",textAlign:"center"}}>
+                        View Job
+                      </button>
                       <button onClick={()=>toggleSaveJob(job)} style={{width:"100%",background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:11,fontWeight:600,padding:"7px 0",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer",textAlign:"center"}}>
                         {savedJobs.includes(job.id) ? '🔖 Saved' : '🔖 Save'}
                       </button>
