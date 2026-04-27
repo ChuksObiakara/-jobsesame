@@ -25,6 +25,10 @@ export default function Home() {
   const [exitIntent, setExitIntent] = useState(false);
   const [exitDismissed, setExitDismissed] = useState(false);
   const [signupCount, setSignupCount] = useState(0);
+  const [cvAnalysisState, setCvAnalysisState] = useState<'idle' | 'uploading' | 'done'>('idle');
+  const [cvAnalysisScore, setCvAnalysisScore] = useState(0);
+  const [cvAnalysisWeaknesses, setCvAnalysisWeaknesses] = useState<string[]>([]);
+  const [cvAnalysisDragOver, setCvAnalysisDragOver] = useState(false);
   const exitReadyRef = useRef(false);
 
   useEffect(() => {
@@ -88,6 +92,40 @@ export default function Home() {
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     setMenuOpen(false);
+  };
+
+  const handleCvAnalysis = async (file: File) => {
+    if (!file || !file.name.toLowerCase().endsWith('.pdf')) return;
+    setCvAnalysisState('uploading');
+    try {
+      const formData = new FormData();
+      formData.append('cv', file);
+      const res = await fetch('/api/cv', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        const cv = data.cvData;
+        let s = 30;
+        if (cv.summary) s += 10;
+        if ((cv.skills?.length || 0) >= 5) s += 10;
+        if (cv.experience_years || cv.experience?.length) s += 10;
+        if (cv.education) s += 10;
+        if ((cv.languages?.length || 0) > 0) s += 10;
+        const text = [cv.summary, ...(cv.skills || []), cv.title].filter(Boolean).join(' ').toLowerCase();
+        ['management','leadership','strategy','communication','analytics'].forEach(kw => { if (text.includes(kw)) s += 5; });
+        const score = Math.min(95, s);
+        const weaknesses: string[] = [];
+        if (!cv.summary || cv.summary.length < 50) weaknesses.push('No professional summary — ATS filters remove CVs without one');
+        if ((cv.skills?.length || 0) < 5) weaknesses.push('Too few skills listed — add at least 8 role-specific keywords');
+        if (!cv.education) weaknesses.push('Education section missing — required by most ATS systems');
+        setCvAnalysisScore(score);
+        setCvAnalysisWeaknesses(weaknesses.slice(0, 3));
+        setCvAnalysisState('done');
+      } else {
+        setCvAnalysisState('idle');
+      }
+    } catch {
+      setCvAnalysisState('idle');
+    }
   };
 
   const faqs = [
@@ -543,6 +581,106 @@ export default function Home() {
             </div>
             <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: 14, fontWeight: 800, padding: "14px 32px", borderRadius: 99, textDecoration: "none", whiteSpace: "nowrap" }}>Start your journey →</a>
           </div>
+        </div>
+      </section>
+
+      {/* FREE CV ANALYSIS */}
+      <section style={{ background: "#052A14", padding: isMobile ? "72px 20px" : "96px 28px" }}>
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 40 }}>
+            <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>Free tool</span>
+            </div>
+            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 12 }}>
+              See your ATS score<br /><span style={{ color: "#C8E600" }}>in 15 seconds — free</span>
+            </h2>
+            <p style={{ fontSize: isMobile ? 14 : 16, color: "rgba(255,255,255,0.35)", maxWidth: 420, margin: "0 auto" }}>
+              No signup required. Drop your CV and get an instant ATS analysis with specific weaknesses.
+            </p>
+          </div>
+
+          {cvAnalysisState === 'idle' && (
+            <div
+              onDrop={e => { e.preventDefault(); setCvAnalysisDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleCvAnalysis(f); }}
+              onDragOver={e => { e.preventDefault(); setCvAnalysisDragOver(true); }}
+              onDragLeave={() => setCvAnalysisDragOver(false)}
+              style={{ border: `2px dashed ${cvAnalysisDragOver ? '#C8E600' : 'rgba(200,230,0,0.3)'}`, borderRadius: 20, padding: "52px 28px", textAlign: "center", background: cvAnalysisDragOver ? 'rgba(200,230,0,0.04)' : 'rgba(255,255,255,0.02)', transition: "all 0.2s", cursor: "pointer" }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>📄</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF", marginBottom: 8 }}>Drop your CV here</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 20 }}>PDF format · processed instantly · never stored</div>
+              <label style={{ cursor: "pointer" }}>
+                <input type="file" accept=".pdf" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) handleCvAnalysis(f); }} />
+                <span style={{ background: "#C8E600", color: "#052A14", fontSize: 14, fontWeight: 800, padding: "13px 32px", borderRadius: 99, display: "inline-block" }}>Choose PDF</span>
+              </label>
+            </div>
+          )}
+
+          {cvAnalysisState === 'uploading' && (
+            <div style={{ textAlign: "center", padding: "52px 28px", background: "rgba(255,255,255,0.02)", border: "2px solid rgba(200,230,0,0.2)", borderRadius: 20 }}>
+              <div style={{ width: 48, height: 48, border: "4px solid rgba(200,230,0,0.2)", borderTop: "4px solid #C8E600", borderRadius: "50%", animation: "spinAI 0.8s linear infinite", margin: "0 auto 16px" }} />
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF", marginBottom: 6 }}>AI is reading your CV...</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Analysing skills, experience and ATS compatibility</div>
+            </div>
+          )}
+
+          {cvAnalysisState === 'done' && (
+            <div style={{ background: "rgba(255,255,255,0.02)", border: "1.5px solid rgba(200,230,0,0.2)", borderRadius: 20, padding: isMobile ? "28px 20px" : "36px 40px" }}>
+              {/* Score gauge */}
+              <div style={{ display: "flex", gap: 28, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 28 }}>
+                <div style={{ textAlign: "center", flexShrink: 0 }}>
+                  <div style={{ position: "relative", width: 110, height: 110, margin: "0 auto 10px" }}>
+                    <svg width="110" height="110" style={{ transform: "rotate(-90deg)" }}>
+                      <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
+                      <circle cx="55" cy="55" r="44" fill="none"
+                        stroke={cvAnalysisScore >= 75 ? "#22C55E" : cvAnalysisScore >= 60 ? "#F59E0B" : "#EF4444"}
+                        strokeWidth="10"
+                        strokeDasharray={`${2 * Math.PI * 44}`}
+                        strokeDashoffset={`${2 * Math.PI * 44 * (1 - cvAnalysisScore / 100)}`}
+                        strokeLinecap="round" />
+                    </svg>
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+                      <span style={{ fontSize: 26, fontWeight: 900, color: cvAnalysisScore >= 75 ? "#22C55E" : cvAnalysisScore >= 60 ? "#F59E0B" : "#EF4444", lineHeight: 1 }}>{cvAnalysisScore}%</span>
+                      <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 3 }}>ATS score</span>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: cvAnalysisScore >= 75 ? "#22C55E" : cvAnalysisScore >= 60 ? "#F59E0B" : "#EF4444" }}>
+                    {cvAnalysisScore >= 75 ? "Performing well" : cvAnalysisScore >= 60 ? "Needs improvement" : "Failing screening"}
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF", marginBottom: 12 }}>
+                    {cvAnalysisScore >= 75
+                      ? "Your CV is in good shape. AI tailoring can push it above 90% per role."
+                      : "Most employers will never see your CV. Here is why:"}
+                  </div>
+                  {cvAnalysisWeaknesses.map((w, i) => (
+                    <div key={i} style={{ background: "rgba(239,68,68,0.08)", borderLeft: "3px solid #EF4444", borderRadius: "0 8px 8px 0", padding: "9px 14px", marginBottom: 8, fontSize: 13, color: "#F09595", lineHeight: 1.5 }}>
+                      ⚠️ {w}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Before / After preview */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
+                <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 12, padding: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#F09595", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Your CV now</div>
+                  {["Generic language, no metrics", "Missing key ATS keywords", "Recruiters skip past it"].map((t, i) => (
+                    <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>✗ {t}</div>
+                  ))}
+                </div>
+                <div style={{ background: "rgba(200,230,0,0.05)", border: "1px solid rgba(200,230,0,0.15)", borderRadius: 12, padding: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#C8E600", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>After Jobsesame</div>
+                  {["Impact metrics for every bullet", "90%+ ATS pass rate", "Recruiters call you back"].map((t, i) => (
+                    <div key={i} style={{ fontSize: 12, color: "#90C898", marginBottom: 4 }}>✓ {t}</div>
+                  ))}
+                </div>
+              </div>
+              <a href="/sign-up" style={{ display: "block", background: "#C8E600", color: "#052A14", fontSize: 15, fontWeight: 900, padding: "16px 0", borderRadius: 99, textDecoration: "none", textAlign: "center", marginBottom: 10, animation: "ctaGlow 2.5s ease-in-out infinite" }}>
+                Fix all issues with AI — free →
+              </a>
+              <div style={{ textAlign: "center", fontSize: 12, color: "rgba(255,255,255,0.2)" }}>No credit card · Takes 30 seconds</div>
+            </div>
+          )}
         </div>
       </section>
 

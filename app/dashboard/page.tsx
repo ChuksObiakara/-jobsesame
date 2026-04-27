@@ -6,6 +6,27 @@ import QuickApply, { isAutoApply } from '../components/QuickApply';
 import CoverLetter from '../components/CoverLetter';
 import { jsPDF } from 'jspdf';
 
+const SALARY_DATA: Record<string, { min: number; median: number; max: number }> = {
+  'software engineer': { min: 480000, median: 720000, max: 1200000 },
+  'software developer': { min: 420000, median: 660000, max: 1100000 },
+  'senior software engineer': { min: 720000, median: 1050000, max: 1680000 },
+  'full stack developer': { min: 450000, median: 690000, max: 1100000 },
+  'frontend developer': { min: 380000, median: 600000, max: 960000 },
+  'backend developer': { min: 420000, median: 660000, max: 1080000 },
+  'data scientist': { min: 540000, median: 840000, max: 1440000 },
+  'data analyst': { min: 320000, median: 540000, max: 900000 },
+  'product manager': { min: 600000, median: 960000, max: 1560000 },
+  'project manager': { min: 420000, median: 660000, max: 1080000 },
+  'devops engineer': { min: 540000, median: 840000, max: 1440000 },
+  'ux designer': { min: 360000, median: 600000, max: 1020000 },
+  'marketing manager': { min: 360000, median: 600000, max: 960000 },
+  'financial analyst': { min: 360000, median: 600000, max: 1020000 },
+  'accountant': { min: 300000, median: 480000, max: 780000 },
+  'human resources': { min: 300000, median: 480000, max: 780000 },
+  'sales manager': { min: 360000, median: 600000, max: 1080000 },
+  'business analyst': { min: 420000, median: 660000, max: 1080000 },
+};
+
 interface Application {
   id: string;
   jobTitle: string;
@@ -79,6 +100,11 @@ export default function Dashboard() {
   // ── AI actions modal ──────────────────────────────────────────
   const [showAiModal, setShowAiModal] = useState<'tailor' | 'cover' | null>(null);
 
+  // ── ATS shock modal ────────────────────────────────────────────
+  const [showAtsShock, setShowAtsShock] = useState(false);
+  const [atsShockScore, setAtsShockScore] = useState(0);
+  const [atsShockWeaknesses, setAtsShockWeaknesses] = useState<string[]>([]);
+
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
@@ -115,6 +141,41 @@ export default function Dashboard() {
       .catch(() => {});
   }, []);
 
+  // Trigger job-matches email 24h after signup
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+    const email = user.emailAddresses[0]?.emailAddress;
+    const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || '';
+    const cvTitle = cvData?.title || '';
+    if (!email || localStorage.getItem('jobsesame_jobmatches_email_sent')) return;
+    const signupTs = localStorage.getItem('jobsesame_signup_ts');
+    if (!signupTs) { localStorage.setItem('jobsesame_signup_ts', String(Date.now())); return; }
+    if (Date.now() - Number(signupTs) < 24 * 60 * 60 * 1000) return;
+    fetch('/api/emails/job-matches', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, cvTitle }),
+    }).catch(() => {});
+    localStorage.setItem('jobsesame_jobmatches_email_sent', 'true');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, user, cvData]);
+
+  // Trigger upgrade-nudge email when user hits 2 applications
+  useEffect(() => {
+    if (!isSignedIn || !user || applications.length < 2) return;
+    if (localStorage.getItem('jobsesame_nudge_email_sent')) return;
+    const email = user.emailAddresses[0]?.emailAddress;
+    const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || '';
+    if (!email) return;
+    fetch('/api/emails/upgrade-nudge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, currency }),
+    }).catch(() => {});
+    localStorage.setItem('jobsesame_nudge_email_sent', 'true');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applications.length, isSignedIn, user]);
+
   // Fetch recommended jobs — re-runs when profile or cvData changes
   useEffect(() => {
     const t = setTimeout(() => {
@@ -136,7 +197,7 @@ export default function Dashboard() {
 
   const atsScore = useMemo(() => {
     if (!cvData) return 0;
-    let score = 25;
+    let score = 30;
     if (cvData.summary) score += 10;
     if ((cvData.skills?.length || 0) >= 5) score += 10;
     if (cvData.experience_years || cvData.experience?.length) score += 10;
@@ -146,7 +207,7 @@ export default function Dashboard() {
     ['management', 'leadership', 'strategy', 'communication', 'analytics'].forEach(kw => {
       if (text.includes(kw)) score += 5;
     });
-    return Math.min(100, score);
+    return Math.min(95, score);
   }, [cvData]);
 
   useEffect(() => {
@@ -172,6 +233,27 @@ export default function Dashboard() {
     if (cvTitle && job.title.toLowerCase().includes(cvTitle.toLowerCase())) score += 15;
     return Math.min(98, score);
   };
+
+  const computeWeaknesses = (cv: any): string[] => {
+    const issues: string[] = [];
+    if (!cv.summary || cv.summary.length < 50) issues.push('No professional summary — ATS filters remove CVs without one');
+    if ((cv.skills?.length || 0) < 5) issues.push('Too few skills listed — add at least 8 role-specific keywords');
+    if (!cv.experience?.some((e: any) => /\d/.test(e.bullets?.join('') || ''))) issues.push('No measurable achievements — add numbers, percentages, and impact metrics');
+    if (!cv.education) issues.push('Education section missing — required by most ATS systems');
+    if ((cv.languages?.length || 0) === 0) issues.push('No languages listed — multilingual candidates rank higher');
+    return issues.slice(0, 3);
+  };
+
+  const matchedSalary = useMemo(() => {
+    if (!cvData?.title) return null;
+    const title = cvData.title.toLowerCase();
+    for (const [key, val] of Object.entries(SALARY_DATA)) {
+      if (title.includes(key) || key.split(' ').some(w => w.length > 4 && title.includes(w))) {
+        return { role: key, ...val };
+      }
+    }
+    return null;
+  }, [cvData]);
 
   const matchBadge = (pct: number) => {
     if (pct >= 80) return { bg: '#D4F5D4', color: '#1A5A2A' };
@@ -202,6 +284,22 @@ export default function Dashboard() {
     localStorage.setItem('jobsesame_welcome_sent', 'true');
   };
 
+  const sendAtsWelcomeEmail = async (cv: any, score: number, weaknesses: string[]) => {
+    if (localStorage.getItem('jobsesame_ats_email_sent')) return;
+    const email = user?.emailAddresses[0]?.emailAddress;
+    const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || '';
+    const userId = user?.id;
+    if (!email) return;
+    try {
+      await fetch('/api/emails/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, atsScore: score, weaknesses, cvTitle: cv.title, userId }),
+      });
+    } catch { /* Non-critical */ }
+    localStorage.setItem('jobsesame_ats_email_sent', 'true');
+  };
+
   const generateReferralLink = async () => {
     try {
       const res = await fetch('/api/referral', {
@@ -228,6 +326,22 @@ export default function Dashboard() {
       if (data.success) {
         setCvData(data.cvData);
         localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.cvData));
+        const shockScore = (() => {
+          let s = 30;
+          if (data.cvData.summary) s += 10;
+          if ((data.cvData.skills?.length || 0) >= 5) s += 10;
+          if (data.cvData.experience_years || data.cvData.experience?.length) s += 10;
+          if (data.cvData.education) s += 10;
+          if ((data.cvData.languages?.length || 0) > 0) s += 10;
+          const text = [data.cvData.summary, ...(data.cvData.skills || []), data.cvData.title].filter(Boolean).join(' ').toLowerCase();
+          ['management','leadership','strategy','communication','analytics'].forEach(kw => { if (text.includes(kw)) s += 5; });
+          return Math.min(95, s);
+        })();
+        const shockWeaknesses = computeWeaknesses(data.cvData);
+        setAtsShockScore(shockScore);
+        setAtsShockWeaknesses(shockWeaknesses);
+        setShowAtsShock(true);
+        sendAtsWelcomeEmail(data.cvData, shockScore, shockWeaknesses);
       } else {
         setError(data.error || 'Failed to process CV');
       }
@@ -550,6 +664,73 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* ATS SHOCK MODAL */}
+      {showAtsShock && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#072E16",border:"1.5px solid #1A5A2A",borderRadius:20,padding:32,width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",textAlign:"center"}}>
+            <p style={{margin:"0 0 8px",fontSize:11,fontWeight:700,color:"#5A9A6A",letterSpacing:"2px",textTransform:"uppercase"}}>Your CV was just analysed</p>
+            {/* Circular gauge */}
+            <div style={{position:"relative",width:130,height:130,margin:"0 auto 16px"}}>
+              <svg width="130" height="130" style={{transform:"rotate(-90deg)"}}>
+                <circle cx="65" cy="65" r="55" fill="none" stroke="#1A4A2A" strokeWidth="11"/>
+                <circle cx="65" cy="65" r="55" fill="none"
+                  stroke={atsShockScore>=75?"#22C55E":atsShockScore>=60?"#F59E0B":"#EF4444"}
+                  strokeWidth="11"
+                  strokeDasharray={`${2*Math.PI*55}`}
+                  strokeDashoffset={`${2*Math.PI*55*(1-atsShockScore/100)}`}
+                  strokeLinecap="round"/>
+              </svg>
+              <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
+                <span style={{fontSize:32,fontWeight:900,color:atsShockScore>=75?"#22C55E":atsShockScore>=60?"#F59E0B":"#EF4444",lineHeight:1}}>{atsShockScore}%</span>
+                <span style={{fontSize:10,color:"#5A9A6A",marginTop:3}}>ATS score</span>
+              </div>
+            </div>
+            <h2 style={{fontSize:20,fontWeight:900,color:"#FFFFFF",marginBottom:6,lineHeight:1.3}}>
+              {atsShockScore>=75?"Your CV is performing well"
+               :atsShockScore>=60?"Your CV needs improvement to compete"
+               :"Your CV is failing automated screening"}
+            </h2>
+            <p style={{fontSize:13,color:"#5A9A6A",marginBottom:20,lineHeight:1.6}}>
+              {atsShockScore>=75
+                ?"Most ATS systems will pass your CV. Use AI tailoring to push it above 85% for every role."
+                :atsShockScore>=60
+                ?"Many ATS systems will filter your CV out before a human sees it. Fix the issues below now."
+                :"Most job applications are never seen by a recruiter. Here is why your CV is being rejected:"}
+            </p>
+            {atsShockWeaknesses.length > 0 && (
+              <div style={{marginBottom:20,textAlign:"left"}}>
+                {atsShockWeaknesses.map((w,i)=>(
+                  <div key={i} style={{background:"#0D3A1A",borderLeft:"3px solid #EF4444",borderRadius:"0 8px 8px 0",padding:"10px 14px",marginBottom:8,fontSize:13,color:"#F09595",lineHeight:1.5}}>
+                    ⚠️ {w}
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Before / After */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20,textAlign:"left"}}>
+              <div style={{background:"#0D1A0D",border:"1px solid #A32D2D",borderRadius:10,padding:12}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#F09595",textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Before Jobsesame</div>
+                {["Generic CV sent to every job","Filtered by ATS before human sees it","Ignored by recruiters","Weeks without a response"].map((t,i)=>(
+                  <div key={i} style={{fontSize:12,color:"#8A5A5A",marginBottom:4}}>✗ {t}</div>
+                ))}
+              </div>
+              <div style={{background:"#0D2A0D",border:"1px solid #1A6A2A",borderRadius:10,padding:12}}>
+                <div style={{fontSize:10,fontWeight:700,color:"#C8E600",textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>After Jobsesame</div>
+                {["CV tailored for each job in 30s","Passes ATS with 80%+ score","Seen by real recruiters","Interviews within 2 weeks"].map((t,i)=>(
+                  <div key={i} style={{fontSize:12,color:"#90C898",marginBottom:4}}>✓ {t}</div>
+                ))}
+              </div>
+            </div>
+            <a href="/optimise" style={{display:"block",background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:900,padding:"14px 0",borderRadius:99,textDecoration:"none",marginBottom:12}}>
+              Fix my CV with AI — free →
+            </a>
+            <button onClick={()=>setShowAtsShock(false)} style={{background:"transparent",color:"#3A7A4A",fontSize:12,fontWeight:600,border:"none",cursor:"pointer",padding:"8px"}}>
+              View my dashboard
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* NAV */}
       <nav style={{background:"#052A14",padding:"0 20px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #0D4A20",position:"sticky",top:0,zIndex:100}}>
         <a href="/" style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none"}}>
@@ -691,7 +872,48 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* C. AI Actions Row */}
+            {/* C. Salary Intelligence */}
+            {cvData && matchedSalary && (
+              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:isMobile?20:24}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
+                  <div>
+                    <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF",marginBottom:2}}>Salary Intelligence</h2>
+                    <div style={{fontSize:12,color:"#5A9A6A",textTransform:"capitalize"}}>{matchedSalary.role} — South Africa market rates</div>
+                  </div>
+                  <span style={{fontSize:10,fontWeight:700,color:"#3A7A4A",background:"#0D3A1A",padding:"3px 10px",borderRadius:99,border:"1px solid #1A5A2A"}}>ZAR · Annual</span>
+                </div>
+                {/* Salary bar */}
+                <div style={{marginBottom:16}}>
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#5A9A6A",marginBottom:8}}>
+                    <span>R{(matchedSalary.min/1000).toFixed(0)}k min</span>
+                    <span style={{fontWeight:700,color:"#C8E600"}}>R{(matchedSalary.median/1000).toFixed(0)}k median</span>
+                    <span>R{(matchedSalary.max/1000).toFixed(0)}k max</span>
+                  </div>
+                  <div style={{position:"relative",height:8,background:"#0D3A1A",borderRadius:99,overflow:"hidden"}}>
+                    <div style={{position:"absolute",left:0,top:0,height:"100%",width:"100%",background:"linear-gradient(90deg,#1A4A2A,#C8E600,#1A4A2A)",borderRadius:99,opacity:0.6}}/>
+                    <div style={{position:"absolute",top:-2,height:12,width:3,background:"#FFFFFF",borderRadius:99,left:"50%",transform:"translateX(-50%)"}}/>
+                  </div>
+                </div>
+                {/* Experience-adjusted estimate */}
+                {cvData.experience_years != null && (
+                  <div style={{background:"#0D3A1A",borderRadius:10,padding:"12px 16px",marginBottom:14}}>
+                    <div style={{fontSize:11,color:"#5A9A6A",fontWeight:600,marginBottom:4}}>Your estimated range based on {cvData.experience_years} years experience</div>
+                    <div style={{fontSize:18,fontWeight:800,color:"#C8E600"}}>
+                      R{Math.round((matchedSalary.min + (matchedSalary.max - matchedSalary.min) * Math.min(1, cvData.experience_years / 10) * 0.4) / 12000) * 12}k
+                      {' — '}
+                      R{Math.round((matchedSalary.median + (matchedSalary.max - matchedSalary.median) * Math.min(1, cvData.experience_years / 10) * 0.5) / 12000) * 12}k
+                    </div>
+                    <div style={{fontSize:11,color:"#3A7A4A",marginTop:2}}>per year · based on market data</div>
+                  </div>
+                )}
+                <div style={{fontSize:12,color:"#3A7A4A"}}>
+                  Pro members get real-time salary data for every job they apply to.{' '}
+                  <button onClick={()=>handlePayment('pro')} style={{background:"none",border:"none",color:"#C8E600",fontSize:12,fontWeight:700,cursor:"pointer",padding:0}}>Upgrade →</button>
+                </div>
+              </div>
+            )}
+
+            {/* D. AI Actions Row */}
             <div>
               <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF",marginBottom:12}}>AI actions</h2>
               <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
