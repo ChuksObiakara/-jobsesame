@@ -483,15 +483,9 @@ export default function JobsPage() {
 
                   {isMobile ? (
                     <div style={{display:"flex",gap:8,width:"100%",marginTop:4}}>
-                      {isAutoApply(job.url, job.type) ? (
-                        <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"10px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
-                          ⚡ Quick Apply
-                        </button>
-                      ) : (
-                        <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"#052A14",color:"#C8E600",fontSize:12,fontWeight:800,padding:"10px 0",borderRadius:99,border:"2px solid #C8E600",cursor:"pointer"}}>
-                          Apply
-                        </button>
-                      )}
+                      <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"10px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
+                        {isAutoApply(job.url, job.type) ? '⚡ Quick Apply' : 'Apply'}
+                      </button>
                       <button onClick={()=>window.open(job.url,'_blank')} style={{background:"transparent",color:"#FFFFFF",fontSize:12,fontWeight:700,padding:"10px 12px",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
                         View
                       </button>
@@ -501,15 +495,9 @@ export default function JobsPage() {
                     </div>
                   ) : (
                     <div style={{display:"flex",flexDirection:"column",gap:7,width:120,flexShrink:0}}>
-                      {isAutoApply(job.url, job.type) ? (
-                        <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"8px 0",borderRadius:99,border:"none",cursor:"pointer",textAlign:"center"}}>
-                          ⚡ Quick Apply
-                        </button>
-                      ) : (
-                        <button onClick={()=>window.open(job.url,'_blank')} style={{width:"100%",background:"#052A14",color:"#C8E600",fontSize:11,fontWeight:800,padding:"8px 0",borderRadius:99,border:"2px solid #C8E600",cursor:"pointer",textAlign:"center"}}>
-                          Apply
-                        </button>
-                      )}
+                      <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"8px 0",borderRadius:99,border:"none",cursor:"pointer",textAlign:"center"}}>
+                        {isAutoApply(job.url, job.type) ? '⚡ Quick Apply' : 'Apply'}
+                      </button>
                       <button onClick={()=>window.open(job.url,'_blank')} style={{width:"100%",background:"transparent",color:"#FFFFFF",fontSize:11,fontWeight:700,padding:"7px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer",textAlign:"center"}}>
                         View Job
                       </button>
