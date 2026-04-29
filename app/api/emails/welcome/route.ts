@@ -18,6 +18,41 @@ export async function POST(req: NextRequest) {
     const weakList: string[] = Array.isArray(weaknesses) ? weaknesses.slice(0, 3) : [];
     const jobRole = cvTitle || 'your role';
 
+    // Fetch role-specific jobs for the email
+    const genericJobs = [
+      { title: 'Software Engineer', company: 'Takealot Group', location: 'Cape Town', match: 88 },
+      { title: 'Project Manager', company: 'Standard Bank', location: 'Johannesburg', match: 85 },
+      { title: 'Marketing Manager', company: 'Discovery Ltd', location: 'Sandton', match: 82 },
+    ];
+    let emailJobs = genericJobs;
+    if (cvTitle) {
+      try {
+        const jobRes = await fetch(`${appUrl}/api/jobs?query=${encodeURIComponent(cvTitle)}&location=`, {
+          signal: AbortSignal.timeout(6000),
+        });
+        if (jobRes.ok) {
+          const jobData = await jobRes.json();
+          const fetched = (jobData.jobs || []).slice(0, 3);
+          if (fetched.length >= 2) {
+            emailJobs = fetched.map((j: any, i: number) => ({
+              title: j.title,
+              company: j.company,
+              location: j.location,
+              match: Math.max(75, 90 - i * 4),
+            }));
+          }
+        }
+      } catch {
+        // use generic jobs
+      }
+    }
+    const jobRowHtml = emailJobs.map(j =>
+      `<div style="background:#072E16;border:1px solid #1A5A2A;border-radius:10px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+        <div><div style="font-size:14px;font-weight:800;color:#FFFFFF;margin-bottom:2px;">${j.title}</div><div style="font-size:11px;color:#5A9A6A;">${j.company} &middot; ${j.location}</div></div>
+        <div style="background:#0D3A1A;border:1.5px solid #22C55E;border-radius:99px;padding:4px 10px;font-size:12px;font-weight:900;color:#22C55E;white-space:nowrap;">${j.match}% match</div>
+      </div>`
+    ).join('');
+
     const weakHtml = weakList.map(w =>
       `<div style="background:#0D3A1A;border-left:3px solid #EF4444;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:10px;font-size:13px;color:#F09595;line-height:1.5;">⚠️ ${w}</div>`
     ).join('');
@@ -44,6 +79,13 @@ ${weakHtml ? `<tr><td style="background:#0D3A1A;padding:28px 36px;">
   <p style="margin:0 0 14px;font-size:12px;font-weight:700;color:#C8E600;text-transform:uppercase;letter-spacing:1px;">Issues found in your CV:</p>
   ${weakHtml}
 </td></tr>` : ''}
+<tr><td style="background:#052A14;padding:24px 36px;">
+  <p style="margin:0 0 14px;font-size:12px;font-weight:700;color:#C8E600;text-transform:uppercase;letter-spacing:1px;">Jobs matching your profile — apply now:</p>
+  ${jobRowHtml}
+  <div style="text-align:center;margin-top:16px;">
+    <a href="${appUrl}/jobs" style="display:inline-block;background:transparent;color:#C8E600;font-size:13px;font-weight:700;padding:9px 22px;border-radius:99px;border:1.5px solid #C8E600;text-decoration:none;">See all matching jobs →</a>
+  </div>
+</td></tr>
 <tr><td style="background:#072E16;padding:32px 36px;text-align:center;">
   <h2 style="margin:0 0 8px;font-size:20px;font-weight:800;color:#FFFFFF;">Fix all issues in 30 seconds — free</h2>
   <p style="margin:0 0 20px;font-size:13px;color:#5A9A6A;line-height:1.6;">Our AI rewrites your CV for every job, fixing every issue above.</p>

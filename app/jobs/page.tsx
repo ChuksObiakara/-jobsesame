@@ -168,11 +168,12 @@ export default function JobsPage() {
     const cvTitle: string = cvData.title || '';
     if (!skills.length && !cvTitle) return null;
     const text = (job.title + ' ' + (job.description || '')).toLowerCase();
-    let score = 40;
-    skills.forEach(s => { if (s && text.includes(s.toLowerCase())) score += 5; });
-    if (cvTitle && job.title.toLowerCase().includes(cvTitle.toLowerCase())) score += 15;
-    if (location && job.location.toLowerCase().includes(location.toLowerCase())) score += 10;
-    return Math.min(98, score);
+    let skillMatches = 0;
+    skills.forEach(s => { if (s && text.includes(s.toLowerCase())) skillMatches++; });
+    const titleMatch = cvTitle
+      ? cvTitle.toLowerCase().split(' ').some(word => word.length > 2 && job.title.toLowerCase().includes(word))
+      : false;
+    return Math.min(97, 35 + skillMatches * 8 + (titleMatch ? 20 : 0));
   };
 
   const filteredJobs = (() => {
@@ -183,14 +184,14 @@ export default function JobsPage() {
       else list = list.filter(j => j.location.toLowerCase().includes(location.toLowerCase()));
     }
     if (cvData && sortMode === 'match') list = [...list].sort((a, b) => (calcMatch(b) ?? 0) - (calcMatch(a) ?? 0));
-    if (strongMatchOnly) list = list.filter(j => (calcMatch(j) ?? 0) >= 70);
+    if (strongMatchOnly) list = list.filter(j => (calcMatch(j) ?? 0) >= 55);
     return list;
   })();
 
   const matchBadge = (pct: number) => {
-    if (pct >= 80) return { bg: '#D4F5D4', color: '#1A5A2A', label: 'Strong match' };
-    if (pct >= 60) return { bg: '#FDFFF5', color: '#5A7A00', label: 'Good match' };
-    if (pct >= 40) return { bg: '#FFF5E0', color: '#8A5A00', label: 'Partial match' };
+    if (pct >= 75) return { bg: '#D4F5D4', color: '#1A5A2A', label: 'Strong match' };
+    if (pct >= 55) return { bg: '#FDFFF5', color: '#5A7A00', label: 'Good match' };
+    if (pct >= 35) return { bg: '#FFF5E0', color: '#8A5A00', label: 'Partial match' };
     return { bg: '#F0F0F0', color: '#777', label: 'Low match' };
   };
 
@@ -267,7 +268,7 @@ export default function JobsPage() {
       )}
 
       {/* PAGE HEADER */}
-      <div style={{background:"#052A14",padding:isMobile?"20px 20px 0":"28px 28px 0"}}>
+      <div style={{background:"#052A14",padding:isMobile?"12px 12px 0":"28px 28px 0",overflowX:"hidden"}}>
         <div style={{maxWidth:900,margin:"0 auto"}}>
           <h1 style={{fontSize:isMobile?20:26,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>
             Find your next job
@@ -279,7 +280,7 @@ export default function JobsPage() {
       </div>
 
       {/* SEARCH + TABS */}
-      <div style={{background:"#052A14",padding:"0 24px 24px",borderBottom:"4px solid #C8E600"}}>
+      <div style={{background:"#052A14",padding:isMobile?"0 12px 16px":"0 24px 24px",borderBottom:"4px solid #C8E600",overflowX:"hidden"}}>
         <div style={{maxWidth:900,margin:"0 auto"}}>
           <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",marginBottom:18}}>
             <div style={{display:"flex",gap:8,minWidth:"fit-content",padding:"4px 0"}}>
@@ -361,7 +362,7 @@ export default function JobsPage() {
       )}
 
       {/* JOBS LIST */}
-      <section ref={jobsSectionRef} style={{background:"#F4FCF4",padding:isMobile?"16px":"20px 24px",minHeight:"60vh"}}>
+      <section ref={jobsSectionRef} style={{background:"#F4FCF4",padding:isMobile?"12px":"20px 24px",minHeight:"60vh",overflowX:"hidden"}}>
         <div style={{maxWidth:900,margin:"0 auto"}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
             <div>
@@ -404,7 +405,7 @@ export default function JobsPage() {
                 background: strongMatchOnly ? "#C8E600" : "transparent",
                 color: strongMatchOnly ? "#052A14" : "#5A9A6A",
               }}>
-                {strongMatchOnly ? '✓ Strong matches (70%+)' : 'Strong matches (70%+)'}
+                {strongMatchOnly ? '✓ Hide low matches' : 'Hide low matches'}
               </button>
             </div>
           )}
@@ -482,16 +483,18 @@ export default function JobsPage() {
                   </div>
 
                   {isMobile ? (
-                    <div style={{display:"flex",gap:8,width:"100%",marginTop:4}}>
-                      <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"10px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:7,width:"100%",marginTop:8}}>
+                      <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
                         {isAutoApply(job.url, job.type) ? '⚡ Quick Apply' : 'Apply'}
                       </button>
-                      <button onClick={()=>window.open(job.url,'_blank')} style={{background:"transparent",color:"#FFFFFF",fontSize:12,fontWeight:700,padding:"10px 12px",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
-                        View
-                      </button>
-                      <button onClick={()=>toggleSaveJob(job)} style={{background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:12,fontWeight:600,padding:"10px 14px",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer",flexShrink:0}}>
-                        🔖
-                      </button>
+                      <div style={{display:"flex",gap:7}}>
+                        <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:"#052A14",fontSize:12,fontWeight:700,padding:"9px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer"}}>
+                          View Job
+                        </button>
+                        <button onClick={()=>toggleSaveJob(job)} style={{flex:1,background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 0",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer"}}>
+                          {savedJobs.includes(job.id) ? '🔖 Saved' : '🔖 Save'}
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <div style={{display:"flex",flexDirection:"column",gap:7,width:120,flexShrink:0}}>

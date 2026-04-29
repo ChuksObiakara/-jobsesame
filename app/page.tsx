@@ -8,7 +8,7 @@ const PHOTOS = [
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
   'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face',
-  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&h=80&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1507152927303-50cbf7093570?w=80&h=80&fit=crop&crop=face',
 ];
 
 export default function Home() {
@@ -104,19 +104,35 @@ export default function Home() {
       const data = await res.json();
       if (data.success) {
         const cv = data.cvData;
-        let s = 30;
-        if (cv.summary) s += 10;
-        if ((cv.skills?.length || 0) >= 5) s += 10;
-        if (cv.experience_years || cv.experience?.length) s += 10;
-        if (cv.education) s += 10;
-        if ((cv.languages?.length || 0) > 0) s += 10;
-        const text = [cv.summary, ...(cv.skills || []), cv.title].filter(Boolean).join(' ').toLowerCase();
-        ['management','leadership','strategy','communication','analytics'].forEach(kw => { if (text.includes(kw)) s += 5; });
-        const score = Math.min(95, s);
+        let s = 20;
+        // Summary quality: must be long AND contain action verbs
+        const actionVerbs = ['led','managed','delivered','achieved','increased','reduced','built','launched','drove','grew','saved','developed','implemented','improved','created','established'];
+        const summaryText = (cv.summary || '').toLowerCase();
+        if (cv.summary && cv.summary.length > 100 && actionVerbs.some(v => summaryText.includes(v))) s += 8;
+        // Skills depth
+        if ((cv.skills?.length || 0) > 8) s += 8;
+        // Measurable achievements
+        const bulletText = (cv.experience || []).flatMap((e: any) => e.bullets || []).join(' ');
+        if (/\d+\s*%|\d+\s*(million|thousand|k\b|\$|£|€|R\d)|\d+\s*(people|users|clients|projects|teams)/i.test(bulletText)) s += 8;
+        // Seniority in job titles
+        const jobTitles = (cv.experience || []).map((e: any) => (e.title || '').toLowerCase()).join(' ');
+        if (/senior|lead|manager|director|head|principal|chief|vp|vice president/.test(jobTitles)) s += 8;
+        // Industry or tech keywords in summary
+        const techIndustryKw = ['software','engineering','finance','marketing','sales','operations','product','data','cloud','agile','devops','react','python','java','node','aws','azure','crm','erp','saas'];
+        if (techIndustryKw.some(kw => summaryText.includes(kw))) s += 8;
+        // Contact completeness
+        if (cv.phone && cv.email) s += 5;
+        // Specific city location (not just a country name — cities are shorter/unique)
+        const countryNames = ['south africa','nigeria','kenya','ghana','united kingdom','united states','canada','australia','india'];
+        if (cv.location && !countryNames.some(c => cv.location.toLowerCase().includes(c)) && cv.location.length > 2) s += 5;
+        // Named qualification in education
+        if (cv.education && /bachelor|master|phd|diploma|degree|bsc|ba |msc|mba|honours|certificate/i.test(cv.education)) s += 5;
+        const score = Math.min(75, s);
         const weaknesses: string[] = [];
-        if (!cv.summary || cv.summary.length < 50) weaknesses.push('No professional summary — ATS filters remove CVs without one');
-        if ((cv.skills?.length || 0) < 5) weaknesses.push('Too few skills listed — add at least 8 role-specific keywords');
-        if (!cv.education) weaknesses.push('Education section missing — required by most ATS systems');
+        if (!cv.summary || cv.summary.length < 100 || !actionVerbs.some(v => summaryText.includes(v))) weaknesses.push('No impact-driven summary — ATS filters reject CVs without measurable action verbs');
+        if ((cv.skills?.length || 0) <= 8) weaknesses.push('Too few skills listed — ATS needs 9+ role-specific keywords to pass filters');
+        if (!bulletText || !/\d/.test(bulletText)) weaknesses.push('No measurable achievements — add numbers and percentages to every bullet point');
+        if (!cv.education || !/bachelor|master|phd|diploma|degree|bsc|msc|mba|honours/i.test(cv.education)) weaknesses.push('Education section incomplete — ATS systems rank CVs with specific qualifications higher');
         setCvAnalysisScore(score);
         setCvAnalysisWeaknesses(weaknesses.slice(0, 3));
         setCvAnalysisState('done');
@@ -645,6 +661,9 @@ export default function Home() {
                   </div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: cvAnalysisScore >= 75 ? "#22C55E" : cvAnalysisScore >= 60 ? "#F59E0B" : "#EF4444" }}>
                     {cvAnalysisScore >= 75 ? "Performing well" : cvAnalysisScore >= 60 ? "Needs improvement" : "Failing screening"}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 6, lineHeight: 1.4 }}>
+                    Industry average ATS pass rate is 23%.<br />Most CVs score below 60.
                   </div>
                 </div>
                 <div style={{ flex: 1, minWidth: 200 }}>

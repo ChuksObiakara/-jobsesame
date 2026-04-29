@@ -12,13 +12,40 @@ export async function POST(req: NextRequest) {
     const appUrl = 'https://jobsesame.co.za';
     const role = cvTitle || 'your role';
 
-    const jobs = [
-      { title: 'Senior Software Engineer', company: 'Takealot Group', location: 'Cape Town', match: 94 },
-      { title: 'Full Stack Developer', company: 'Discovery Ltd', location: 'Johannesburg', match: 91 },
-      { title: 'Backend Engineer', company: 'Yoco Technologies', location: 'Remote', match: 88 },
-      { title: 'Software Developer', company: 'Capitec Bank', location: 'Stellenbosch', match: 85 },
-      { title: 'Platform Engineer', company: 'Standard Bank', location: 'Johannesburg', match: 82 },
+    // Fetch real jobs based on cvTitle, fall back to defaults
+    const genericJobs = [
+      { title: 'Software Engineer', company: 'Takealot Group', location: 'Cape Town', match: 88 },
+      { title: 'Project Manager', company: 'Standard Bank', location: 'Johannesburg', match: 85 },
+      { title: 'Marketing Manager', company: 'Discovery Ltd', location: 'Sandton', match: 82 },
+      { title: 'Data Analyst', company: 'Vodacom', location: 'Midrand', match: 80 },
+      { title: 'Sales Manager', company: 'Capitec Bank', location: 'Stellenbosch', match: 78 },
     ];
+
+    let jobs = genericJobs;
+    if (cvTitle) {
+      try {
+        const jobRes = await fetch(`${appUrl}/api/jobs?query=${encodeURIComponent(cvTitle)}&location=`, {
+          headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(8000),
+        });
+        if (jobRes.ok) {
+          const jobData = await jobRes.json();
+          const fetched = (jobData.jobs || []).slice(0, 5);
+          if (fetched.length >= 3) {
+            jobs = fetched.map((j: any, i: number) => ({
+              title: j.title,
+              company: j.company,
+              location: j.location,
+              match: Math.max(75, 92 - i * 3),
+            }));
+          }
+        }
+      } catch {
+        // use generic jobs
+      }
+    }
+
+    const matchColor = (m: number) => m >= 85 ? '#22C55E' : m >= 75 ? '#F59E0B' : '#90C898';
 
     const jobCards = jobs.map(j => `
 <tr>
@@ -33,8 +60,8 @@ export async function POST(req: NextRequest) {
                 <div style="font-size:12px;color:#5A9A6A;">${j.company} &middot; ${j.location}</div>
               </td>
               <td style="text-align:right;vertical-align:top;">
-                <div style="background:#0D3A1A;border:1.5px solid #22C55E;border-radius:99px;padding:5px 12px;display:inline-block;">
-                  <span style="font-size:13px;font-weight:900;color:#22C55E;">${j.match}%</span>
+                <div style="background:#0D3A1A;border:1.5px solid ${matchColor(j.match)};border-radius:99px;padding:5px 12px;display:inline-block;">
+                  <span style="font-size:13px;font-weight:900;color:${matchColor(j.match)};">${j.match}%</span>
                   <span style="font-size:10px;color:#3A9A4A;margin-left:3px;">match</span>
                 </div>
               </td>
@@ -51,6 +78,10 @@ export async function POST(req: NextRequest) {
   </td>
 </tr>`).join('');
 
+    const subject = cvTitle
+      ? `5 ${cvTitle} jobs matching your CV`
+      : '5 jobs your CV is a strong match for right now';
+
     const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
 <body style="margin:0;padding:0;background:#f0f7f0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f7f0;padding:32px 16px;"><tr><td align="center">
@@ -60,7 +91,7 @@ export async function POST(req: NextRequest) {
 </td></tr>
 <tr><td style="background:#072E16;padding:36px 36px 24px;text-align:center;">
   <p style="margin:0 0 8px;font-size:12px;font-weight:700;color:#5A9A6A;letter-spacing:2px;text-transform:uppercase;">Strong matches found</p>
-  <h1 style="margin:0 0 12px;font-size:24px;font-weight:900;color:#FFFFFF;line-height:1.3;">Hi ${firstName}, here are 5 jobs<br/>your CV is a strong match for</h1>
+  <h1 style="margin:0 0 12px;font-size:24px;font-weight:900;color:#FFFFFF;line-height:1.3;">Hi ${firstName}, here are 5 ${cvTitle ? cvTitle : ''} jobs<br/>your CV is a strong match for</h1>
   <p style="margin:0;font-size:13px;color:#5A9A6A;">Based on your CV — ${role} roles</p>
 </td></tr>
 <tr><td style="background:#052A14;padding:24px 36px;">
@@ -82,7 +113,7 @@ export async function POST(req: NextRequest) {
       from: 'Jobsesame <onboarding@resend.dev>',
       replyTo: 'support@jobsesame.co.za',
       to: email,
-      subject: '5 jobs your CV is a strong match for right now',
+      subject,
       html,
     });
 
