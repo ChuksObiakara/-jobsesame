@@ -54,7 +54,9 @@ export async function POST(req: NextRequest) {
   <p style="margin:14px 0 0;font-size:11px;color:#3A7A4A;">Most users get an interview within 14 days of upgrading</p>
 </td></tr>
 <tr><td style="background:#031A0C;border-radius:0 0 16px 16px;padding:20px 36px;text-align:center;border-top:1px solid #0D3A1A;">
-  <p style="margin:0;font-size:11px;color:#1A4A2A;">© 2025 Jobsesame · <a href="${appUrl}/privacy" style="color:#1A5A2A;text-decoration:none;">Privacy</a> · <a href="${appUrl}/terms" style="color:#1A5A2A;text-decoration:none;">Terms</a></p>
+  <p style="margin:0 0 8px;font-size:11px;color:#1A4A2A;">© 2025 Jobsesame (Pty) Ltd · <a href="${appUrl}/privacy" style="color:#1A5A2A;text-decoration:none;">Privacy</a> · <a href="${appUrl}/terms" style="color:#1A5A2A;text-decoration:none;">Terms</a></p>
+  <p style="margin:0 0 6px;font-size:11px;color:#1A4A2A;">Jobsesame (Pty) Ltd, South Africa</p>
+  <p style="margin:0;font-size:11px;"><a href="${appUrl}/unsubscribe" style="color:#3A7A4A;text-decoration:underline;">Don't want these emails? Unsubscribe here</a></p>
 </td></tr>
 </table></td></tr></table>
 </body></html>`;

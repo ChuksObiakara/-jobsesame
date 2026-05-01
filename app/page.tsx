@@ -817,13 +817,14 @@ export default function Home() {
                 </div>
                 <span style={{ fontSize: 16, fontWeight: 800 }}><span style={{ color: "#FFFFFF" }}>job</span><span style={{ color: "#C8E600" }}>sesame</span></span>
               </div>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.18)", lineHeight: 1.8, maxWidth: 220, marginBottom: 10 }}>AI-powered job applications for professionals who refuse to be ignored.</p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.1)", fontStyle: "italic" }}>&ldquo;Open sesame — your future awaits.&rdquo;</p>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.18)", lineHeight: 1.8, maxWidth: 220, marginBottom: 6 }}>AI-powered job applications for professionals who refuse to be ignored.</p>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.1)", marginBottom: 6 }}>Jobsesame (Pty) Ltd · South Africa</p>
+              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.1)" }}><a href="mailto:support@jobsesame.co.za" style={{ color: "rgba(255,255,255,0.15)", textDecoration: "none" }}>support@jobsesame.co.za</a></p>
             </div>
             {[
               { heading: "Product", links: [{ label: "Find Jobs", href: "/jobs" }, { label: "CV Optimiser", href: "/optimise" }, { label: "Dashboard", href: "/dashboard" }] },
               { heading: "Company", links: [{ label: "About", href: "/about" }, { label: "Recruiters", href: "/recruiters" }, { label: "Blog", href: "/blog" }, { label: "Contact", href: "mailto:hello@jobsesame.co.za" }] },
-              { heading: "Legal", links: [{ label: "Privacy Policy", href: "/privacy" }, { label: "Terms of Service", href: "/terms" }] },
+              { heading: "Legal", links: [{ label: "Privacy Policy", href: "/privacy" }, { label: "Terms of Service", href: "/terms" }, { label: "Refund Policy", href: "/refund" }, { label: "Cookie Policy", href: "/privacy#cookies" }, { label: "Delete My Data", href: "/delete-data" }] },
             ].map(col => (
               <div key={col.heading}>
                 <div style={{ fontSize: 10, color: "#C8E600", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 16 }}>{col.heading}</div>
@@ -835,10 +836,17 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.12)" }}>© 2025 Jobsesame. All rights reserved.</span>
-            <div style={{ display: "flex", gap: 20 }}>
-              {["Twitter", "LinkedIn", "Instagram"].map(s => <span key={s} style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", cursor: "pointer" }}>{s}</span>)}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.12)" }}>© 2025 Jobsesame (Pty) Ltd. All rights reserved.</span>
+              <div style={{ display: "flex", gap: 20 }}>
+                {["Twitter", "LinkedIn", "Instagram"].map(s => <span key={s} style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", cursor: "pointer" }}>{s}</span>)}
+              </div>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.1)" }}>Jobsesame is registered with the South African Information Regulator under POPIA</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.1)" }}>support@jobsesame.co.za</span>
+              <a href="/unsubscribe" style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", textDecoration: "none" }}>Unsubscribe from emails</a>
             </div>
           </div>
         </div>

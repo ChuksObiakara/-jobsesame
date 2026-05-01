@@ -104,7 +104,9 @@ export async function POST(req: NextRequest) {
   <a href="${appUrl}/jobs" style="display:inline-block;background:#C8E600;color:#052A14;font-size:15px;font-weight:900;padding:14px 36px;border-radius:99px;text-decoration:none;">See all matching jobs →</a>
 </td></tr>
 <tr><td style="background:#031A0C;border-radius:0 0 16px 16px;padding:20px 36px;text-align:center;border-top:1px solid #0D3A1A;">
-  <p style="margin:0;font-size:11px;color:#1A4A2A;">© 2025 Jobsesame · <a href="${appUrl}/privacy" style="color:#1A5A2A;text-decoration:none;">Privacy</a> · <a href="${appUrl}/terms" style="color:#1A5A2A;text-decoration:none;">Terms</a></p>
+  <p style="margin:0 0 8px;font-size:11px;color:#1A4A2A;">© 2025 Jobsesame (Pty) Ltd · <a href="${appUrl}/privacy" style="color:#1A5A2A;text-decoration:none;">Privacy</a> · <a href="${appUrl}/terms" style="color:#1A5A2A;text-decoration:none;">Terms</a></p>
+  <p style="margin:0 0 6px;font-size:11px;color:#1A4A2A;">Jobsesame (Pty) Ltd, South Africa</p>
+  <p style="margin:0;font-size:11px;"><a href="${appUrl}/unsubscribe" style="color:#3A7A4A;text-decoration:underline;">Don't want these emails? Unsubscribe here</a></p>
 </td></tr>
 </table></td></tr></table>
 </body></html>`;

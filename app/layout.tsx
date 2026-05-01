@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from '@clerk/nextjs';
 import "./globals.css";
+import CookieConsent from "./components/CookieConsent";
 
 export const metadata: Metadata = {
   title: "Jobsesame — AI Job Platform for Africa and the World",
@@ -44,7 +45,10 @@ export default function RootLayout({
       afterSignUpUrl="/onboarding"
     >
       <html lang="en">
-        <body>{children}</body>
+        <body>
+          {children}
+          <CookieConsent />
+        </body>
       </html>
     </ClerkProvider>
   );
