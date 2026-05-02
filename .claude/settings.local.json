@@ -29,7 +29,10 @@
       "Bash(git merge *)",
       "Bash(git checkout *)",
       "Bash(git commit -m 'Merge remote — add Greenhouse + Lever to global jobs feed, all routes cached 1h *)",
-      "Bash(npx prisma *)"
+      "Bash(npx prisma *)",
+      "Bash(git commit *)",
+      "Bash(Get-Content \"C:\\\\Users\\\\chuks\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-chuks-OneDrive-Desktop-jobsesame\\\\67d9e36e-3a6a-461f-b1a6-e9544a1ee3c4\\\\tasks\\\\bq6631wph.output\" -Wait -Tail 40)",
+      "Bash(Select-Object -First 60)"
     ]
   }
 }
