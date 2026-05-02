@@ -28,7 +28,8 @@
       "Bash(git fetch *)",
       "Bash(git merge *)",
       "Bash(git checkout *)",
-      "Bash(git commit -m 'Merge remote — add Greenhouse + Lever to global jobs feed, all routes cached 1h *)"
+      "Bash(git commit -m 'Merge remote — add Greenhouse + Lever to global jobs feed, all routes cached 1h *)",
+      "Bash(npx prisma *)"
     ]
   }
 }

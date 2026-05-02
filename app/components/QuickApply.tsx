@@ -108,6 +108,13 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   };
 
   const startRewrite = async (cv: any) => {
+    // Check credits before processing
+    try {
+      const creditsRes = await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deduct' }) });
+      const creditsData = await creditsRes.json();
+      if (creditsData.paywall) { setStep('paywall'); return; }
+    } catch { /* Non-critical — proceed */ }
+
     setStep('rewrite');
     setRewritePhase(0);
     let phaseIdx = 0;
@@ -308,6 +315,15 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       jobUrl: job.url,
     });
     localStorage.setItem('jobsesame_applications', JSON.stringify(applications));
+    // Save to database
+    fetch('/api/user/applications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jobTitle: job.title, company: job.company, location: job.location,
+        jobUrl: job.url, jobSource: job.type || 'web', matchScore: rewrittenMatchPct,
+      }),
+    }).catch(() => {});
   };
 
   const handleApply = async () => {

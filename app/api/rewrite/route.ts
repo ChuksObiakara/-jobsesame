@@ -1,8 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { auth } from '@clerk/nextjs/server';
+
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+function checkRateLimit(userId: string, maxRequests: number): boolean {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+  if (!userLimit || now > userLimit.resetTime) {
+    rateLimitMap.set(userId, { count: 1, resetTime: now + 3600000 });
+    return true;
+  }
+  if (userLimit.count >= maxRequests) return false;
+  userLimit.count++;
+  return true;
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (userId && !checkRateLimit(userId, 20)) {
+      return NextResponse.json({ error: 'Rate limit exceeded. Try again in an hour.' }, { status: 429 });
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const creditsResponse = await fetch(`${baseUrl}/api/credits`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'deduct' }),
+    });
+    const creditsData = await creditsResponse.json();
+    if (creditsData.paywall) return NextResponse.json({ error: 'No credits remaining', paywall: true }, { status: 402 });
+
     const body = await request.json();
     const { cvData, jobTitle, jobDescription, jobCompany, userPrompt, coverLetter } = body;
 

@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { auth } from '@clerk/nextjs/server';
 
 export const dynamic = 'force-dynamic';
 
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+function checkRateLimit(userId: string, maxRequests: number): boolean {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+  if (!userLimit || now > userLimit.resetTime) {
+    rateLimitMap.set(userId, { count: 1, resetTime: now + 3600000 });
+    return true;
+  }
+  if (userLimit.count >= maxRequests) return false;
+  userLimit.count++;
+  return true;
+}
+
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (userId && !checkRateLimit(userId, 10)) {
+      return NextResponse.json({ error: 'Rate limit exceeded. Try again in an hour.' }, { status: 429 });
+    }
+
     console.log('CV route called');
     const formData = await request.formData();
     const file = formData.get('cv') as File;
@@ -53,6 +72,15 @@ export async function POST(request: NextRequest) {
     const clean = text.replace(/```json|```/g, '').trim();
     const cvData = JSON.parse(clean);
     console.log('Parsed CV for:', cvData.name);
+
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      await fetch(`${baseUrl}/api/user/cv`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': request.headers.get('Authorization') || '' },
+        body: JSON.stringify({ cvData }),
+      });
+    } catch (e) { console.log('CV save to DB skipped:', e); }
 
     return NextResponse.json({ success: true, cvData });
 

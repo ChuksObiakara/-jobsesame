@@ -83,7 +83,9 @@ export default function Dashboard() {
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('USD');
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState('');
-  const freeRewrites = 3;
+  const [credits, setCredits] = useState(3);
+  const [isPro, setIsPro] = useState(false);
+  const freeRewrites = credits;
 
   // ── ATS score display (animated) ──────────────────────────────────
   const [displayAts, setDisplayAts] = useState(0);
@@ -121,6 +123,32 @@ export default function Dashboard() {
       sendWelcomeEmailOnce();
       // Defer referral link — non-critical, load after main content
       setTimeout(() => generateReferralLink(), 2000);
+      // Sync user to database
+      fetch('/api/user/sync', { method: 'POST' }).catch(() => {});
+      // Fetch credits from database
+      fetch('/api/credits').then(r => r.json()).then(d => {
+        if (typeof d.credits === 'number') setCredits(d.credits);
+        if (typeof d.isPro === 'boolean') setIsPro(d.isPro);
+      }).catch(() => {});
+      // Fetch applications from database
+      fetch('/api/user/applications').then(r => r.json()).then(d => {
+        if (d.applications?.length) {
+          const mapped = d.applications.map((a: any) => ({
+            id: a.id, jobTitle: a.jobTitle, company: a.company,
+            location: a.location || '', dateApplied: a.appliedAt, status: a.status, jobUrl: a.jobUrl,
+          }));
+          setApplications(mapped);
+          localStorage.setItem('jobsesame_applications', JSON.stringify(mapped));
+        }
+      }).catch(() => {});
+      // Fetch CV from database if not in localStorage
+      fetch('/api/user/cv').then(r => r.json()).then(d => {
+        if (d.cv && !localStorage.getItem('jobsesame_cv_data')) {
+          const cv = { ...d.cv, experience_years: d.cv.experienceYears };
+          setCvData(cv);
+          localStorage.setItem('jobsesame_cv_data', JSON.stringify(cv));
+        }
+      }).catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, user]);
@@ -326,6 +354,7 @@ export default function Dashboard() {
       if (data.success) {
         setCvData(data.cvData);
         localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.cvData));
+        fetch('/api/user/cv', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cvData: data.cvData }) }).catch(() => {});
         const shockScore = (() => {
           let s = 30;
           if (data.cvData.summary) s += 10;
