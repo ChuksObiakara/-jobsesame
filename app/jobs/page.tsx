@@ -40,14 +40,7 @@ export default function JobsPage() {
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [cvData] = useState<any>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const stored = localStorage.getItem('jobsesame_cv_data');
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    return null;
-  });
+  const [cvData, setCvData] = useState<any>(null);
   const [strongMatchOnly, setStrongMatchOnly] = useState(false);
   const [sortMode, setSortMode] = useState<'match' | 'date'>('match');
   const [lastSearchQuery, setLastSearchQuery] = useState('');
@@ -78,6 +71,13 @@ export default function JobsPage() {
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('jobsesame_cv_data');
+      if (stored) setCvData(JSON.parse(stored));
+    } catch {}
   }, []);
 
   const fetchJobs = async (tab = 'all', searchQuery = '', loc = '', pageNum = 1, append = false) => {
@@ -162,7 +162,7 @@ export default function JobsPage() {
     'Canada': ['Canada', 'Toronto', 'Vancouver', 'Montreal'],
   };
 
-  const calcMatch = (job: Job): number | null => {
+  const calculateMatchScore = (job: Job): number | null => {
     if (!cvData) return null;
     const skills: string[] = cvData.skills || [];
     const cvTitle: string = cvData.title || '';
@@ -170,10 +170,10 @@ export default function JobsPage() {
     const text = (job.title + ' ' + (job.description || '')).toLowerCase();
     let skillMatches = 0;
     skills.forEach(s => { if (s && text.includes(s.toLowerCase())) skillMatches++; });
-    const titleMatch = cvTitle
-      ? cvTitle.toLowerCase().split(' ').some(word => word.length > 2 && job.title.toLowerCase().includes(word))
-      : false;
-    return Math.min(97, 35 + skillMatches * 8 + (titleMatch ? 20 : 0));
+    const skillScore = Math.min(40, skillMatches * 8);
+    const firstWord = cvTitle.split(' ')[0].toLowerCase();
+    const titleMatch = firstWord.length > 2 && job.title.toLowerCase().includes(firstWord);
+    return Math.min(97, 35 + skillScore + (titleMatch ? 20 : 0));
   };
 
   const filteredJobs = (() => {
@@ -183,8 +183,8 @@ export default function JobsPage() {
       if (keywords) list = list.filter(j => keywords.some(kw => j.location.toLowerCase().includes(kw.toLowerCase())));
       else list = list.filter(j => j.location.toLowerCase().includes(location.toLowerCase()));
     }
-    if (cvData && sortMode === 'match') list = [...list].sort((a, b) => (calcMatch(b) ?? 0) - (calcMatch(a) ?? 0));
-    if (strongMatchOnly) list = list.filter(j => (calcMatch(j) ?? 0) >= 55);
+    if (cvData && sortMode === 'match') list = [...list].sort((a, b) => (calculateMatchScore(b) ?? 0) - (calculateMatchScore(a) ?? 0));
+    if (strongMatchOnly) list = list.filter(j => (calculateMatchScore(j) ?? 0) >= 55);
     return list;
   })();
 
@@ -463,8 +463,8 @@ export default function JobsPage() {
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3,minWidth:0}}>
                         <div style={{fontSize:14,fontWeight:700,color:"#052A14",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",flex:1,minWidth:0}}>{job.title}</div>
-                        {(() => { const pct = calcMatch(job); if (pct === null) return null; const b = matchBadge(pct); return (
-                          <span style={{fontSize:10,fontWeight:800,color:b.color,background:b.bg,padding:"2px 7px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{pct}%</span>
+                        {(() => { const matchScore = calculateMatchScore(job); if (matchScore === null) return null; const b = matchBadge(matchScore); return (
+                          <span style={{fontSize:10,fontWeight:800,color:b.color,background:b.bg,padding:"2px 7px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{matchScore}%</span>
                         ); })()}
                       </div>
                       <div style={{fontSize:12,color:"#666",marginBottom:8,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{job.company} · {job.location}</div>

@@ -6,25 +6,17 @@ import QuickApply, { isAutoApply } from '../components/QuickApply';
 import CoverLetter from '../components/CoverLetter';
 import { jsPDF } from 'jspdf';
 
-const SALARY_DATA: Record<string, { min: number; median: number; max: number }> = {
-  'software engineer': { min: 480000, median: 720000, max: 1200000 },
-  'software developer': { min: 420000, median: 660000, max: 1100000 },
-  'senior software engineer': { min: 720000, median: 1050000, max: 1680000 },
-  'full stack developer': { min: 450000, median: 690000, max: 1100000 },
-  'frontend developer': { min: 380000, median: 600000, max: 960000 },
-  'backend developer': { min: 420000, median: 660000, max: 1080000 },
-  'data scientist': { min: 540000, median: 840000, max: 1440000 },
-  'data analyst': { min: 320000, median: 540000, max: 900000 },
-  'product manager': { min: 600000, median: 960000, max: 1560000 },
-  'project manager': { min: 420000, median: 660000, max: 1080000 },
-  'devops engineer': { min: 540000, median: 840000, max: 1440000 },
-  'ux designer': { min: 360000, median: 600000, max: 1020000 },
-  'marketing manager': { min: 360000, median: 600000, max: 960000 },
-  'financial analyst': { min: 360000, median: 600000, max: 1020000 },
-  'accountant': { min: 300000, median: 480000, max: 780000 },
-  'human resources': { min: 300000, median: 480000, max: 780000 },
-  'sales manager': { min: 360000, median: 600000, max: 1080000 },
-  'business analyst': { min: 420000, median: 660000, max: 1080000 },
+const SALARY_DATA: Record<string, { min: number; max: number }> = {
+  'software engineer': { min: 480000, max: 720000 },
+  'data scientist':    { min: 420000, max: 660000 },
+  'product manager':   { min: 540000, max: 780000 },
+  'designer':          { min: 300000, max: 480000 },
+  'marketing manager': { min: 360000, max: 540000 },
+  'accountant':        { min: 300000, max: 480000 },
+  'project manager':   { min: 420000, max: 600000 },
+  'sales manager':     { min: 360000, max: 600000 },
+  'hr manager':        { min: 300000, max: 480000 },
+  'default':           { min: 240000, max: 480000 },
 };
 
 interface Application {
@@ -283,11 +275,12 @@ export default function Dashboard() {
     if (!cvData?.title) return null;
     const title = cvData.title.toLowerCase();
     for (const [key, val] of Object.entries(SALARY_DATA)) {
-      if (title.includes(key) || key.split(' ').some(w => w.length > 4 && title.includes(w))) {
+      if (key === 'default') continue;
+      if (title.includes(key) || key.split(' ').some(w => w.length > 3 && title.includes(w))) {
         return { role: key, ...val };
       }
     }
-    return null;
+    return { role: cvData.title.toLowerCase(), ...SALARY_DATA['default'] };
   }, [cvData]);
 
   const matchBadge = (pct: number) => {
@@ -994,40 +987,14 @@ export default function Dashboard() {
             {cvData && matchedSalary && (
               <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:isMobile?20:24}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
-                  <div>
-                    <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF",marginBottom:2}}>Salary Intelligence</h2>
-                    <div style={{fontSize:12,color:"#5A9A6A",textTransform:"capitalize"}}>{matchedSalary.role} — South Africa market rates</div>
-                  </div>
+                  <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF",margin:0}}>Salary Intelligence</h2>
                   <span style={{fontSize:10,fontWeight:700,color:"#3A7A4A",background:"#0D3A1A",padding:"3px 10px",borderRadius:99,border:"1px solid #1A5A2A"}}>ZAR · Annual</span>
                 </div>
-                {/* Salary bar */}
-                <div style={{marginBottom:16}}>
-                  <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#5A9A6A",marginBottom:8}}>
-                    <span>R{(matchedSalary.min/1000).toFixed(0)}k min</span>
-                    <span style={{fontWeight:700,color:"#C8E600"}}>R{(matchedSalary.median/1000).toFixed(0)}k median</span>
-                    <span>R{(matchedSalary.max/1000).toFixed(0)}k max</span>
-                  </div>
-                  <div style={{position:"relative",height:8,background:"#0D3A1A",borderRadius:99,overflow:"hidden"}}>
-                    <div style={{position:"absolute",left:0,top:0,height:"100%",width:"100%",background:"linear-gradient(90deg,#1A4A2A,#C8E600,#1A4A2A)",borderRadius:99,opacity:0.6}}/>
-                    <div style={{position:"absolute",top:-2,height:12,width:3,background:"#FFFFFF",borderRadius:99,left:"50%",transform:"translateX(-50%)"}}/>
-                  </div>
+                <div style={{fontSize:12,color:"#5A9A6A",textTransform:"capitalize",marginBottom:12}}>{matchedSalary.role}</div>
+                <div style={{fontSize:26,fontWeight:900,color:"#C8E600",marginBottom:8}}>
+                  R{(matchedSalary.min/1000).toFixed(0)}k – R{(matchedSalary.max/1000).toFixed(0)}k per year
                 </div>
-                {/* Experience-adjusted estimate */}
-                {cvData.experience_years != null && (
-                  <div style={{background:"#0D3A1A",borderRadius:10,padding:"12px 16px",marginBottom:14}}>
-                    <div style={{fontSize:11,color:"#5A9A6A",fontWeight:600,marginBottom:4}}>Your estimated range based on {cvData.experience_years} years experience</div>
-                    <div style={{fontSize:18,fontWeight:800,color:"#C8E600"}}>
-                      R{Math.round((matchedSalary.min + (matchedSalary.max - matchedSalary.min) * Math.min(1, cvData.experience_years / 10) * 0.4) / 12000) * 12}k
-                      {' — '}
-                      R{Math.round((matchedSalary.median + (matchedSalary.max - matchedSalary.median) * Math.min(1, cvData.experience_years / 10) * 0.5) / 12000) * 12}k
-                    </div>
-                    <div style={{fontSize:11,color:"#3A7A4A",marginTop:2}}>per year · based on market data</div>
-                  </div>
-                )}
-                <div style={{fontSize:12,color:"#3A7A4A"}}>
-                  Pro members get real-time salary data for every job they apply to.{' '}
-                  <button onClick={()=>handlePayment('pro')} style={{background:"none",border:"none",color:"#C8E600",fontSize:12,fontWeight:700,cursor:"pointer",padding:0}}>Upgrade →</button>
-                </div>
+                <div style={{fontSize:11,color:"#3A7A4A"}}>Based on South African market data 2025</div>
               </div>
             )}
 
