@@ -1,11 +1,13 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ cv: null });
+    const { prisma } = await import('@/app/lib/prisma');
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) return NextResponse.json({ cv: null });
     const cv = await prisma.cV.findUnique({ where: { userId: user.id } });
@@ -20,6 +22,7 @@ export async function POST(request: Request) {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { cvData } = await request.json();
+    const { prisma } = await import('@/app/lib/prisma');
     let user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) {
       const referralCode = Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase();

@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST() {
   try {
@@ -10,6 +11,7 @@ export async function POST() {
     const email = user?.emailAddresses[0]?.emailAddress || '';
     const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
     const referralCode = Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase();
+    const { prisma } = await import('@/app/lib/prisma');
     const dbUser = await prisma.user.upsert({
       where: { clerkId: userId },
       update: { email, name },

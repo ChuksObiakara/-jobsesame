@@ -1,11 +1,13 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ credits: 0, isPro: false });
+    const { prisma } = await import('@/app/lib/prisma');
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) return NextResponse.json({ credits: 3, isPro: false });
     return NextResponse.json({ credits: user.credits, isPro: user.isPro, proExpiresAt: user.proExpiresAt });
@@ -20,6 +22,7 @@ export async function POST(request: Request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { action } = await request.json();
     if (action === 'deduct') {
+      const { prisma } = await import('@/app/lib/prisma');
       const user = await prisma.user.findUnique({ where: { clerkId: userId } });
       if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
       if (!user.isPro && user.credits <= 0) return NextResponse.json({ error: 'No credits remaining', paywall: true }, { status: 402 });
