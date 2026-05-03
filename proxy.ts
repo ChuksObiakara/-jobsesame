@@ -50,6 +50,8 @@ const isPublicRoute = createRouteMatcher([
   '/unsubscribe',
   '/payment/success',
   '/optimise',
+  '/uk',
+  '/uk/(.*)',
   '/api/jobs(.*)',
   '/api/jsearch(.*)',
   '/api/adzuna(.*)',
