@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
+import MarketSwitcher from './components/MarketSwitcher';
 
 const PHOTOS = [
   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face',
@@ -228,6 +229,7 @@ export default function Home() {
         )}
 
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <MarketSwitcher compact={isMobile} />
           {!isMobile && !isSignedIn && (
             <a href="/sign-in" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500, textDecoration: "none", padding: "8px 12px" }}>Sign in</a>
           )}

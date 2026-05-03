@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
 import CoverLetter from '../components/CoverLetter';
+import MarketSwitcher from '../components/MarketSwitcher';
 import { jsPDF } from 'jspdf';
 
 const SALARY_DATA: Record<string, { min: number; max: number }> = {
@@ -880,6 +881,7 @@ export default function Dashboard() {
           <a href="/account" style={{fontSize:isMobile?12:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}} title="My Account">
             {isMobile ? '⚙' : 'My Account'}
           </a>
+          <MarketSwitcher compact={isMobile} />
           <UserButton afterSignOutUrl="/" />
         </div>
       </nav>
