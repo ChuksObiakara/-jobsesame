@@ -15,14 +15,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
 
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: BASE,                    lastModified: now, changeFrequency: 'daily',   priority: 1.0 },
-    { url: `${BASE}/jobs`,          lastModified: now, changeFrequency: 'hourly',  priority: 0.9 },
-    { url: `${BASE}/blog`,          lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
-    { url: `${BASE}/about`,         lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${BASE}/recruiters`,    lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
-    { url: `${BASE}/privacy`,       lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
-    { url: `${BASE}/terms`,         lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
-    { url: `${BASE}/refund`,        lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
+    { url: BASE,                          lastModified: now, changeFrequency: 'daily',   priority: 1.0 },
+    { url: `${BASE}/jobs`,                lastModified: now, changeFrequency: 'hourly',  priority: 0.9 },
+    { url: `${BASE}/uk`,                  lastModified: now, changeFrequency: 'daily',   priority: 0.9 },
+    { url: `${BASE}/uk/jobs`,             lastModified: now, changeFrequency: 'hourly',  priority: 0.9 },
+    { url: `${BASE}/uk/subscribe`,        lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
+    { url: `${BASE}/blog`,                lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
+    { url: `${BASE}/about`,               lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE}/recruiters`,          lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE}/privacy`,             lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
+    { url: `${BASE}/terms`,               lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
+    { url: `${BASE}/refund`,              lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
   ];
 
   const blogRoutes: MetadataRoute.Sitemap = BLOG_SLUGS.map(slug => ({

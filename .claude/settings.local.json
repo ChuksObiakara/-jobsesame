@@ -32,7 +32,15 @@
       "Bash(npx prisma *)",
       "Bash(git commit *)",
       "Bash(Get-Content \"C:\\\\Users\\\\chuks\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-chuks-OneDrive-Desktop-jobsesame\\\\67d9e36e-3a6a-461f-b1a6-e9544a1ee3c4\\\\tasks\\\\bq6631wph.output\" -Wait -Tail 40)",
-      "Bash(Select-Object -First 60)"
+      "Bash(Select-Object -First 60)",
+      "Bash(Get-Content \"C:\\\\Users\\\\chuks\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-chuks-OneDrive-Desktop-jobsesame\\\\67d9e36e-3a6a-461f-b1a6-e9544a1ee3c4\\\\tasks\\\\bq959cnw3.output\" -Wait -Tail 30)",
+      "Bash(Select-String -Pattern \"error|warning|Route|compiled|failed\")",
+      "Bash(Select-Object -Last 30)",
+      "Bash(Remove-Item middleware.ts)",
+      "Bash(rm middleware.ts)",
+      "Bash(ls middleware.ts)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(findstr /i \"cookie\")"
     ]
   }
 }
