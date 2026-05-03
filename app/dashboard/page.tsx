@@ -70,6 +70,7 @@ export default function Dashboard() {
 
   // ── Applications state ────────────────────────────────────────
   const [applications, setApplications] = useState<Application[]>([]);
+  const [loadingApplications, setLoadingApplications] = useState(true);
 
   // ── Payment state ─────────────────────────────────────────────
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('USD');
@@ -130,16 +131,21 @@ export default function Dashboard() {
         if (typeof d.isPro === 'boolean') setIsPro(d.isPro);
       }).catch(() => {});
       // Fetch applications from database
-      fetch('/api/user/applications').then(r => r.json()).then(d => {
-        if (d.applications?.length) {
-          const mapped = d.applications.map((a: any) => ({
+      fetch('/api/user/applications')
+        .then(r => r.json())
+        .then(d => {
+          const mapped = (d.applications || []).map((a: any) => ({
             id: a.id, jobTitle: a.jobTitle, company: a.company,
             location: a.location || '', dateApplied: a.appliedAt, status: a.status, jobUrl: a.jobUrl,
           }));
           setApplications(mapped);
           localStorage.setItem('jobsesame_applications', JSON.stringify(mapped));
-        }
-      }).catch(() => {});
+        })
+        .catch(() => {
+          const stored = localStorage.getItem('jobsesame_applications');
+          if (stored) try { setApplications(JSON.parse(stored)); } catch {}
+        })
+        .finally(() => setLoadingApplications(false));
       // Fetch CV from database if not in localStorage
       fetch('/api/user/cv').then(r => r.json()).then(d => {
         if (d.cv && !localStorage.getItem('jobsesame_cv_data')) {
@@ -153,8 +159,6 @@ export default function Dashboard() {
   }, [isSignedIn, user]);
 
   useEffect(() => {
-    const stored = localStorage.getItem('jobsesame_applications');
-    if (stored) setApplications(JSON.parse(stored));
     const storedCv = localStorage.getItem('jobsesame_cv_data');
     if (storedCv) setCvData(JSON.parse(storedCv));
     const storedProfile = localStorage.getItem('jobsesame_profile');
@@ -1407,7 +1411,12 @@ export default function Dashboard() {
               ))}
             </div>
 
-            {applications.length === 0 ? (
+            {loadingApplications ? (
+              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:48,textAlign:"center"}}>
+                <div style={{fontSize:13,color:"#5A9A6A",fontStyle:"italic",marginBottom:8}}>Syncing applications from database...</div>
+                <div style={{width:32,height:32,border:"3px solid #1A4A2A",borderTopColor:"#C8E600",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto"}}/>
+              </div>
+            ) : applications.length === 0 ? (
               <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:48,textAlign:"center"}}>
                 <div style={{fontSize:40,marginBottom:16}}>📋</div>
                 <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>No applications yet</h3>
