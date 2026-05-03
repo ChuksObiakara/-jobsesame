@@ -27,6 +27,7 @@ export default function JobsPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'remote' | 'relocation' | 'teaching'>('all');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const jobsSectionRef = useRef<HTMLDivElement>(null);
   const jobsFetchedRef = useRef(false);
@@ -67,7 +68,10 @@ export default function JobsPage() {
   }, []);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
+    const check = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsDesktop(window.innerWidth >= 1024);
+    };
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
@@ -282,14 +286,12 @@ export default function JobsPage() {
       {/* SEARCH + TABS */}
       <div style={{background:"#052A14",padding:isMobile?"0 12px 16px":"0 24px 24px",borderBottom:"4px solid #C8E600",overflowX:"hidden"}}>
         <div style={{maxWidth:900,margin:"0 auto"}}>
-          <div style={{overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",msOverflowStyle:"none",marginBottom:18}}>
-            <div style={{display:"flex",gap:8,minWidth:"fit-content",padding:"4px 0"}}>
-              {(['all','remote','relocation','teaching'] as const).map(tab=>(
-                <button key={tab} style={tabStyle(tab)} onClick={()=>handleTabChange(tab)}>
-                  {tab === 'all' ? '🌍 All Jobs' : tab === 'remote' ? '💻 Remote Jobs' : tab === 'teaching' ? '🎓 Teaching Jobs' : '✈️ Relocation Jobs'}
-                </button>
-              ))}
-            </div>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",padding:"4px 0",marginBottom:18}}>
+            {(['all','remote','relocation','teaching'] as const).map(tab=>(
+              <button key={tab} style={tabStyle(tab)} onClick={()=>handleTabChange(tab)}>
+                {tab === 'all' ? '🌍 All Jobs' : tab === 'remote' ? '💻 Remote Jobs' : tab === 'teaching' ? '🎓 Teaching Jobs' : '✈️ Relocation Jobs'}
+              </button>
+            ))}
           </div>
           <p style={{fontSize:12,color:"#5A9A6A",marginBottom:14,fontStyle:"italic"}}>
             {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : activeTab === 'teaching' ? 'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
@@ -411,26 +413,22 @@ export default function JobsPage() {
           )}
 
           {loading ? (
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":isDesktop?"repeat(3,1fr)":"repeat(2,1fr)",gap:10}}>
               {[...Array(6)].map((_,i)=>(
-                <div key={i} style={{background:"#fff",border:"1.5px solid #C8E6C8",borderRadius:14,padding:16,display:"flex",gap:16,alignItems:"flex-start"}}>
-                  <div style={{display:"flex",gap:12,flex:1,minWidth:0}}>
+                <div key={i} style={{background:"#fff",border:"1.5px solid #C8E6C8",borderRadius:14,padding:16}}>
+                  <div style={{display:"flex",gap:12,marginBottom:12}}>
                     <div style={{width:44,height:44,borderRadius:11,background:"#D8EED8",flexShrink:0}}></div>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{height:14,background:"#D8EED8",borderRadius:6,marginBottom:10,width:"60%"}}></div>
-                      <div style={{height:11,background:"#E8F4E8",borderRadius:6,marginBottom:10,width:"45%"}}></div>
-                      <div style={{display:"flex",gap:5,marginBottom:10}}>
-                        <div style={{height:20,width:64,background:"#E8F4E8",borderRadius:99}}></div>
-                        <div style={{height:20,width:52,background:"#E8F4E8",borderRadius:99}}></div>
-                      </div>
-                      <div style={{height:11,background:"#E8F4E8",borderRadius:6,width:"80%"}}></div>
+                      <div style={{height:11,background:"#E8F4E8",borderRadius:6,width:"45%"}}></div>
                     </div>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:7,width:120,flexShrink:0}}>
-                    <div style={{height:30,width:"100%",background:"#D8EED8",borderRadius:99}}></div>
-                    <div style={{height:28,width:"100%",background:"#E8F4E8",borderRadius:99}}></div>
-                    <div style={{height:28,width:"100%",background:"#E8F4E8",borderRadius:99}}></div>
+                  <div style={{display:"flex",gap:5,marginBottom:10,flexWrap:"wrap"}}>
+                    <div style={{height:20,width:64,background:"#E8F4E8",borderRadius:99}}></div>
+                    <div style={{height:20,width:52,background:"#E8F4E8",borderRadius:99}}></div>
                   </div>
+                  <div style={{height:11,background:"#E8F4E8",borderRadius:6,width:"80%",marginBottom:14}}></div>
+                  <div style={{height:30,background:"#D8EED8",borderRadius:99}}></div>
                 </div>
               ))}
             </div>
@@ -442,7 +440,7 @@ export default function JobsPage() {
               <div style={{fontSize:13,color:"#4A8A5A"}}>Change keywords, location or tab</div>
             </div>
           ) : (
-            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":isDesktop?"repeat(3,1fr)":"repeat(2,1fr)",gap:10}}>
               {filteredJobs.map((job,i)=>(
                 <div key={job.id} style={{
                   background:i===0?"#FDFFF5":"#fff",
@@ -450,9 +448,8 @@ export default function JobsPage() {
                   borderRadius:14,
                   padding:16,
                   display:"flex",
-                  flexDirection:isMobile?"column":"row",
-                  gap:16,
-                  alignItems:"flex-start",
+                  flexDirection:"column",
+                  gap:12,
                   overflow:"hidden",
                   width:"100%",
                 }}>
@@ -482,37 +479,23 @@ export default function JobsPage() {
                     </div>
                   </div>
 
-                  {isMobile ? (
-                    <div style={{display:"flex",flexDirection:"column",gap:7,width:"100%",marginTop:8}}>
-                      <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
-                        {isAutoApply(job.url, job.type) ? '⚡ Quick Apply' : 'Apply'}
-                      </button>
-                      <div style={{display:"flex",gap:7}}>
-                        <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:"#052A14",fontSize:12,fontWeight:700,padding:"9px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer"}}>
-                          View Job
-                        </button>
-                        <button onClick={()=>toggleSaveJob(job)} style={{flex:1,background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 0",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer"}}>
-                          {savedJobs.includes(job.id) ? '🔖 Saved' : '🔖 Save'}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{display:"flex",flexDirection:"column",gap:7,width:120,flexShrink:0}}>
-                      <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"8px 0",borderRadius:99,border:"none",cursor:"pointer",textAlign:"center"}}>
-                        {isAutoApply(job.url, job.type) ? '⚡ Quick Apply' : 'Apply'}
-                      </button>
-                      <button onClick={()=>window.open(job.url,'_blank')} style={{width:"100%",background:"transparent",color:"#FFFFFF",fontSize:11,fontWeight:700,padding:"7px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer",textAlign:"center"}}>
+                  <div style={{display:"flex",flexDirection:"column",gap:7,width:"100%"}}>
+                    <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
+                      {isAutoApply(job.url, job.type) ? '⚡ Quick Apply' : 'Apply'}
+                    </button>
+                    <div style={{display:"flex",gap:7}}>
+                      <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:"#052A14",fontSize:12,fontWeight:700,padding:"9px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer"}}>
                         View Job
                       </button>
-                      <button onClick={()=>toggleSaveJob(job)} style={{width:"100%",background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:11,fontWeight:600,padding:"7px 0",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer",textAlign:"center"}}>
+                      <button onClick={()=>toggleSaveJob(job)} style={{flex:1,background:savedJobs.includes(job.id)?"#1A4A2A":"transparent",color:savedJobs.includes(job.id)?"#C8E600":"#5A9A6A",fontSize:12,fontWeight:600,padding:"9px 0",borderRadius:99,border:`1px solid ${savedJobs.includes(job.id)?"#C8E600":"#1A5A2A"}`,cursor:"pointer"}}>
                         {savedJobs.includes(job.id) ? '🔖 Saved' : '🔖 Save'}
                       </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
               {hasMore && !loading && filteredJobs.length > 0 && (
-                <div style={{textAlign:"center",paddingTop:16}}>
+                <div style={{textAlign:"center",paddingTop:16,gridColumn:"1/-1"}}>
                   <button
                     onClick={handleLoadMore}
                     disabled={loadingMore}

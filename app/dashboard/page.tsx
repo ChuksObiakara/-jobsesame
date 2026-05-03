@@ -604,11 +604,11 @@ export default function Dashboard() {
           </div>
         </div>
         {/* Body skeleton */}
-        <div style={{padding:"32px 28px",maxWidth:960,margin:"0 auto"}}>
+        <div style={{padding:isMobile?"16px 16px 32px":"32px 28px",maxWidth:960,margin:"0 auto"}}>
           {/* Welcome + stats */}
           <div style={{width:220,height:28,borderRadius:8,background:"#1A4A2A",marginBottom:8,animation:"shimmer 1.5s ease infinite"}}/>
           <div style={{width:140,height:14,borderRadius:6,background:"#0D3A1A",marginBottom:20,animation:"shimmer 1.5s ease infinite"}}/>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:24}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:10,marginBottom:24}}>
             {[1,2,3,4].map(i=>(
               <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px",height:72,animation:"shimmer 1.5s ease infinite"}}/>
             ))}
@@ -616,7 +616,7 @@ export default function Dashboard() {
           {/* CV panel */}
           <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:24,marginBottom:20,height:160,animation:"shimmer 1.5s ease infinite"}}/>
           {/* AI actions */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:20}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:10,marginBottom:20}}>
             {[1,2,3].map(i=>(
               <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,height:90,animation:"shimmer 1.5s ease infinite"}}/>
             ))}
@@ -648,7 +648,7 @@ export default function Dashboard() {
   } as React.CSSProperties);
 
   return (
-    <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#052A14",minHeight:"100vh"}}>
+    <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#052A14",minHeight:"100vh",overflowX:"hidden"}}>
 
       {/* QUICK APPLY MODAL */}
       {selectedJob && (
