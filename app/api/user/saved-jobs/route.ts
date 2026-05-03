@@ -38,9 +38,14 @@ export async function DELETE(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const { jobId } = await request.json();
+    const { jobId, jobUrl } = await request.json();
     const { prisma } = await import('@/app/lib/prisma');
-    await prisma.savedJob.delete({ where: { id: jobId } });
+    if (jobId) {
+      await prisma.savedJob.delete({ where: { id: jobId } });
+    } else if (jobUrl) {
+      const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+      if (user) await prisma.savedJob.deleteMany({ where: { userId: user.id, jobUrl } });
+    }
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

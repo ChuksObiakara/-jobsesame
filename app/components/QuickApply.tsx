@@ -108,11 +108,12 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   };
 
   const startRewrite = async (cv: any) => {
-    // Check credits before processing
+    // Credit check only — deduction happens after successful rewrite so users
+    // are not charged if the AI call fails
     try {
-      const creditsRes = await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deduct' }) });
+      const creditsRes = await fetch('/api/credits');
       const creditsData = await creditsRes.json();
-      if (creditsData.paywall) { setStep('paywall'); return; }
+      if (!creditsData.isPro && creditsData.credits <= 0) { setStep('paywall'); return; }
     } catch { /* Non-critical — proceed */ }
 
     setStep('rewrite');
@@ -134,6 +135,8 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       const data = await response.json();
       clearInterval(interval);
       if (data.success) {
+        // Deduct credit only after successful rewrite
+        fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deduct' }) }).catch(() => {});
         setRewritePhase(REWRITE_PHASES.length);
         const newScore = calcScore(data.rewrittenCV);
         setRewrittenMatchPct(newScore);

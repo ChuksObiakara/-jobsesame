@@ -4,6 +4,7 @@ import QuickApply from '../components/QuickApply';
 
 interface Job {
   id: string | number;
+  dbId?: string;
   title: string;
   company: string;
   location: string;
@@ -19,14 +20,44 @@ export default function SavedJobsPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('jobsesame_saved_jobs');
-    if (saved) setSavedJobs(JSON.parse(saved));
+    fetch('/api/user/saved-jobs')
+      .then(r => r.json())
+      .then(d => {
+        const dbJobs: Job[] = (d.savedJobs || []).map((s: any) => ({
+          id: s.id,
+          dbId: s.id,
+          title: s.jobTitle,
+          company: s.company,
+          location: s.location || '',
+          description: (s.jobData as any)?.description || '',
+          url: s.jobUrl,
+          category: (s.jobData as any)?.category || '',
+          level: (s.jobData as any)?.level || '',
+          salary: (s.jobData as any)?.salary,
+        }));
+        if (dbJobs.length > 0) {
+          setSavedJobs(dbJobs);
+          localStorage.setItem('jobsesame_saved_jobs', JSON.stringify(dbJobs));
+        } else {
+          const local = localStorage.getItem('jobsesame_saved_jobs');
+          if (local) setSavedJobs(JSON.parse(local));
+        }
+      })
+      .catch(() => {
+        const local = localStorage.getItem('jobsesame_saved_jobs');
+        if (local) setSavedJobs(JSON.parse(local));
+      });
   }, []);
 
-  const removeJob = (id: string | number) => {
-    const updated = savedJobs.filter(j => String(j.id) !== String(id));
+  const removeJob = (job: Job) => {
+    const updated = savedJobs.filter(j => String(j.id) !== String(job.id));
     setSavedJobs(updated);
     localStorage.setItem('jobsesame_saved_jobs', JSON.stringify(updated));
+    fetch('/api/user/saved-jobs', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(job.dbId ? { jobId: job.dbId } : { jobUrl: job.url }),
+    }).catch(() => {});
   };
 
   return (
@@ -94,7 +125,7 @@ export default function SavedJobsPage() {
                     style={{background:"transparent",color:"#5A9A6A",fontSize:11,fontWeight:600,padding:"6px 14px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer",whiteSpace:"nowrap"}}>
                     View job
                   </button>
-                  <button onClick={() => removeJob(job.id)}
+                  <button onClick={() => removeJob(job)}
                     style={{background:"transparent",color:"#A32D2D",fontSize:11,fontWeight:600,padding:"6px 14px",borderRadius:99,border:"1px solid #A32D2D",cursor:"pointer",whiteSpace:"nowrap"}}>
                     Remove
                   </button>

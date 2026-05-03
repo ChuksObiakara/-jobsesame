@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { POSTS as HARDCODED_POSTS, Post } from '../blog/posts';
 
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Jobsesame2024Admin';
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '10px 14px', border: '1.5px solid #1A5A2A', borderRadius: 8,
@@ -82,7 +81,7 @@ export default function AdminPage() {
     } catch {}
 
     setLoadingStats(true);
-    fetch(`/api/admin/stats?pw=${encodeURIComponent(ADMIN_PASSWORD)}`)
+    fetch(`/api/admin/stats?pw=${encodeURIComponent(pw)}`)
       .then(r => r.json())
       .then(d => {
         if (!d.error) {
@@ -97,9 +96,14 @@ export default function AdminPage() {
   const allPosts = [...localPosts, ...HARDCODED_POSTS];
   const publishedCount = allPosts.filter(p => !p.status || p.status === 'published').length;
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pw === ADMIN_PASSWORD) {
+    const res = await fetch('/api/admin/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+    if (res.ok) {
       setAuthed(true);
       setPwError(false);
     } else {

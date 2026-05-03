@@ -129,10 +129,19 @@ export default function OnboardingPage() {
     if (file) handleFileUpload(file);
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const fullProfile = { ...profile, cvData, completedAt: new Date().toISOString() };
     localStorage.setItem('jobsesame_profile', JSON.stringify(fullProfile));
     localStorage.setItem('jobsesame_onboarding_complete', 'true');
+    // Persist user and CV to DB (fire-and-forget — don't block navigation)
+    fetch('/api/user/sync', { method: 'POST' }).catch(() => {});
+    if (cvData) {
+      fetch('/api/user/cv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cvData }),
+      }).catch(() => {});
+    }
     router.push('/dashboard');
   };
 

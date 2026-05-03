@@ -53,8 +53,18 @@ export default function JobsPage() {
     let updated: Job[];
     if (isAlreadySaved) {
       updated = savedList.filter(j => String(j.id) !== String(job.id));
+      fetch('/api/user/saved-jobs', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobUrl: job.url }),
+      }).catch(() => {});
     } else {
       updated = [...savedList, job];
+      fetch('/api/user/saved-jobs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobTitle: job.title, company: job.company, location: job.location, jobUrl: job.url, jobData: job }),
+      }).catch(() => {});
     }
     localStorage.setItem('jobsesame_saved_jobs', JSON.stringify(updated));
     setSavedJobs(updated.map(j => String(j.id)));
