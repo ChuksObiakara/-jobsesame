@@ -107,13 +107,25 @@ ${weakHtml ? `<tr><td style="background:#0D3A1A;padding:28px 36px;">
 </table></td></tr></table>
 </body></html>`;
 
-    const { error } = await resend.emails.send({
-      from: 'Jobsesame <onboarding@resend.dev>',
+    const fromAddress = process.env.RESEND_FROM_EMAIL
+      ? `Jobsesame <${process.env.RESEND_FROM_EMAIL}>`
+      : 'Jobsesame <noreply@jobsesame.co.za>';
+    const emailOpts = {
       replyTo: 'support@jobsesame.co.za',
       to: email,
       subject: 'Your CV score is ready — here is what we found',
       html,
-    });
+    };
+
+    let { error } = await resend.emails.send({ from: fromAddress, ...emailOpts });
+
+    // Domain not yet verified — retry with Resend shared domain fallback
+    if (error && fromAddress !== 'Jobsesame <onboarding@resend.dev>') {
+      ({ error } = await resend.emails.send({
+        from: 'Jobsesame <onboarding@resend.dev>',
+        ...emailOpts,
+      }));
+    }
 
     if (error) {
       console.error('Welcome email error:', JSON.stringify(error));

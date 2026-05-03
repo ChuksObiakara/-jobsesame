@@ -212,12 +212,24 @@ export async function POST(req: NextRequest) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const { data, error } = await resend.emails.send({
-      from: 'Jobsesame <hello@jobsesame.co.za>',
+    const fromAddress = process.env.RESEND_FROM_EMAIL
+      ? `Jobsesame <${process.env.RESEND_FROM_EMAIL}>`
+      : 'Jobsesame <noreply@jobsesame.co.za>';
+    const emailOpts = {
       to: email,
       subject: 'Welcome to Jobsesame — your 3 free applications are ready',
       html: buildEmailHtml(name || email.split('@')[0], email, userId),
-    });
+    };
+
+    let { data, error } = await resend.emails.send({ from: fromAddress, ...emailOpts });
+
+    // Domain not yet verified — retry with Resend shared domain fallback
+    if (error && fromAddress !== 'Jobsesame <onboarding@resend.dev>') {
+      ({ data, error } = await resend.emails.send({
+        from: 'Jobsesame <onboarding@resend.dev>',
+        ...emailOpts,
+      }));
+    }
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });

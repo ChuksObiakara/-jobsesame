@@ -111,13 +111,25 @@ export async function POST(req: NextRequest) {
 </table></td></tr></table>
 </body></html>`;
 
-    const { error } = await resend.emails.send({
-      from: 'Jobsesame <onboarding@resend.dev>',
+    const fromAddress = process.env.RESEND_FROM_EMAIL
+      ? `Jobsesame <${process.env.RESEND_FROM_EMAIL}>`
+      : 'Jobsesame <noreply@jobsesame.co.za>';
+    const emailOpts = {
       replyTo: 'support@jobsesame.co.za',
       to: email,
       subject,
       html,
-    });
+    };
+
+    let { error } = await resend.emails.send({ from: fromAddress, ...emailOpts });
+
+    // Domain not yet verified — retry with Resend shared domain fallback
+    if (error && fromAddress !== 'Jobsesame <onboarding@resend.dev>') {
+      ({ error } = await resend.emails.send({
+        from: 'Jobsesame <onboarding@resend.dev>',
+        ...emailOpts,
+      }));
+    }
 
     if (error) {
       console.error('Job-matches email error:', JSON.stringify(error));

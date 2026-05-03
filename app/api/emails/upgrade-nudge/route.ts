@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const appUrl = 'https://jobsesame.co.za';
     const isZAR = !currency || currency === 'ZAR';
     const price = isZAR ? 'R249/month' : '$14/month';
-    const upgradeUrl = `${appUrl}/pricing`;
+    const upgradeUrl = `${appUrl}/account`;
 
     const loseItems = [
       'Unlimited AI-rewritten CVs for every job',
@@ -61,13 +61,25 @@ export async function POST(req: NextRequest) {
 </table></td></tr></table>
 </body></html>`;
 
-    const { error } = await resend.emails.send({
-      from: 'Jobsesame <onboarding@resend.dev>',
+    const fromAddress = process.env.RESEND_FROM_EMAIL
+      ? `Jobsesame <${process.env.RESEND_FROM_EMAIL}>`
+      : 'Jobsesame <noreply@jobsesame.co.za>';
+    const emailOpts = {
       replyTo: 'support@jobsesame.co.za',
       to: email,
       subject: 'You have 1 free application left — upgrade before it runs out',
       html,
-    });
+    };
+
+    let { error } = await resend.emails.send({ from: fromAddress, ...emailOpts });
+
+    // Domain not yet verified — retry with Resend shared domain fallback
+    if (error && fromAddress !== 'Jobsesame <onboarding@resend.dev>') {
+      ({ error } = await resend.emails.send({
+        from: 'Jobsesame <onboarding@resend.dev>',
+        ...emailOpts,
+      }));
+    }
 
     if (error) {
       console.error('Upgrade-nudge email error:', JSON.stringify(error));
