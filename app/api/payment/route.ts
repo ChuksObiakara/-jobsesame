@@ -2,8 +2,8 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 
 const PLAN_AMOUNTS: Record<string, Record<string, number>> = {
-  credits: { ZAR: 18500, USD: 1000 },
-  pro:     { ZAR: 37000, USD: 2000 },
+  credits: { ZAR: 9900, USD: 599 },
+  pro:     { ZAR: 24900, USD: 1399 },
 };
 
 export async function POST(req: NextRequest) {
