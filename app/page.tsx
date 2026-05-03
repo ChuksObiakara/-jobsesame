@@ -106,27 +106,19 @@ export default function Home() {
       if (data.success) {
         const cv = data.cvData;
         let s = 20;
-        // Summary quality: must be long AND contain action verbs
         const actionVerbs = ['led','managed','delivered','achieved','increased','reduced','built','launched','drove','grew','saved','developed','implemented','improved','created','established'];
         const summaryText = (cv.summary || '').toLowerCase();
         if (cv.summary && cv.summary.length > 100 && actionVerbs.some(v => summaryText.includes(v))) s += 8;
-        // Skills depth
         if ((cv.skills?.length || 0) > 8) s += 8;
-        // Measurable achievements
         const bulletText = (cv.experience || []).flatMap((e: any) => e.bullets || []).join(' ');
         if (/\d+\s*%|\d+\s*(million|thousand|k\b|\$|£|€|R\d)|\d+\s*(people|users|clients|projects|teams)/i.test(bulletText)) s += 8;
-        // Seniority in job titles
         const jobTitles = (cv.experience || []).map((e: any) => (e.title || '').toLowerCase()).join(' ');
         if (/senior|lead|manager|director|head|principal|chief|vp|vice president/.test(jobTitles)) s += 8;
-        // Industry or tech keywords in summary
         const techIndustryKw = ['software','engineering','finance','marketing','sales','operations','product','data','cloud','agile','devops','react','python','java','node','aws','azure','crm','erp','saas'];
         if (techIndustryKw.some(kw => summaryText.includes(kw))) s += 8;
-        // Contact completeness
         if (cv.phone && cv.email) s += 5;
-        // Specific city location (not just a country name — cities are shorter/unique)
         const countryNames = ['south africa','nigeria','kenya','ghana','united kingdom','united states','canada','australia','india'];
         if (cv.location && !countryNames.some(c => cv.location.toLowerCase().includes(c)) && cv.location.length > 2) s += 5;
-        // Named qualification in education
         if (cv.education && /bachelor|master|phd|diploma|degree|bsc|ba |msc|mba|honours|certificate/i.test(cv.education)) s += 5;
         const score = Math.min(75, s);
         const weaknesses: string[] = [];
@@ -160,88 +152,95 @@ export default function Home() {
     ? faqs.filter(f => f.q.toLowerCase().includes(faqSearch.toLowerCase()) || f.a.toLowerCase().includes(faqSearch.toLowerCase()))
     : faqs;
 
+  const BG = '#061A0C';
+  const DIVIDE = '1px solid rgba(255,255,255,0.05)';
+
   return (
-    <main style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", background: "#052A14", margin: 0, padding: 0, overflowX: "hidden" }}>
+    <main style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", background: BG, margin: 0, padding: 0, overflowX: 'hidden' }}>
       <style>{`
-        *, *::before, *::after { box-sizing: border-box; }
-        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.6)} }
-        @keyframes fadeInUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes floatCard { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-12px)} }
-        @keyframes notifIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes glowPulse { 0%,100%{opacity:0.6} 50%{opacity:1} }
-        @keyframes faqSlide { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes ctaGlow { 0%,100%{box-shadow:0 8px 32px rgba(200,230,0,0.35)} 50%{box-shadow:0 8px 52px rgba(200,230,0,0.65)} }
-        @keyframes spinAI { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes slideInRight { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes modalIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
-        .hov-lift { transition: transform 0.22s ease, border-color 0.22s ease; }
-        .hov-lift:hover { transform: translateY(-5px); }
-        .feat-card { transition: border-color 0.2s, transform 0.2s; }
-        .feat-card:hover { border-color: rgba(200,230,0,0.35) !important; transform: translateY(-4px); }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        @keyframes pulse      { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.5)} }
+        @keyframes fadeInUp   { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes notifIn    { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes ctaGlow    { 0%,100%{box-shadow:0 4px 24px rgba(200,230,0,0.32)} 50%{box-shadow:0 4px 44px rgba(200,230,0,0.58)} }
+        @keyframes spinAI     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+        @keyframes slideRight { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes modalIn    { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+        @keyframes shimmer    { 0%,100%{opacity:0.3} 50%{opacity:0.55} }
         .nav-link { transition: color 0.15s; }
         .nav-link:hover { color: #FFFFFF !important; }
-        input::placeholder { color: rgba(255,255,255,0.25); }
-        input:focus { border-color: rgba(200,230,0,0.35) !important; }
+        .row-feat { border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s; }
+        .row-feat:hover { background: rgba(200,230,0,0.025) !important; }
+        .row-feat:last-child { border-bottom: none; }
+        input::placeholder { color: rgba(255,255,255,0.22); }
+        input:focus { border-color: rgba(200,230,0,0.38) !important; outline: none; }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(200,230,0,0.12); border-radius: 2px; }
+        @media(max-width:767px) {
+          .hide-mobile { display:none !important; }
+          .mob-col { flex-direction:column !important; }
+        }
       `}</style>
 
       {/* EXIT INTENT */}
       {exitIntent && !exitDismissed && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: "#072E16", border: "1.5px solid rgba(200,230,0,0.4)", borderRadius: 20, padding: "36px 32px", maxWidth: 420, width: "100%", textAlign: "center", position: "relative", animation: "modalIn 0.25s ease-out" }}>
-            <button onClick={() => { setExitIntent(false); setExitDismissed(true); }} style={{ position: "absolute", top: 14, right: 16, background: "transparent", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 20, cursor: "pointer" }}>✕</button>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>⚡</div>
-            <h3 style={{ fontSize: 22, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.15, marginBottom: 10 }}>Wait — get 3 free CV rewrites before you go</h3>
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, marginBottom: 24 }}>No credit card. No commitment. AI rewrites your CV in 30 seconds and gets you more interviews.</p>
-            <a href="/sign-up" onClick={() => setExitDismissed(true)} style={{ display: "block", background: "#C8E600", color: "#052A14", fontSize: 15, fontWeight: 800, padding: "14px 32px", borderRadius: 99, textDecoration: "none", marginBottom: 10, animation: "ctaGlow 2s ease-in-out infinite" }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#071E0E', border: '1.5px solid rgba(200,230,0,0.35)', borderRadius: 16, padding: isMobile ? '28px 22px' : '40px 36px', maxWidth: 420, width: '100%', textAlign: 'center', position: 'relative', animation: 'modalIn 0.22s ease-out' }}>
+            <button onClick={() => { setExitIntent(false); setExitDismissed(true); }} style={{ position: 'absolute', top: 14, right: 16, background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.25)', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>✕</button>
+            <div style={{ width: 44, height: 44, background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.22)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, margin: '0 auto 18px' }}>⚡</div>
+            <h3 style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.18, marginBottom: 10 }}>Get 3 free CV rewrites before you go</h3>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.42)', lineHeight: 1.7, marginBottom: 24 }}>No credit card. No commitment. AI rewrites your CV in 30 seconds and gets you more interviews.</p>
+            <a href="/sign-up" onClick={() => setExitDismissed(true)} style={{ display: 'block', background: '#C8E600', color: BG, fontSize: 15, fontWeight: 800, padding: '14px 32px', borderRadius: 8, textDecoration: 'none', marginBottom: 10, animation: 'ctaGlow 2s ease-in-out infinite' }}>
               Claim my 3 free rewrites →
             </a>
-            <button onClick={() => { setExitIntent(false); setExitDismissed(true); }} style={{ background: "transparent", border: "none", fontSize: 12, color: "rgba(255,255,255,0.2)", cursor: "pointer" }}>
-              No thanks, I&apos;ll keep struggling
-            </button>
+            <button onClick={() => { setExitIntent(false); setExitDismissed(true); }} style={{ background: 'transparent', border: 'none', fontSize: 12, color: 'rgba(255,255,255,0.18)', cursor: 'pointer' }}>No thanks, I&apos;ll keep struggling</button>
           </div>
         </div>
       )}
 
-      {/* NAV */}
+      {/* NOTIFICATION */}
+      {notifVisible && (
+        <div style={{ position: 'fixed', bottom: isMobile ? 88 : 28, left: 16, zIndex: 400, animation: 'notifIn 0.4s ease-out', background: 'rgba(6,18,8,0.97)', backdropFilter: 'blur(18px)', border: '1px solid rgba(74,222,128,0.18)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, maxWidth: 260, boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}>
+          <span style={{ width: 7, height: 7, background: '#4ADE80', borderRadius: '50%', flexShrink: 0, animation: 'pulse 2s infinite' }} />
+          <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.7)', fontWeight: 600, lineHeight: 1.4 }}>Member just landed 3 interviews this week</span>
+          <button onClick={() => setNotifVisible(false)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.18)', fontSize: 13, cursor: 'pointer', flexShrink: 0, padding: 0, lineHeight: 1 }}>✕</button>
+        </div>
+      )}
+
+      {/* ── NAV ───────────────────────────────────────────────── */}
       <nav style={{
-        position: "sticky", top: 0, zIndex: 200, height: 64,
-        padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: scrolled ? "rgba(3,15,7,0.88)" : "transparent",
-        backdropFilter: scrolled ? "blur(20px)" : "none",
-        WebkitBackdropFilter: scrolled ? "blur(20px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.05)" : "none",
-        transition: "all 0.3s",
+        position: 'sticky', top: 0, zIndex: 200, height: 64,
+        padding: '0 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: scrolled ? 'rgba(4,12,6,0.92)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(20px)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
+        borderBottom: scrolled ? DIVIDE : 'none',
+        transition: 'all 0.3s', gap: 12,
       }}>
-        <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flexShrink: 0 }}>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
           <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.5 }}>
-            <span style={{ color: "#FFFFFF" }}>job</span><span style={{ color: "#C8E600" }}>sesame</span>
+            <span style={{ color: '#fff' }}>job</span><span style={{ color: '#C8E600' }}>sesame</span>
           </span>
         </a>
 
-        {!isMobile && (
-          <div style={{ display: "flex", gap: 2, alignItems: "center" }}>
-            {[{ label: "How it works", id: "how-it-works" }, { label: "Features", id: "features" }, { label: "Pricing", id: "pricing" }, { label: "FAQ", id: "faq" }].map(item => (
-              <button key={item.id} onClick={() => scrollTo(item.id)} className="nav-link" style={{ background: "transparent", border: "none", fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500, padding: "8px 14px", borderRadius: 8, cursor: "pointer" }}>{item.label}</button>
-            ))}
-            <a href="/recruiters" className="nav-link" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500, padding: "8px 14px", textDecoration: "none", borderRadius: 8 }}>Recruiters</a>
-            <a href="/blog" className="nav-link" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500, padding: "8px 14px", textDecoration: "none", borderRadius: 8 }}>Blog</a>
-          </div>
-        )}
+        <div className="hide-mobile" style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          {[{ label: 'How it works', id: 'how-it-works' }, { label: 'Features', id: 'features' }, { label: 'Pricing', id: 'pricing' }, { label: 'FAQ', id: 'faq' }].map(item => (
+            <button key={item.id} onClick={() => scrollTo(item.id)} className="nav-link" style={{ background: 'transparent', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.52)', fontWeight: 500, padding: '8px 14px', borderRadius: 6, cursor: 'pointer' }}>{item.label}</button>
+          ))}
+          <a href="/recruiters" className="nav-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.52)', fontWeight: 500, padding: '8px 14px', textDecoration: 'none' }}>Recruiters</a>
+          <a href="/blog" className="nav-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.52)', fontWeight: 500, padding: '8px 14px', textDecoration: 'none' }}>Blog</a>
+        </div>
 
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <MarketSwitcher compact={isMobile} />
-          {!isMobile && !isSignedIn && (
-            <a href="/sign-in" style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontWeight: 500, textDecoration: "none", padding: "8px 12px" }}>Sign in</a>
-          )}
-          {!isMobile && isSignedIn && (
-            <a href="/dashboard" style={{ fontSize: 13, color: "#C8E600", fontWeight: 700, textDecoration: "none", padding: "8px 16px", background: "rgba(200,230,0,0.1)", borderRadius: 99, border: "1px solid rgba(200,230,0,0.3)" }}>Dashboard</a>
-          )}
+          {!isMobile && !isSignedIn && <a href="/sign-in" className="nav-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.48)', fontWeight: 500, textDecoration: 'none', padding: '8px 12px' }}>Sign in</a>}
+          {!isMobile && isSignedIn && <a href="/dashboard" style={{ fontSize: 13, color: '#C8E600', fontWeight: 700, textDecoration: 'none', padding: '8px 16px', background: 'rgba(200,230,0,0.08)', borderRadius: 8, border: '1px solid rgba(200,230,0,0.22)' }}>Dashboard</a>}
           {isSignedIn
             ? <UserButton afterSignOutUrl="/" />
-            : <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: 13, fontWeight: 800, padding: "9px 22px", borderRadius: 99, textDecoration: "none", whiteSpace: "nowrap", boxShadow: "0 2px 16px rgba(200,230,0,0.3)" }}>Get started free</a>
+            : <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '9px 22px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>Get started free</a>
           }
           {isMobile && (
-            <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: "transparent", border: "none", color: "#C8E600", fontSize: 22, cursor: "pointer", padding: 4, lineHeight: 1 }}>
+            <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 22, cursor: 'pointer', padding: 4, lineHeight: 1 }}>
               {menuOpen ? '✕' : '☰'}
             </button>
           )}
@@ -250,363 +249,188 @@ export default function Home() {
 
       {/* MOBILE MENU */}
       {isMobile && menuOpen && (
-        <div style={{ position: "fixed", top: 64, left: 0, right: 0, background: "rgba(3,15,7,0.97)", backdropFilter: "blur(20px)", zIndex: 199, borderTop: "1px solid rgba(255,255,255,0.06)", padding: "24px 24px 32px", display: "flex", flexDirection: "column", gap: 16 }}>
-          {[{ label: "How it works", id: "how-it-works" }, { label: "Features", id: "features" }, { label: "Pricing", id: "pricing" }, { label: "FAQ", id: "faq" }].map(item => (
-            <button key={item.id} onClick={() => scrollTo(item.id)} style={{ background: "transparent", border: "none", fontSize: 16, color: "rgba(255,255,255,0.75)", fontWeight: 600, textAlign: "left", cursor: "pointer", padding: "4px 0" }}>{item.label}</button>
+        <div style={{ position: 'fixed', top: 64, left: 0, right: 0, background: 'rgba(4,12,6,0.98)', backdropFilter: 'blur(20px)', zIndex: 199, borderTop: DIVIDE, padding: '24px 24px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {[{ label: 'How it works', id: 'how-it-works' }, { label: 'Features', id: 'features' }, { label: 'Pricing', id: 'pricing' }, { label: 'FAQ', id: 'faq' }].map(item => (
+            <button key={item.id} onClick={() => scrollTo(item.id)} style={{ background: 'transparent', border: 'none', fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textAlign: 'left', cursor: 'pointer', padding: '4px 0' }}>{item.label}</button>
           ))}
-          <a href="/recruiters" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: "rgba(255,255,255,0.75)", fontWeight: 600, textDecoration: "none" }}>Recruiters</a>
-          <a href="/blog" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: "rgba(255,255,255,0.75)", fontWeight: 600, textDecoration: "none" }}>Blog</a>
-          <div style={{ height: 1, background: "rgba(255,255,255,0.06)" }} />
+          <a href="/recruiters" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Recruiters</a>
+          <a href="/blog" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Blog</a>
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
           {isSignedIn
-            ? <a href="/dashboard" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: "#C8E600", fontWeight: 700, textDecoration: "none" }}>Dashboard →</a>
+            ? <a href="/dashboard" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: '#C8E600', fontWeight: 700, textDecoration: 'none' }}>Dashboard →</a>
             : <>
-              <a href="/sign-in" onClick={() => setMenuOpen(false)} style={{ fontSize: 15, color: "rgba(255,255,255,0.5)", fontWeight: 500, textDecoration: "none" }}>Sign in</a>
-              <a href="/sign-up" onClick={() => setMenuOpen(false)} style={{ background: "#C8E600", color: "#052A14", fontSize: 15, fontWeight: 800, padding: "14px 24px", borderRadius: 99, textDecoration: "none", textAlign: "center" }}>Get started — free</a>
+              <a href="/sign-in" onClick={() => setMenuOpen(false)} style={{ fontSize: 15, color: 'rgba(255,255,255,0.45)', fontWeight: 500, textDecoration: 'none' }}>Sign in</a>
+              <a href="/sign-up" onClick={() => setMenuOpen(false)} style={{ background: '#C8E600', color: BG, fontSize: 15, fontWeight: 800, padding: '14px 24px', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>Get started — free</a>
             </>
           }
         </div>
       )}
 
-      {/* HERO */}
-      <section style={{ background: "#052A14", minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", padding: isMobile ? "96px 20px 96px" : "120px 28px 80px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: "15%", left: "5%", width: 700, height: 700, background: "radial-gradient(circle,rgba(200,230,0,0.07) 0%,transparent 65%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: "5%", right: "0%", width: 500, height: 500, background: "radial-gradient(circle,rgba(200,230,0,0.04) 0%,transparent 65%)", pointerEvents: "none" }} />
+      {/* ── HERO ─────────────────────────────────────────────── */}
+      <section style={{ padding: isMobile ? '80px 22px 72px' : '100px 40px 80px', maxWidth: 1240, margin: '0 auto', animation: 'fadeInUp 0.6s ease-out' }}>
+        <div style={{ display: isMobile ? 'flex' : 'grid', gridTemplateColumns: isMobile ? undefined : '1fr 1fr', flexDirection: isMobile ? 'column' : undefined, gap: isMobile ? 52 : 80, alignItems: 'center' }}>
 
-        <div style={{ maxWidth: 1140, margin: "0 auto", width: "100%" }}>
-          <div style={{ display: isMobile ? "flex" : "grid", gridTemplateColumns: isMobile ? undefined : "1fr 1fr", flexDirection: isMobile ? "column" : undefined, gap: isMobile ? 52 : 80, alignItems: "center" }}>
+          {/* LEFT */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28 }}>
+              <span style={{ width: 7, height: 7, background: '#FF4444', borderRadius: '50%', animation: 'pulse 1.6s ease-in-out infinite', flexShrink: 0 }} />
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: 0.2 }}>{signupCount} people signed up today</span>
+            </div>
 
-            {/* LEFT */}
-            <div style={{ animation: "fadeInUp 0.65s ease-out" }}>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 99, padding: "7px 16px", marginBottom: 28, backdropFilter: "blur(10px)" }}>
-                <span style={{ width: 8, height: 8, background: "#FF4444", borderRadius: "50%", display: "inline-block", animation: "pulse 1.6s ease-in-out infinite", flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>LIVE — 47 people applying right now</span>
-              </div>
+            <h1 style={{ fontSize: isMobile ? 'clamp(36px,9vw,44px)' : 'clamp(48px,5vw,68px)', fontWeight: 800, color: '#fff', lineHeight: 1.03, letterSpacing: -2.5, marginBottom: 22 }}>
+              Your CV is being<br />
+              <span style={{ color: 'rgba(255,100,100,0.75)', textDecoration: 'line-through', textDecorationColor: '#FF6B6B', textDecorationThickness: 3 }}>ignored.</span><br />
+              <span style={{ color: '#C8E600' }}>We fix that.</span>
+            </h1>
 
-              <h1 style={{ fontSize: isMobile ? 38 : 64, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.05, letterSpacing: -2, marginBottom: 22 }}>
-                Your CV is being<br />
-                <span style={{ color: "rgba(255,100,100,0.8)", textDecoration: "line-through", textDecorationColor: "#FF6B6B", textDecorationThickness: 3 }}>ignored.</span><br />
-                <span style={{ color: "#C8E600" }}>We fix that.</span>
-              </h1>
+            <p style={{ fontSize: isMobile ? 16 : 18, color: 'rgba(255,255,255,0.48)', lineHeight: 1.75, marginBottom: 32, maxWidth: 480 }}>
+              8 out of 10 CVs never reach a human. Our AI rewrites yours for every job in 30 seconds — so yours always gets through.
+            </p>
 
-              <p style={{ fontSize: isMobile ? 16 : 18, color: "rgba(255,255,255,0.55)", lineHeight: 1.75, marginBottom: 36, maxWidth: 480 }}>
-                8 out of 10 CVs never reach a human. Our AI rewrites yours for every job in 30 seconds — so yours always gets through.
-              </p>
-
-              {/* Avatars */}
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32, justifyContent: isMobile ? "center" : "flex-start" }}>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  {PHOTOS.map((src, i) => (
-                    <img key={i} src={src} crossOrigin="anonymous" loading="lazy" width={36} height={36} alt="Member"
-                      style={{ borderRadius: "50%", border: "2.5px solid #052A14", marginLeft: i === 0 ? 0 : -10, zIndex: 5 - i, position: "relative", background: "#1A4A2A", objectFit: "cover" }} />
-                  ))}
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: "#FFFFFF" }}>+2,400</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>joined this week</div>
-                </div>
-              </div>
-
-              {/* CTAs */}
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: isMobile ? "center" : "flex-start", marginBottom: 16 }}>
-                <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: 15, fontWeight: 800, padding: "18px 40px", borderRadius: 99, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8, animation: "ctaGlow 2.5s ease-in-out infinite", whiteSpace: "nowrap" }}>
-                  Start for free — no card needed →
-                </a>
-                <button onClick={() => scrollTo('demo')} style={{ background: "transparent", color: "rgba(255,255,255,0.7)", fontSize: 15, fontWeight: 600, padding: "18px 24px", borderRadius: 99, border: "1.5px solid rgba(255,255,255,0.12)", cursor: "pointer", whiteSpace: "nowrap" }}>
-                  See a live demo →
-                </button>
-              </div>
-
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 16, textAlign: isMobile ? "center" : "left" }}>
-                <span style={{ color: "#C8E600", fontWeight: 700 }}>{signupCount}</span> people signed up today
-              </div>
-
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: isMobile ? "center" : "flex-start" }}>
-                {["🔒 CV never shared", "⚡ 30 seconds", "🌍 50+ countries"].map(t => (
-                  <span key={t} style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", fontWeight: 500 }}>{t}</span>
+            {/* Avatars + count */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+              <div style={{ display: 'flex' }}>
+                {PHOTOS.map((src, i) => (
+                  <img key={i} src={src} loading="lazy" width={34} height={34} alt=""
+                    style={{ borderRadius: '50%', border: `2.5px solid ${BG}`, marginLeft: i === 0 ? 0 : -9, zIndex: 6 - i, position: 'relative', objectFit: 'cover', background: '#1A4A2A' }} />
                 ))}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>+2,400</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.32)' }}>joined this week</div>
               </div>
             </div>
 
-            {/* RIGHT */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, animation: "fadeInUp 0.65s ease-out 0.15s both", position: "relative" }}>
-              <div style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, padding: 24, width: "100%", maxWidth: 380, boxShadow: "0 32px 80px rgba(0,0,0,0.5)", animation: "floatCard 5s ease-in-out infinite" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 18 }}>
-                  <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(200,230,0,0.1)", border: "1px solid rgba(200,230,0,0.2)", borderRadius: 99, padding: "4px 12px" }}>
-                    <span style={{ width: 6, height: 6, background: "#C8E600", borderRadius: "50%", animation: "pulse 1.5s infinite" }} />
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "#C8E600", letterSpacing: "1px" }}>AI TRANSFORMING</span>
-                  </div>
-                  <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+            {/* CTAs */}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 32 }}>
+              <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: isMobile ? 14 : 15, fontWeight: 800, padding: isMobile ? '15px 28px' : '16px 36px', borderRadius: 8, textDecoration: 'none', display: 'inline-block', animation: 'ctaGlow 2.5s ease-in-out infinite', whiteSpace: 'nowrap' }}>
+                Start free — no card needed →
+              </a>
+              <button onClick={() => scrollTo('cv-check')} style={{ background: 'transparent', color: 'rgba(255,255,255,0.62)', fontSize: isMobile ? 14 : 15, fontWeight: 600, padding: isMobile ? '15px 20px' : '16px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                Check my CV score →
+              </button>
+            </div>
+
+            {/* Stats inline */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 28px', paddingTop: 24, borderTop: DIVIDE }}>
+              {[['30s', 'CV rewrite'], ['90%+', 'ATS pass rate'], ['3 free', 'applications'], ['495k+', 'live jobs']].map(([n, l]) => (
+                <div key={l} style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <span style={{ fontSize: isMobile ? 19 : 23, fontWeight: 800, color: '#C8E600', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{l}</span>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 28px 1fr", gap: 8, alignItems: "start" }}>
-                  <div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: "#FF6B6B", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 8 }}>Before</div>
-                    {["Responsible for managing team", "Worked on various projects", "Helped with strategy"].map(t => (
-                      <div key={t} style={{ background: "rgba(255,80,80,0.07)", border: "1px solid rgba(255,80,80,0.12)", borderRadius: 8, padding: "6px 8px", fontSize: 10, color: "rgba(255,255,255,0.35)", lineHeight: 1.4, marginBottom: 5, display: "flex", gap: 5 }}>
-                        <span style={{ color: "#FF6B6B", flexShrink: 0 }}>✕</span><span>{t}</span>
-                      </div>
-                    ))}
-                    <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.15)", borderRadius: 8, padding: "5px 8px" }}>
-                      <span style={{ fontSize: 9, color: "rgba(255,107,107,0.7)", fontWeight: 600 }}>ATS Score</span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#FF6B6B" }}>42%</span>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 18, gap: 4 }}>
-                    <div style={{ width: 24, height: 24, background: "linear-gradient(135deg,#C8E600,#88AA00)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, boxShadow: "0 0 12px rgba(200,230,0,0.4)" }}>🤖</div>
-                    <div style={{ width: 1, height: 36, background: "linear-gradient(to bottom,rgba(200,230,0,0.3),transparent)" }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: "#4ADE80", letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 8 }}>After</div>
-                    {["Led 12-person team, +40% efficiency", "5 projects on time, 15% under budget", "Strategy driving $2.4M new revenue"].map(t => (
-                      <div key={t} style={{ background: "rgba(74,222,128,0.06)", border: "1px solid rgba(74,222,128,0.12)", borderRadius: 8, padding: "6px 8px", fontSize: 10, color: "rgba(255,255,255,0.7)", lineHeight: 1.4, marginBottom: 5, display: "flex", gap: 5 }}>
-                        <span style={{ color: "#4ADE80", flexShrink: 0 }}>✓</span><span>{t}</span>
-                      </div>
-                    ))}
-                    <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(200,230,0,0.06)", border: "1px solid rgba(200,230,0,0.15)", borderRadius: 8, padding: "5px 8px" }}>
-                      <span style={{ fontSize: 9, color: "rgba(200,230,0,0.6)", fontWeight: 600 }}>ATS Score</span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: "#C8E600" }}>94%</span>
-                    </div>
-                  </div>
+              ))}
+            </div>
+          </div>
+
+          {/* RIGHT — CV transform visual */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, position: 'relative' }}>
+            <div style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: isMobile ? 20 : 24, width: '100%', maxWidth: 400, boxShadow: '0 32px 80px rgba(0,0,0,0.5)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 18 }}>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(200,230,0,0.08)', border: '1px solid rgba(200,230,0,0.18)', borderRadius: 6, padding: '4px 12px' }}>
+                  <span style={{ width: 5, height: 5, background: '#C8E600', borderRadius: '50%', animation: 'pulse 1.5s infinite' }} />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#C8E600', letterSpacing: '0.8px' }}>AI TRANSFORMING</span>
                 </div>
-                <a href="/sign-up" style={{ display: "block", marginTop: 16, background: "#C8E600", color: "#052A14", fontSize: 13, fontWeight: 800, padding: "12px", borderRadius: 12, textDecoration: "none", textAlign: "center" }}>
-                  ⚡ Try it free now
-                </a>
+                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
               </div>
 
-              {notifVisible && (
-                <div style={{ position: "absolute", bottom: -20, right: isMobile ? 0 : -16, background: "rgba(10,30,15,0.92)", backdropFilter: "blur(16px)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, maxWidth: 248, animation: "notifIn 0.5s ease-out", boxShadow: "0 8px 32px rgba(0,0,0,0.4)", zIndex: 2 }}>
-                  <span style={{ width: 8, height: 8, background: "#4ADE80", borderRadius: "50%", flexShrink: 0, animation: "pulse 2s infinite" }} />
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.8)", fontWeight: 600, lineHeight: 1.4 }}>✓ New member just got 3 interview invites this week</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 28px 1fr', gap: 8, alignItems: 'start' }}>
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: '#FF6B6B', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>Before</div>
+                  {['Responsible for managing team', 'Worked on various projects', 'Helped with strategy'].map(t => (
+                    <div key={t} style={{ background: 'rgba(255,80,80,0.06)', border: '1px solid rgba(255,80,80,0.1)', borderRadius: 6, padding: '6px 8px', fontSize: 10, color: 'rgba(255,255,255,0.32)', lineHeight: 1.4, marginBottom: 5, display: 'flex', gap: 5 }}>
+                      <span style={{ color: '#FF6B6B', flexShrink: 0 }}>✕</span><span>{t}</span>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,80,80,0.07)', border: '1px solid rgba(255,80,80,0.14)', borderRadius: 6, padding: '5px 8px' }}>
+                    <span style={{ fontSize: 9, color: 'rgba(255,107,107,0.65)', fontWeight: 600 }}>ATS Score</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#FF6B6B', fontVariantNumeric: 'tabular-nums' }}>42%</span>
+                  </div>
                 </div>
-              )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 18, gap: 4 }}>
+                  <div style={{ width: 22, height: 22, background: 'linear-gradient(135deg,#C8E600,#88AA00)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, boxShadow: '0 0 10px rgba(200,230,0,0.38)' }}>✦</div>
+                  <div style={{ width: 1, height: 32, background: 'linear-gradient(to bottom,rgba(200,230,0,0.3),transparent)' }} />
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: '#4ADE80', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>After</div>
+                  {['Led 12-person team, +40% efficiency', '5 projects on time, 15% under budget', 'Strategy driving $2.4M new revenue'].map(t => (
+                    <div key={t} style={{ background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.1)', borderRadius: 6, padding: '6px 8px', fontSize: 10, color: 'rgba(255,255,255,0.68)', lineHeight: 1.4, marginBottom: 5, display: 'flex', gap: 5 }}>
+                      <span style={{ color: '#4ADE80', flexShrink: 0 }}>✓</span><span>{t}</span>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(200,230,0,0.06)', border: '1px solid rgba(200,230,0,0.14)', borderRadius: 6, padding: '5px 8px' }}>
+                    <span style={{ fontSize: 9, color: 'rgba(200,230,0,0.55)', fontWeight: 600 }}>ATS Score</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#C8E600', fontVariantNumeric: 'tabular-nums' }}>94%</span>
+                  </div>
+                </div>
+              </div>
+
+              <a href="/sign-up" style={{ display: 'block', marginTop: 16, background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '12px', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>
+                Try it free now →
+              </a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* TRUST BAR */}
-      <div style={{ background: "#040F07", borderTop: "1px solid rgba(255,255,255,0.04)", borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "18px 28px" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", gap: isMobile ? 20 : 44, flexWrap: "wrap" }}>
-          {["🔒 Bank-grade security", "⭐ 4.8/5 rating", "🌍 Used in 50+ countries", "✓ GDPR compliant", "💼 495,000+ live jobs"].map(item => (
-            <span key={item} style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>{item}</span>
+      {/* ── NUMBERS BAR ─────────────────────────────────────── */}
+      <div style={{ borderTop: DIVIDE, borderBottom: DIVIDE, padding: '28px 40px' }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap: isMobile ? '20px 16px' : 0 }}>
+          {[
+            { n: '495k+', l: 'Live jobs worldwide' },
+            { n: '50+',   l: 'Countries covered' },
+            { n: '90%+',  l: 'ATS pass rate' },
+            { n: '11 days', l: 'Avg. time to first interview' },
+          ].map(({ n, l }, i) => (
+            <div key={l} style={{ textAlign: 'center', padding: isMobile ? 0 : '0 32px', borderRight: !isMobile && i < 3 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+              <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, color: '#C8E600', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{n}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 6 }}>{l}</div>
+            </div>
           ))}
         </div>
       </div>
 
-      {/* PROBLEM */}
-      <section style={{ background: "#020A04", padding: isMobile ? "72px 20px" : "96px 28px", textAlign: "center" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(255,80,80,0.08)", border: "1px solid rgba(255,80,80,0.2)", borderRadius: 99, padding: "6px 18px", marginBottom: 28 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,120,120,0.9)", letterSpacing: "1.5px", textTransform: "uppercase" }}>The problem</span>
-          </div>
-          <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>
-            The job market is broken.<br /><span style={{ color: "rgba(255,255,255,0.25)" }}>Here is proof.</span>
-          </h2>
-          <p style={{ fontSize: isMobile ? 14 : 16, color: "rgba(255,255,255,0.35)", lineHeight: 1.75, maxWidth: 500, margin: "0 auto 56px" }}>
-            It is not your qualifications. It is not your experience. The system is filtering you out before any human sees your name.
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 16, marginBottom: 40 }}>
-            {[
-              { stat: "80%", label: "of CVs rejected by ATS", desc: "Before a human ever sees them. One missing keyword and you disappear from the entire process.", color: "#FF6B6B" },
-              { stat: "6 months", label: "average job hunt duration", desc: "Without the right tools. Every month you spend job hunting is money and opportunities lost.", color: "#FFAA44" },
-              { stat: "2%", label: "average CV-to-interview rate", desc: "Without optimisation. Most people apply to 50 jobs and hear back from 1. Jobsesame makes you that 1.", color: "#C8E600" },
-            ].map((s, i) => (
-              <div key={i} className="hov-lift" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 20, padding: "32px 24px", textAlign: "left" }}>
-                <div style={{ fontSize: isMobile ? 44 : 52, fontWeight: 800, color: s.color, letterSpacing: -2, lineHeight: 1, marginBottom: 8 }}>{s.stat}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF", marginBottom: 10 }}>{s.label}</div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", lineHeight: 1.7 }}>{s.desc}</div>
-              </div>
-            ))}
-          </div>
-          <p style={{ fontSize: isMobile ? 18 : 22, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>&ldquo;You are not the problem. Your CV is.&rdquo;</p>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section id="how-it-works" style={{ background: "#052A14", padding: isMobile ? "72px 20px" : "96px 28px" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: isMobile ? 48 : 64 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>The solution</span>
-            </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>
-              One upload.<br /><span style={{ color: "#C8E600" }}>Infinite possibilities.</span>
+      {/* ── THE PROBLEM ─────────────────────────────────────── */}
+      <section style={{ padding: isMobile ? '72px 22px' : '96px 40px', maxWidth: 1240, margin: '0 auto' }}>
+        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start' }}>
+          <div style={{ marginBottom: isMobile ? 40 : 0 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,80,80,0.65)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 18 }}>Why you&apos;re not hearing back</p>
+            <h2 style={{ fontSize: isMobile ? 30 : 46, fontWeight: 800, color: '#fff', lineHeight: 1.06, letterSpacing: -1.5, marginBottom: 22 }}>
+              The job market<br />is <span style={{ color: '#FF6B6B' }}>filtering you out</span><br />before they even<br />read your name.
             </h2>
-            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.4)", maxWidth: 460, margin: "0 auto" }}>Upload your CV once and let AI handle everything else.</p>
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', lineHeight: 1.78, maxWidth: 480 }}>
+              It is not your qualifications. It is not your experience. ATS software is automatically rejecting 8 out of 10 CVs before any human sees them. One wrong keyword and you disappear from the entire process.
+            </p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4,1fr)", gap: isMobile ? 14 : 12, position: "relative" }}>
-            {!isMobile && <div style={{ position: "absolute", top: 36, left: "12%", right: "12%", height: 2, background: "linear-gradient(to right,transparent,rgba(200,230,0,0.3),rgba(200,230,0,0.3),transparent)", zIndex: 0, borderTop: "2px dashed rgba(200,230,0,0.2)" }} />}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderTop: DIVIDE }}>
             {[
-              { n: "01", icon: "📄", title: "Upload CV", desc: "Drop your PDF. AI reads everything in seconds." },
-              { n: "02", icon: "🧠", title: "AI Analyses", desc: "Skills, experience and strengths extracted automatically." },
-              { n: "03", icon: "⚡", title: "Apply Smarter", desc: "CV rewritten for each job. Every application perfectly tailored." },
-              { n: "04", icon: "🏆", title: "Get Hired", desc: "Pass ATS filters. Reach human recruiters. Get interviews." },
-            ].map(step => (
-              <div key={step.n} className="hov-lift" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "28px 18px 24px", textAlign: "center", position: "relative", zIndex: 1 }}>
-                <div style={{ position: "absolute", top: 14, right: 16, fontSize: 11, fontWeight: 800, color: "rgba(200,230,0,0.25)", letterSpacing: "1px" }}>{step.n}</div>
-                <div style={{ width: 48, height: 48, background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.15)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, margin: "0 auto 16px" }}>{step.icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#FFFFFF", marginBottom: 8 }}>{step.title}</div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", lineHeight: 1.65 }}>{step.desc}</div>
+              { stat: '80%', label: 'CVs auto-rejected before a human reads them', color: '#FF6B6B' },
+              { stat: '6 mo', label: 'Average job hunt without the right tools', color: '#FFAA44' },
+              { stat: '2%',  label: 'Average CV-to-interview rate without AI', color: '#FFD700' },
+              { stat: '11×', label: 'More interviews with an AI-optimised CV', color: '#C8E600' },
+            ].map(({ stat, label, color }) => (
+              <div key={stat} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '24px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <span style={{ fontSize: isMobile ? 34 : 44, fontWeight: 800, color, lineHeight: 1, minWidth: isMobile ? 80 : 100, fontVariantNumeric: 'tabular-nums' }}>{stat}</span>
+                <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.55 }}>{label}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FEATURES */}
-      <section id="features" style={{ background: "#020A04", padding: isMobile ? "72px 20px" : "96px 28px" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: isMobile ? 48 : 64 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>Features</span>
-            </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>Everything you need<br />to get hired faster</h2>
-            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 400, margin: "0 auto" }}>One platform. Every tool an ambitious job seeker needs.</p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 14 }}>
-            {[
-              { icon: "🧬", title: "AI CV Tailoring", desc: "Rewrites your CV for each job in 30 seconds. Keywords, tone, structure — all matched to the role." },
-              { icon: "🔍", title: "ATS Optimisation", desc: "Pass automated screening systems every time. Our AI knows exactly what filters look for." },
-              { icon: "🌍", title: "495,000+ Live Jobs", desc: "All jobs in one place from 50+ sources. Remote, relocation, teaching and more." },
-              { icon: "⚡", title: "Quick Apply", desc: "Apply to any job in under 10 seconds. AI handles the CV, cover letter and submission." },
-              { icon: "🎯", title: "Match Scoring", desc: "See exactly how well your CV fits each role before you apply. Fix the gaps first." },
-              { icon: "📊", title: "Application Tracker", desc: "Track every application in one dashboard. Know what stage you are at — always." },
-            ].map(f => (
-              <div key={f.title} className="feat-card" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "28px 22px" }}>
-                <div style={{ width: 48, height: 48, background: "rgba(200,230,0,0.06)", border: "1px solid rgba(200,230,0,0.12)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, marginBottom: 18 }}>{f.icon}</div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF", marginBottom: 8 }}>{f.title}</div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.32)", lineHeight: 1.7 }}>{f.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* LIVE DEMO */}
-      <section id="demo" style={{ background: "#052A14", padding: isMobile ? "72px 20px" : "96px 28px" }}>
-        <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: isMobile ? 40 : 56 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>Live demo</span>
-            </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>
-              Watch AI rewrite a CV<br /><span style={{ color: "#C8E600" }}>in real time</span>
+      {/* ── FREE CV ANALYSIS (moved up for conversion) ──────── */}
+      <section id="cv-check" style={{ padding: isMobile ? '72px 22px' : '96px 40px', borderTop: DIVIDE, borderBottom: DIVIDE }}>
+        <div style={{ maxWidth: 780, margin: '0 auto' }}>
+          <div style={{ marginBottom: 44 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 14 }}>Free — no signup required</p>
+            <h2 style={{ fontSize: isMobile ? 28 : 44, fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: -1.2, marginBottom: 14 }}>
+              See your ATS score<br />in 15 seconds
             </h2>
-            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 400, margin: "0 auto" }}>See the transformation from weak language to recruiter-ready copy.</p>
-          </div>
-
-          <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 24, overflow: "hidden" }}>
-            <div style={{ padding: "14px 22px", background: "rgba(0,0,0,0.25)", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", gap: 8 }}>
-              {["#FF5F57", "#FFBD2E", "#28CA41"].map(c => <div key={c} style={{ width: 11, height: 11, background: c, borderRadius: "50%" }} />)}
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginLeft: 8 }}>CV Optimiser — AI Transform</span>
-            </div>
-            <div style={{ display: isMobile ? "flex" : "grid", gridTemplateColumns: isMobile ? undefined : "1fr 120px 1fr", flexDirection: isMobile ? "column" : undefined }}>
-              {/* Before */}
-              <div style={{ padding: "28px 24px", opacity: demoStage === 'loading' ? 0 : 1, transition: "opacity 0.3s" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: "1.5px", textTransform: "uppercase" }}>Your original CV</span>
-                  <div style={{ background: "rgba(255,100,100,0.1)", border: "1px solid rgba(255,100,100,0.2)", borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: "#FF6B6B" }}>ATS: 42%</div>
-                </div>
-                {["Responsible for managing team", "Worked on various projects", "Helped with strategy"].map((t, i) => (
-                  <div key={i} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,80,80,0.12)", borderRadius: 10, padding: "10px 12px", fontSize: 12, color: "rgba(255,255,255,0.3)", lineHeight: 1.5, marginBottom: 8 }}>
-                    <span style={{ color: "#FF6B6B", marginRight: 8 }}>✕</span>{t}
-                  </div>
-                ))}
-              </div>
-
-              {/* Center */}
-              <div style={{ display: "flex", flexDirection: isMobile ? "row" : "column", alignItems: "center", justifyContent: "center", padding: isMobile ? "16px 24px" : "28px 12px", borderLeft: isMobile ? "none" : "1px solid rgba(255,255,255,0.04)", borderRight: isMobile ? "none" : "1px solid rgba(255,255,255,0.04)", gap: 10 }}>
-                {demoStage === 'loading' ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 32, height: 32, border: "3px solid rgba(200,230,0,0.2)", borderTop: "3px solid #C8E600", borderRadius: "50%", animation: "spinAI 0.8s linear infinite" }} />
-                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>AI working...</span>
-                  </div>
-                ) : (
-                  <>
-                    <button onClick={handleDemoTransform} style={{ background: demoStage === 'done' ? "rgba(74,222,128,0.1)" : "#C8E600", color: demoStage === 'done' ? "#4ADE80" : "#052A14", border: demoStage === 'done' ? "1.5px solid rgba(74,222,128,0.3)" : "none", fontSize: 12, fontWeight: 800, padding: "10px 16px", borderRadius: 12, cursor: "pointer", boxShadow: demoStage === 'idle' ? "0 4px 20px rgba(200,230,0,0.3)" : "none", whiteSpace: "nowrap" }}>
-                      {demoStage === 'done' ? "Transformed ✓" : "Transform →"}
-                    </button>
-                    {demoStage === 'done' && <button onClick={() => { setDemoStage('idle'); setDemoAts(42); }} style={{ background: "transparent", border: "none", fontSize: 10, color: "rgba(255,255,255,0.2)", cursor: "pointer", textDecoration: "underline" }}>Reset</button>}
-                    {demoStage === 'idle' && <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", textAlign: "center" }}>AI magic</span>}
-                  </>
-                )}
-              </div>
-
-              {/* After */}
-              <div style={{ padding: "28px 24px", background: demoStage === 'done' ? "rgba(200,230,0,0.015)" : "transparent", opacity: demoStage === 'done' ? 1 : 0.25, animation: demoStage === 'done' ? "slideInRight 0.4s ease-out" : "none", transition: "background 0.5s, opacity 0.4s" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: demoStage === 'done' ? "rgba(200,230,0,0.7)" : "rgba(255,255,255,0.15)", letterSpacing: "1.5px", textTransform: "uppercase", transition: "color 0.4s" }}>AI-optimised version</span>
-                  <div style={{ background: demoStage === 'done' ? "rgba(200,230,0,0.08)" : "rgba(255,255,255,0.03)", border: `1px solid ${demoStage === 'done' ? "rgba(200,230,0,0.2)" : "rgba(255,255,255,0.06)"}`, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: demoStage === 'done' ? "#C8E600" : "rgba(255,255,255,0.15)", transition: "all 0.4s" }}>
-                    ATS: {demoStage === 'done' ? `${demoAts}%` : "—"}
-                  </div>
-                </div>
-                {["Led cross-functional team of 12 driving 40% efficiency gains", "Delivered 5 enterprise projects on time and 15% under budget", "Architected go-to-market strategy generating $2.4M in new revenue"].map((t, i) => (
-                  <div key={i} style={{ background: demoStage === 'done' ? "rgba(200,230,0,0.04)" : "rgba(255,255,255,0.015)", border: `1px solid ${demoStage === 'done' ? "rgba(200,230,0,0.12)" : "rgba(255,255,255,0.04)"}`, borderRadius: 10, padding: "10px 12px", fontSize: 12, color: demoStage === 'done' ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.1)", lineHeight: 1.5, marginBottom: 8, transition: `all 0.4s ${i * 0.1}s` }}>
-                    <span style={{ color: demoStage === 'done' ? "#C8E600" : "rgba(255,255,255,0.1)", marginRight: 8, transition: "color 0.3s" }}>✓</span>{t}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div style={{ textAlign: "center", marginTop: 28 }}>
-            <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: 14, fontWeight: 800, padding: "14px 36px", borderRadius: 99, textDecoration: "none", display: "inline-block", boxShadow: "0 4px 24px rgba(200,230,0,0.3)" }}>Transform my CV now →</a>
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS */}
-      <section style={{ background: "#020A04", padding: isMobile ? "72px 20px" : "96px 28px" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: isMobile ? 48 : 64 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>Success stories</span>
-            </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>Real people.<br /><span style={{ color: "#C8E600" }}>Real results.</span></h2>
-            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 360, margin: "0 auto" }}>From silence to offer letters.</p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 14, marginBottom: 14 }}>
-            {[
-              { photo: PHOTOS[5], name: "Thabo N.", result: "Got hired in 3 weeks", quote: "I applied to 30 jobs manually for 4 months. Zero responses. After Jobsesame I had 4 interviews in 10 days. The AI knew exactly what recruiters wanted to see." },
-              { photo: PHOTOS[0], name: "Amara D.", result: "ATS score: 38% → 91%", quote: "My CV was good. Jobsesame made it exceptional. The ATS score went from 38 to 91 percent. I got a callback within 48 hours." },
-              { photo: PHOTOS[1], name: "James K.", result: "Relocated internationally, hired", quote: "I was relocating and had no idea what employers there wanted. Jobsesame rewrote my CV perfectly for the market. I got the job." },
-            ].map(t => (
-              <div key={t.name} className="hov-lift" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "28px 22px" }}>
-                <div style={{ display: "flex", gap: 2, marginBottom: 14 }}>
-                  {[1, 2, 3, 4, 5].map(n => <span key={n} style={{ color: "#C8E600", fontSize: 13 }}>★</span>)}
-                </div>
-                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", lineHeight: 1.75, fontStyle: "italic", marginBottom: 20 }}>&ldquo;{t.quote}&rdquo;</p>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <img src={t.photo} crossOrigin="anonymous" loading="lazy" width={48} height={48} alt={t.name} style={{ borderRadius: "50%", border: "2px solid rgba(200,230,0,0.25)", background: "#1A4A2A", flexShrink: 0, objectFit: "cover" }} />
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#FFFFFF" }}>{t.name}</div>
-                    <div style={{ fontSize: 12, color: "#C8E600", fontWeight: 600 }}>{t.result}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ background: "rgba(200,230,0,0.04)", border: "1px solid rgba(200,230,0,0.12)", borderRadius: 20, padding: "28px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
-            <div>
-              <div style={{ fontSize: isMobile ? 38 : 52, fontWeight: 800, color: "#C8E600", lineHeight: 1, letterSpacing: -2 }}>11 days</div>
-              <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Average time from signup to first interview</div>
-            </div>
-            <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: 14, fontWeight: 800, padding: "14px 32px", borderRadius: 99, textDecoration: "none", whiteSpace: "nowrap" }}>Start your journey →</a>
-          </div>
-        </div>
-      </section>
-
-      {/* FREE CV ANALYSIS */}
-      <section style={{ background: "#052A14", padding: isMobile ? "72px 20px" : "96px 28px" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 40 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>Free tool</span>
-            </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 12 }}>
-              See your ATS score<br /><span style={{ color: "#C8E600" }}>in 15 seconds — free</span>
-            </h2>
-            <p style={{ fontSize: isMobile ? 14 : 16, color: "rgba(255,255,255,0.35)", maxWidth: 420, margin: "0 auto" }}>
-              No signup required. Drop your CV and get an instant ATS analysis with specific weaknesses.
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.38)', maxWidth: 460 }}>
+              Drop your CV below. AI analyses it instantly and shows you exactly why recruiters aren&apos;t calling back.
             </p>
           </div>
 
@@ -615,161 +439,321 @@ export default function Home() {
               onDrop={e => { e.preventDefault(); setCvAnalysisDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleCvAnalysis(f); }}
               onDragOver={e => { e.preventDefault(); setCvAnalysisDragOver(true); }}
               onDragLeave={() => setCvAnalysisDragOver(false)}
-              style={{ border: `2px dashed ${cvAnalysisDragOver ? '#C8E600' : 'rgba(200,230,0,0.3)'}`, borderRadius: 20, padding: "52px 28px", textAlign: "center", background: cvAnalysisDragOver ? 'rgba(200,230,0,0.04)' : 'rgba(255,255,255,0.02)', transition: "all 0.2s", cursor: "pointer" }}>
-              <div style={{ fontSize: 40, marginBottom: 16 }}>📄</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF", marginBottom: 8 }}>Drop your CV here</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", marginBottom: 20 }}>PDF format · processed instantly · never stored</div>
-              <label style={{ cursor: "pointer" }}>
-                <input type="file" accept=".pdf" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) handleCvAnalysis(f); }} />
-                <span style={{ background: "#C8E600", color: "#052A14", fontSize: 14, fontWeight: 800, padding: "13px 32px", borderRadius: 99, display: "inline-block" }}>Choose PDF</span>
+              style={{ border: `2px dashed ${cvAnalysisDragOver ? '#C8E600' : 'rgba(200,230,0,0.28)'}`, borderRadius: 12, padding: isMobile ? '44px 22px' : '52px 32px', textAlign: 'center', background: cvAnalysisDragOver ? 'rgba(200,230,0,0.03)' : 'transparent', transition: 'all 0.2s', cursor: 'pointer' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>Drop your CV here</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginBottom: 22 }}>PDF format · analysed instantly · never stored</div>
+              <label style={{ cursor: 'pointer' }}>
+                <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleCvAnalysis(f); }} />
+                <span style={{ background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '12px 28px', borderRadius: 8, display: 'inline-block' }}>Choose PDF</span>
               </label>
             </div>
           )}
 
           {cvAnalysisState === 'uploading' && (
-            <div style={{ textAlign: "center", padding: "52px 28px", background: "rgba(255,255,255,0.02)", border: "2px solid rgba(200,230,0,0.2)", borderRadius: 20 }}>
-              <div style={{ width: 48, height: 48, border: "4px solid rgba(200,230,0,0.2)", borderTop: "4px solid #C8E600", borderRadius: "50%", animation: "spinAI 0.8s linear infinite", margin: "0 auto 16px" }} />
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#FFFFFF", marginBottom: 6 }}>AI is reading your CV...</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Analysing skills, experience and ATS compatibility</div>
+            <div style={{ textAlign: 'center', padding: '52px 28px', border: '1px solid rgba(200,230,0,0.18)', borderRadius: 12 }}>
+              <div style={{ width: 44, height: 44, border: '3px solid rgba(200,230,0,0.18)', borderTop: '3px solid #C8E600', borderRadius: '50%', animation: 'spinAI 0.8s linear infinite', margin: '0 auto 16px' }} />
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 6 }}>Reading your CV...</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Analysing skills, experience and ATS compatibility</div>
             </div>
           )}
 
           {cvAnalysisState === 'done' && (
-            <div style={{ background: "rgba(255,255,255,0.02)", border: "1.5px solid rgba(200,230,0,0.2)", borderRadius: 20, padding: isMobile ? "28px 20px" : "36px 40px" }}>
-              {/* Score gauge */}
-              <div style={{ display: "flex", gap: 28, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 28 }}>
-                <div style={{ textAlign: "center", flexShrink: 0 }}>
-                  <div style={{ position: "relative", width: 110, height: 110, margin: "0 auto 10px" }}>
-                    <svg width="110" height="110" style={{ transform: "rotate(-90deg)" }}>
-                      <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
-                      <circle cx="55" cy="55" r="44" fill="none"
-                        stroke={cvAnalysisScore >= 75 ? "#22C55E" : cvAnalysisScore >= 60 ? "#F59E0B" : "#EF4444"}
-                        strokeWidth="10"
-                        strokeDasharray={`${2 * Math.PI * 44}`}
-                        strokeDashoffset={`${2 * Math.PI * 44 * (1 - cvAnalysisScore / 100)}`}
+            <div style={{ border: '1.5px solid rgba(200,230,0,0.18)', borderRadius: 12, padding: isMobile ? '26px 20px' : '36px 40px' }}>
+              <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 28 }}>
+                <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                  <div style={{ position: 'relative', width: 108, height: 108, margin: '0 auto 10px' }}>
+                    <svg width="108" height="108" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx="54" cy="54" r="43" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="9" />
+                      <circle cx="54" cy="54" r="43" fill="none"
+                        stroke={cvAnalysisScore >= 75 ? '#22C55E' : cvAnalysisScore >= 60 ? '#F59E0B' : '#EF4444'}
+                        strokeWidth="9" strokeDasharray={`${2 * Math.PI * 43}`}
+                        strokeDashoffset={`${2 * Math.PI * 43 * (1 - cvAnalysisScore / 100)}`}
                         strokeLinecap="round" />
                     </svg>
-                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-                      <span style={{ fontSize: 26, fontWeight: 900, color: cvAnalysisScore >= 75 ? "#22C55E" : cvAnalysisScore >= 60 ? "#F59E0B" : "#EF4444", lineHeight: 1 }}>{cvAnalysisScore}%</span>
-                      <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", marginTop: 3 }}>ATS score</span>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+                      <span style={{ fontSize: 26, fontWeight: 900, color: cvAnalysisScore >= 75 ? '#22C55E' : cvAnalysisScore >= 60 ? '#F59E0B' : '#EF4444', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{cvAnalysisScore}%</span>
+                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)', marginTop: 3 }}>ATS score</span>
                     </div>
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: cvAnalysisScore >= 75 ? "#22C55E" : cvAnalysisScore >= 60 ? "#F59E0B" : "#EF4444" }}>
-                    {cvAnalysisScore >= 75 ? "Performing well" : cvAnalysisScore >= 60 ? "Needs improvement" : "Failing screening"}
-                  </div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 6, lineHeight: 1.4 }}>
-                    Industry average ATS pass rate is 23%.<br />Most CVs score below 60.
+                  <div style={{ fontSize: 11, fontWeight: 700, color: cvAnalysisScore >= 75 ? '#22C55E' : cvAnalysisScore >= 60 ? '#F59E0B' : '#EF4444' }}>
+                    {cvAnalysisScore >= 75 ? 'Performing well' : cvAnalysisScore >= 60 ? 'Needs work' : 'Failing screening'}
                   </div>
                 </div>
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#FFFFFF", marginBottom: 12 }}>
-                    {cvAnalysisScore >= 75
-                      ? "Your CV is in good shape. AI tailoring can push it above 90% per role."
-                      : "Most employers will never see your CV. Here is why:"}
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 14, lineHeight: 1.4 }}>
+                    {cvAnalysisScore >= 75 ? 'Solid CV — AI tailoring can push every application above 90%.' : 'Most employers will never see your CV. Here is exactly why:'}
                   </div>
                   {cvAnalysisWeaknesses.map((w, i) => (
-                    <div key={i} style={{ background: "rgba(239,68,68,0.08)", borderLeft: "3px solid #EF4444", borderRadius: "0 8px 8px 0", padding: "9px 14px", marginBottom: 8, fontSize: 13, color: "#F09595", lineHeight: 1.5 }}>
-                      ⚠️ {w}
+                    <div key={i} style={{ borderLeft: '3px solid #EF4444', padding: '9px 0 9px 14px', marginBottom: 10, fontSize: 13, color: 'rgba(255,160,160,0.9)', lineHeight: 1.5 }}>
+                      {w}
                     </div>
                   ))}
                 </div>
               </div>
-              {/* Before / After preview */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
-                <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 12, padding: 14 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#F09595", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>Your CV now</div>
-                  {["Generic language, no metrics", "Missing key ATS keywords", "Recruiters skip past it"].map((t, i) => (
-                    <div key={i} style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>✗ {t}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 22 }}>
+                <div style={{ borderLeft: '3px solid #EF4444', padding: '14px 0 14px 16px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,100,100,0.7)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10 }}>Your CV now</div>
+                  {['Generic language, no metrics', 'Missing key ATS keywords', 'Recruiters skip past it'].map((t, i) => (
+                    <div key={i} style={{ fontSize: 12, color: 'rgba(255,255,255,0.32)', marginBottom: 5 }}>— {t}</div>
                   ))}
                 </div>
-                <div style={{ background: "rgba(200,230,0,0.05)", border: "1px solid rgba(200,230,0,0.15)", borderRadius: 12, padding: 14 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "#C8E600", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 8 }}>After Jobsesame</div>
-                  {["Impact metrics for every bullet", "90%+ ATS pass rate", "Recruiters call you back"].map((t, i) => (
-                    <div key={i} style={{ fontSize: 12, color: "#90C898", marginBottom: 4 }}>✓ {t}</div>
+                <div style={{ borderLeft: '3px solid #C8E600', padding: '14px 0 14px 16px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(200,230,0,0.7)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10 }}>After Jobsesame</div>
+                  {['Impact metrics on every bullet', '90%+ ATS pass rate', 'Recruiters call you back'].map((t, i) => (
+                    <div key={i} style={{ fontSize: 12, color: 'rgba(200,230,0,0.75)', marginBottom: 5 }}>+ {t}</div>
                   ))}
                 </div>
               </div>
-              <a href="/sign-up" style={{ display: "block", background: "#C8E600", color: "#052A14", fontSize: 15, fontWeight: 900, padding: "16px 0", borderRadius: 99, textDecoration: "none", textAlign: "center", marginBottom: 10, animation: "ctaGlow 2.5s ease-in-out infinite" }}>
+              <a href="/sign-up" style={{ display: 'block', background: '#C8E600', color: BG, fontSize: 15, fontWeight: 900, padding: '15px 0', borderRadius: 8, textDecoration: 'none', textAlign: 'center', animation: 'ctaGlow 2.5s ease-in-out infinite' }}>
                 Fix all issues with AI — free →
               </a>
-              <div style={{ textAlign: "center", fontSize: 12, color: "rgba(255,255,255,0.2)" }}>No credit card · Takes 30 seconds</div>
+              <div style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.18)', marginTop: 10 }}>No credit card · 30 seconds</div>
             </div>
           )}
         </div>
       </section>
 
-      {/* PRICING */}
-      <section id="pricing" style={{ background: "#052A14", padding: isMobile ? "72px 20px" : "96px 28px" }}>
-        <div style={{ maxWidth: 860, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: isMobile ? 48 : 64 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>Pricing</span>
-            </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>Simple pricing.<br /><span style={{ color: "#C8E600" }}>Serious results.</span></h2>
-            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 340, margin: "0 auto" }}>Start free. Upgrade when you are ready.</p>
+      {/* ── HOW IT WORKS ───────────────────────────────────────── */}
+      <section id="how-it-works" style={{ padding: isMobile ? '72px 22px' : '96px 40px', maxWidth: 1240, margin: '0 auto' }}>
+        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '380px 1fr', gap: 80, alignItems: 'start' }}>
+          <div style={{ marginBottom: isMobile ? 40 : 0 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 18 }}>How it works</p>
+            <h2 style={{ fontSize: isMobile ? 30 : 44, fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: -1.2, marginBottom: 20 }}>
+              One upload.<br />Infinite<br />opportunities.
+            </h2>
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.38)', lineHeight: 1.75, marginBottom: 28 }}>Upload your CV once and let AI handle every application from that point forward.</p>
+            <a href="/sign-up" style={{ display: 'inline-block', background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '12px 24px', borderRadius: 8, textDecoration: 'none' }}>Start free →</a>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 14, alignItems: "start" }}>
+
+          <div style={{ borderTop: DIVIDE }}>
             {[
-              { name: "Free", price: "R0", usdPrice: "$0", per: " forever", desc: "Get started instantly", features: ["3 Quick Apply credits", "AI CV analysis", "ATS score included", "Browse 495,000+ jobs", "No card needed"], popular: false, btn: "Get started free" },
-              { name: "Credits", price: "R99", usdPrice: "$5", per: " per pack", desc: "Pay as you go", features: ["10 Quick Apply credits", "Credits never expire", "AI CV rewrite per job", "Cover letter generation", "All job categories"], popular: false, btn: "Buy credits" },
-              { name: "Pro", price: "R249", usdPrice: "$14", per: " per month", desc: "For serious job seekers", features: ["Unlimited Quick Apply", "Unlimited CV rewrites", "Priority support", "Cover letters included", "Application tracking"], popular: true, btn: "Go Pro" },
-            ].map(p => (
-              <div key={p.name} style={{ background: p.popular ? "rgba(200,230,0,0.05)" : "rgba(255,255,255,0.03)", border: `1.5px solid ${p.popular ? "rgba(200,230,0,0.35)" : "rgba(255,255,255,0.07)"}`, borderRadius: 20, padding: "28px 22px", position: "relative" }}>
-                {p.popular && <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", background: "#C8E600", color: "#052A14", fontSize: 10, fontWeight: 800, padding: "4px 16px", borderRadius: 99, whiteSpace: "nowrap" }}>MOST POPULAR</div>}
-                <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.35)", marginBottom: 4 }}>{p.name}</div>
-                <div style={{ marginBottom: 4 }}>
-                  <span style={{ fontSize: 40, fontWeight: 800, color: p.popular ? "#C8E600" : "#FFFFFF", lineHeight: 1 }}>{currency === 'ZAR' ? p.price : p.usdPrice}</span>
-                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.25)" }}>{p.per}</span>
+              { n: '01', title: 'Upload your CV once', body: 'Drop in your existing PDF. AI reads everything in seconds — your experience, skills, and achievements. You never have to do this again.' },
+              { n: '02', title: 'AI analyses and matches', body: 'When you find a job you want, AI reads the full description and rewrites your CV in 30 seconds to match exactly what that employer needs.' },
+              { n: '03', title: 'Apply in one click', body: 'Your tailored CV and a personalised cover letter go directly to the employer. No forms. No copy-paste. No wasted evenings.' },
+              { n: '04', title: 'Track and follow up', body: 'Every application, status update, and follow-up reminder in one clean dashboard. Know exactly where you stand at all times.' },
+            ].map(step => (
+              <div key={step.n} style={{ display: 'grid', gridTemplateColumns: '56px 1fr', gap: 20, padding: '28px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'start' }}>
+                <span style={{ fontSize: isMobile ? 36 : 44, fontWeight: 800, color: 'rgba(200,230,0,0.15)', lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: -2 }}>{step.n}</span>
+                <div>
+                  <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, color: '#fff', marginBottom: 8, letterSpacing: -0.3 }}>{step.title}</div>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', lineHeight: 1.72 }}>{step.body}</p>
                 </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", marginBottom: 20 }}>{p.desc}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FEATURES ─────────────────────────────────────────── */}
+      <section id="features" style={{ padding: isMobile ? '72px 22px' : '96px 40px', borderTop: DIVIDE, borderBottom: DIVIDE }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto' }}>
+          <div style={{ display: isMobile ? 'block' : 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: isMobile ? 36 : 52, gap: 24 }}>
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 14 }}>What you get</p>
+              <h2 style={{ fontSize: isMobile ? 28 : 44, fontWeight: 800, color: '#fff', lineHeight: 1.06, letterSpacing: -1.2 }}>
+                Everything you need<br />to get hired faster
+              </h2>
+            </div>
+            <a href="/sign-up" style={{ display: 'inline-block', flexShrink: 0, background: 'rgba(200,230,0,0.1)', color: '#C8E600', fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 8, textDecoration: 'none', border: '1px solid rgba(200,230,0,0.2)', marginTop: isMobile ? 20 : 0 }}>
+              See all features →
+            </a>
+          </div>
+
+          <div style={{ borderTop: DIVIDE }}>
+            {[
+              { n: '01', title: 'AI CV tailoring per job',       body: 'Your CV rewritten for every application in 30 seconds — keywords, tone, and structure matched to the exact role.' },
+              { n: '02', title: 'ATS score optimisation',        body: 'Pass automated screening every time. Our AI knows exactly what filters look for and makes sure you clear them.' },
+              { n: '03', title: '495,000+ live jobs',            body: 'Every job in one place from 50+ sources. Remote, relocation, teaching, tech, finance, healthcare and more.' },
+              { n: '04', title: 'Quick Apply',                   body: 'Apply to any job in under 10 seconds. AI writes the CV, the cover letter, and submits — you just click once.' },
+              { n: '05', title: 'Match scoring',                 body: 'See exactly how your CV fits each role before applying. Fix the gaps before the employer sees your name.' },
+              { n: '06', title: 'Application tracker',           body: 'Track every application in one dashboard. Know what stage you are at, what to follow up, and what is next.' },
+            ].map(f => (
+              <div key={f.n} className="row-feat" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '56px 260px 1fr', gap: isMobile ? 6 : 40, padding: isMobile ? '22px 0' : '26px 0', alignItems: 'start' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.35)', fontVariantNumeric: 'tabular-nums', paddingTop: 3 }}>{f.n}</span>
+                <span style={{ fontSize: isMobile ? 15 : 16, fontWeight: 800, color: '#fff', letterSpacing: -0.2 }}>{f.title}</span>
+                <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.38)', lineHeight: 1.72 }}>{f.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── INTERACTIVE DEMO ─────────────────────────────────── */}
+      <section id="demo" style={{ padding: isMobile ? '72px 22px' : '96px 40px', maxWidth: 1240, margin: '0 auto' }}>
+        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '380px 1fr', gap: 72, alignItems: 'start' }}>
+          <div style={{ marginBottom: isMobile ? 36 : 0 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 18 }}>Live demo</p>
+            <h2 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: -1.2, marginBottom: 16 }}>
+              Watch AI rewrite a CV in real time
+            </h2>
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.38)', lineHeight: 1.75 }}>See the transformation from generic language to recruiter-ready copy that passes every ATS filter.</p>
+          </div>
+
+          <div>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, overflow: 'hidden' }}>
+              <div style={{ padding: '12px 20px', background: 'rgba(0,0,0,0.2)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {['#FF5F57', '#FFBD2E', '#28CA41'].map(c => <div key={c} style={{ width: 10, height: 10, background: c, borderRadius: '50%' }} />)}
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>CV Optimiser — AI Transform</span>
+              </div>
+
+              <div style={{ display: isMobile ? 'flex' : 'grid', gridTemplateColumns: isMobile ? undefined : '1fr 100px 1fr', flexDirection: isMobile ? 'column' : undefined }}>
+                <div style={{ padding: '24px 20px', opacity: demoStage === 'loading' ? 0 : 1, transition: 'opacity 0.3s' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14, alignItems: 'center' }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Original CV</span>
+                    <div style={{ background: 'rgba(255,100,100,0.1)', border: '1px solid rgba(255,100,100,0.18)', borderRadius: 4, padding: '3px 9px', fontSize: 11, fontWeight: 700, color: '#FF6B6B' }}>ATS: 42%</div>
+                  </div>
+                  {['Responsible for managing team', 'Worked on various projects', 'Helped with strategy'].map((t, i) => (
+                    <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,80,80,0.1)', borderRadius: 6, padding: '9px 12px', fontSize: 12, color: 'rgba(255,255,255,0.28)', lineHeight: 1.5, marginBottom: 7 }}>
+                      <span style={{ color: '#FF6B6B', marginRight: 8 }}>✕</span>{t}
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '14px 20px' : '24px 10px', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.04)', borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.04)', gap: 8 }}>
+                  {demoStage === 'loading' ? (
+                    <div style={{ width: 30, height: 30, border: '3px solid rgba(200,230,0,0.18)', borderTop: '3px solid #C8E600', borderRadius: '50%', animation: 'spinAI 0.8s linear infinite' }} />
+                  ) : (
+                    <>
+                      <button onClick={handleDemoTransform} style={{ background: demoStage === 'done' ? 'rgba(74,222,128,0.08)' : '#C8E600', color: demoStage === 'done' ? '#4ADE80' : BG, border: demoStage === 'done' ? '1px solid rgba(74,222,128,0.25)' : 'none', fontSize: 12, fontWeight: 800, padding: '10px 14px', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                        {demoStage === 'done' ? '✓ Done' : 'Transform →'}
+                      </button>
+                      {demoStage === 'done' && <button onClick={() => { setDemoStage('idle'); setDemoAts(42); }} style={{ background: 'transparent', border: 'none', fontSize: 10, color: 'rgba(255,255,255,0.18)', cursor: 'pointer' }}>Reset</button>}
+                    </>
+                  )}
+                </div>
+
+                <div style={{ padding: '24px 20px', opacity: demoStage === 'done' ? 1 : 0.2, animation: demoStage === 'done' ? 'slideRight 0.4s ease-out' : 'none', transition: 'opacity 0.4s' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14, alignItems: 'center' }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: demoStage === 'done' ? 'rgba(200,230,0,0.65)' : 'rgba(255,255,255,0.15)', letterSpacing: '1.5px', textTransform: 'uppercase', transition: 'color 0.4s' }}>AI-optimised</span>
+                    <div style={{ background: demoStage === 'done' ? 'rgba(200,230,0,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${demoStage === 'done' ? 'rgba(200,230,0,0.18)' : 'rgba(255,255,255,0.05)'}`, borderRadius: 4, padding: '3px 9px', fontSize: 11, fontWeight: 700, color: demoStage === 'done' ? '#C8E600' : 'rgba(255,255,255,0.15)', transition: 'all 0.4s' }}>
+                      ATS: {demoStage === 'done' ? `${demoAts}%` : '—'}
+                    </div>
+                  </div>
+                  {['Led cross-functional team of 12 driving 40% efficiency gains', 'Delivered 5 enterprise projects on time and 15% under budget', 'Architected go-to-market strategy generating $2.4M revenue'].map((t, i) => (
+                    <div key={i} style={{ background: demoStage === 'done' ? 'rgba(200,230,0,0.03)' : 'rgba(255,255,255,0.01)', border: `1px solid ${demoStage === 'done' ? 'rgba(200,230,0,0.1)' : 'rgba(255,255,255,0.04)'}`, borderRadius: 6, padding: '9px 12px', fontSize: 12, color: demoStage === 'done' ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.1)', lineHeight: 1.5, marginBottom: 7, transition: `all 0.4s ${i * 0.08}s` }}>
+                      <span style={{ color: demoStage === 'done' ? '#C8E600' : 'rgba(255,255,255,0.1)', marginRight: 8, transition: 'color 0.3s' }}>✓</span>{t}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div style={{ marginTop: 20, textAlign: 'center' }}>
+              <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: 14, fontWeight: 800, padding: '13px 32px', borderRadius: 8, textDecoration: 'none', display: 'inline-block' }}>Transform my CV now →</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ─────────────────────────────────────── */}
+      <section style={{ padding: isMobile ? '72px 22px' : '96px 40px', borderTop: DIVIDE, maxWidth: 1240, margin: '0 auto' }}>
+        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '380px 1fr', gap: 72, alignItems: 'start' }}>
+          <div style={{ marginBottom: isMobile ? 40 : 0 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 18 }}>Results</p>
+            <h2 style={{ fontSize: isMobile ? 30 : 44, fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: -1.2, marginBottom: 20 }}>
+              Real people.<br />Real results.
+            </h2>
+            <div style={{ padding: '20px 0', borderTop: DIVIDE }}>
+              <div style={{ fontSize: isMobile ? 40 : 52, fontWeight: 800, color: '#C8E600', lineHeight: 1, letterSpacing: -2, fontVariantNumeric: 'tabular-nums' }}>11 days</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', marginTop: 6 }}>Average time from signup to first interview</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderTop: DIVIDE }}>
+            {[
+              { photo: PHOTOS[5], name: 'Thabo N.', result: 'Hired in 3 weeks', quote: 'I applied to 30 jobs manually for 4 months. Zero responses. After Jobsesame I had 4 interviews in 10 days. The AI knew exactly what recruiters wanted to see.' },
+              { photo: PHOTOS[0], name: 'Amara D.', result: 'ATS: 38% → 91%', quote: 'My CV was good. Jobsesame made it exceptional. The ATS score went from 38 to 91 percent. I got a callback within 48 hours.' },
+              { photo: PHOTOS[1], name: 'James K.', result: 'Relocated internationally', quote: 'I was relocating and had no idea what employers there wanted. Jobsesame rewrote my CV perfectly for the market. I got the job.' },
+            ].map(t => (
+              <div key={t.name} style={{ padding: isMobile ? '28px 0' : '36px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', gap: 2, marginBottom: 14 }}>
+                  {[1,2,3,4,5].map(n => <span key={n} style={{ color: '#C8E600', fontSize: 12 }}>★</span>)}
+                </div>
+                <p style={{ fontSize: isMobile ? 16 : 19, color: 'rgba(255,255,255,0.78)', lineHeight: 1.58, fontStyle: 'italic', marginBottom: 18, fontWeight: 500, letterSpacing: -0.2 }}>&ldquo;{t.quote}&rdquo;</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <img src={t.photo} loading="lazy" width={38} height={38} alt={t.name} style={{ borderRadius: '50%', border: '2px solid rgba(200,230,0,0.18)', background: '#1A4A2A', flexShrink: 0, objectFit: 'cover' }} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{t.name}</div>
+                    <div style={{ fontSize: 12, color: '#C8E600', fontWeight: 600 }}>{t.result}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ─────────────────────────────────────────── */}
+      <section id="pricing" style={{ padding: isMobile ? '72px 22px' : '96px 40px', borderTop: DIVIDE }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <div style={{ marginBottom: isMobile ? 44 : 60 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 14 }}>Pricing</p>
+            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: '#fff', lineHeight: 1.06, letterSpacing: -1.5, marginBottom: 12 }}>
+              Simple pricing.<br /><span style={{ color: '#C8E600' }}>Serious results.</span>
+            </h2>
+            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.35)' }}>Start free. Upgrade when you are ready.</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 14, alignItems: 'start' }}>
+            {[
+              { name: 'Free', price: 'R0', usdPrice: '$0', per: ' forever', features: ['3 Quick Apply credits', 'AI CV analysis', 'ATS score check', 'Browse 495,000+ jobs', 'No card needed'], popular: false, btn: 'Get started free' },
+              { name: 'Credits', price: 'R99', usdPrice: '$5', per: ' per pack', features: ['10 Quick Apply credits', 'Credits never expire', 'AI CV rewrite per job', 'Cover letter generation', 'All job categories'], popular: false, btn: 'Buy credits' },
+              { name: 'Pro', price: 'R249', usdPrice: '$14', per: ' /month', features: ['Unlimited Quick Apply', 'Unlimited CV rewrites', 'Priority support', 'Cover letters included', 'Application tracking'], popular: true, btn: 'Go Pro' },
+            ].map(p => (
+              <div key={p.name} style={{ background: p.popular ? 'rgba(200,230,0,0.04)' : 'rgba(255,255,255,0.02)', border: `1.5px solid ${p.popular ? 'rgba(200,230,0,0.3)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 12, padding: '26px 22px', position: 'relative' }}>
+                {p.popular && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#C8E600', color: BG, fontSize: 10, fontWeight: 800, padding: '3px 14px', borderRadius: 4, whiteSpace: 'nowrap', letterSpacing: 0.5 }}>MOST POPULAR</div>}
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.32)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>{p.name}</div>
+                <div style={{ marginBottom: 4 }}>
+                  <span style={{ fontSize: 42, fontWeight: 800, color: p.popular ? '#C8E600' : '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{currency === 'ZAR' ? p.price : p.usdPrice}</span>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)' }}>{p.per}</span>
+                </div>
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '18px 0' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
                   {p.features.map(f => (
-                    <div key={f} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
-                      <svg width="16" height="16" viewBox="0 0 16 16" style={{ flexShrink: 0 }}>
-                        <circle cx="8" cy="8" r="7" fill={p.popular ? "rgba(200,230,0,0.12)" : "rgba(255,255,255,0.05)"} />
-                        <path d="M5 8L7 10.5L11 5.5" stroke={p.popular ? "#C8E600" : "rgba(255,255,255,0.35)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
+                      <svg width="14" height="14" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
+                        <circle cx="7" cy="7" r="6" fill={p.popular ? 'rgba(200,230,0,0.1)' : 'rgba(255,255,255,0.05)'} />
+                        <path d="M4.5 7L6.2 9L9.5 5" stroke={p.popular ? '#C8E600' : 'rgba(255,255,255,0.3)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                       {f}
                     </div>
                   ))}
                 </div>
-                <a href="/sign-up" style={{ display: "block", background: p.popular ? "#C8E600" : "rgba(255,255,255,0.06)", color: p.popular ? "#052A14" : "rgba(255,255,255,0.75)", border: `1px solid ${p.popular ? "transparent" : "rgba(255,255,255,0.1)"}`, fontSize: 14, fontWeight: 800, padding: "13px 0", borderRadius: 99, textDecoration: "none", textAlign: "center" }}>{p.btn}</a>
+                <a href="/sign-up" style={{ display: 'block', background: p.popular ? '#C8E600' : 'rgba(255,255,255,0.06)', color: p.popular ? BG : 'rgba(255,255,255,0.7)', border: `1px solid ${p.popular ? 'transparent' : 'rgba(255,255,255,0.1)'}`, fontSize: 13, fontWeight: 800, padding: '12px 0', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>{p.btn}</a>
               </div>
             ))}
           </div>
-          <div style={{ textAlign: "center", marginTop: 20 }}>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.2)" }}>🔒 30-day money back guarantee. No questions asked.</span>
+          <div style={{ textAlign: 'center', marginTop: 18 }}>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.18)' }}>30-day money-back guarantee · No questions asked</span>
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" style={{ background: "#020A04", padding: isMobile ? "72px 20px" : "96px 28px" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: isMobile ? 40 : 52 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.18)", borderRadius: 99, padding: "6px 18px", marginBottom: 24 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#C8E600", letterSpacing: "1.5px", textTransform: "uppercase" }}>FAQ</span>
-            </div>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.08, letterSpacing: -1.5, marginBottom: 16 }}>Everything you need<br />to know</h2>
-            <p style={{ fontSize: isMobile ? 14 : 17, color: "rgba(255,255,255,0.35)", maxWidth: 360, margin: "0 auto 24px" }}>Got questions? We have answers.</p>
-            <div style={{ position: "relative", maxWidth: 440, margin: "0 auto" }}>
-              <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "rgba(255,255,255,0.25)", pointerEvents: "none" }}>🔍</span>
-              <input value={faqSearch} onChange={e => setFaqSearch(e.target.value)} placeholder="Search questions..." style={{ width: "100%", padding: "13px 16px 13px 40px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, fontSize: 14, color: "#FFFFFF", outline: "none", fontFamily: "inherit" }} />
+      {/* ── FAQ ──────────────────────────────────────────────── */}
+      <section id="faq" style={{ padding: isMobile ? '72px 22px' : '96px 40px', borderTop: DIVIDE, maxWidth: 900, margin: '0 auto' }}>
+        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '320px 1fr', gap: 72, alignItems: 'start' }}>
+          <div style={{ marginBottom: isMobile ? 36 : 0 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 18 }}>FAQ</p>
+            <h2 style={{ fontSize: isMobile ? 28 : 40, fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: -1.2, marginBottom: 16 }}>
+              Everything<br />you need<br />to know
+            </h2>
+            <div style={{ position: 'relative', marginTop: 24 }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'rgba(255,255,255,0.22)', pointerEvents: 'none' }}>⌕</span>
+              <input value={faqSearch} onChange={e => setFaqSearch(e.target.value)} placeholder="Search questions..." style={{ width: '100%', padding: '12px 14px 12px 36px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, fontSize: 13, color: '#fff', fontFamily: 'inherit' }} />
             </div>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+
+          <div>
             {filteredFaqs.length === 0
-              ? <div style={{ textAlign: "center", padding: "32px", color: "rgba(255,255,255,0.25)", fontSize: 14 }}>No questions match &ldquo;{faqSearch}&rdquo;</div>
+              ? <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', padding: '24px 0' }}>No questions match &ldquo;{faqSearch}&rdquo;</div>
               : filteredFaqs.map((faq, i) => (
-                <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${openFaq === i ? "rgba(200,230,0,0.22)" : "rgba(255,255,255,0.06)"}`, borderRadius: 14, overflow: "hidden", transition: "border-color 0.2s" }}>
-                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", gap: 12 }}>
-                    <span style={{ fontSize: isMobile ? 14 : 15, fontWeight: 600, color: "rgba(255,255,255,0.8)", lineHeight: 1.4, flex: 1 }}>{faq.q}</span>
-                    <span style={{ width: 24, height: 24, border: "1px solid rgba(200,230,0,0.25)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "#C8E600", flexShrink: 0, transform: openFaq === i ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>+</span>
+                <div key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 0', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16 }}>
+                    <span style={{ fontSize: isMobile ? 14 : 15, fontWeight: 600, color: 'rgba(255,255,255,0.78)', lineHeight: 1.4, flex: 1 }}>{faq.q}</span>
+                    <span style={{ fontSize: 18, color: '#C8E600', flexShrink: 0, transform: openFaq === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.18s', lineHeight: 1 }}>+</span>
                   </button>
                   {openFaq === i && (
-                    <div style={{ padding: "0 22px 20px", animation: "faqSlide 0.2s ease-out" }}>
-                      <div style={{ height: 1, background: "rgba(255,255,255,0.05)", marginBottom: 14 }} />
-                      <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", lineHeight: 1.8, margin: 0 }}>{faq.a}</p>
+                    <div style={{ paddingBottom: 18 }}>
+                      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.42)', lineHeight: 1.8, margin: 0 }}>{faq.a}</p>
                     </div>
                   )}
                 </div>
@@ -778,79 +762,77 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section style={{ background: "#052A14", padding: isMobile ? "88px 20px" : "120px 28px", textAlign: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse 70% 55% at 50% 50%,rgba(200,230,0,0.08) 0%,transparent 70%)", pointerEvents: "none", animation: "glowPulse 4s ease-in-out infinite" }} />
-        <div style={{ maxWidth: 600, margin: "0 auto", position: "relative", zIndex: 1 }}>
-          <h2 style={{ fontSize: isMobile ? 32 : 56, fontWeight: 800, color: "#FFFFFF", lineHeight: 1.05, letterSpacing: -2, marginBottom: 16 }}>Stop sending CVs<br />into the void.</h2>
-          <p style={{ fontSize: isMobile ? 16 : 19, color: "rgba(255,255,255,0.45)", lineHeight: 1.7, maxWidth: 440, margin: "0 auto 36px" }}>
+      {/* ── FINAL CTA ────────────────────────────────────────── */}
+      <section style={{ padding: isMobile ? '88px 22px' : '120px 40px', borderTop: DIVIDE }}>
+        <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: isMobile ? 34 : 58, fontWeight: 800, color: '#fff', lineHeight: 1.03, letterSpacing: -2.5, marginBottom: 18 }}>
+            Stop sending CVs<br />into the void.
+          </h2>
+          <p style={{ fontSize: isMobile ? 16 : 18, color: 'rgba(255,255,255,0.4)', lineHeight: 1.72, maxWidth: 460, margin: '0 auto 36px' }}>
             Join 2,400+ job seekers who stopped applying manually and started getting interviews.
           </p>
-          <a href="/sign-up" style={{ background: "#C8E600", color: "#052A14", fontSize: isMobile ? 15 : 17, fontWeight: 800, padding: "18px 44px", borderRadius: 99, textDecoration: "none", display: "inline-block", animation: "ctaGlow 2.5s ease-in-out infinite", marginBottom: 28 }}>
+          <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: isMobile ? 15 : 17, fontWeight: 800, padding: isMobile ? '16px 32px' : '18px 48px', borderRadius: 8, textDecoration: 'none', display: 'inline-block', animation: 'ctaGlow 2.5s ease-in-out infinite', marginBottom: 24 }}>
             Get your first 3 applications free
           </a>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center" }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex' }}>
               {PHOTOS.map((src, i) => (
-                <img key={i} src={src} crossOrigin="anonymous" loading="lazy" width={30} height={30} alt="Member"
-                  style={{ borderRadius: "50%", border: "2px solid rgba(5,42,20,0.8)", marginLeft: i === 0 ? 0 : -7, zIndex: 5 - i, position: "relative", background: "#1A4A2A", objectFit: "cover" }} />
+                <img key={i} src={src} loading="lazy" width={28} height={28} alt=""
+                  style={{ borderRadius: '50%', border: `2px solid ${BG}`, marginLeft: i === 0 ? 0 : -7, zIndex: 6 - i, position: 'relative', objectFit: 'cover', background: '#1A4A2A' }} />
               ))}
             </div>
-            <span style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>2,400+ new members this week</span>
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>2,400+ new members this week</span>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer style={{ background: "#020804", borderTop: "1px solid rgba(255,255,255,0.04)", padding: isMobile ? "48px 20px 96px" : "64px 28px 32px" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "2fr 1fr 1fr 1fr", gap: isMobile ? "32px 24px" : 40, marginBottom: 48 }}>
-            <div style={{ gridColumn: isMobile ? "1 / -1" : "auto" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 30, height: 30, background: "#C8E600", borderRadius: 7, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="17" height="17" viewBox="0 0 22 22" fill="none"><circle cx="9" cy="9" r="5.5" stroke="#052A14" strokeWidth="2.2" /><circle cx="9" cy="9" r="2.5" fill="#052A14" opacity="0.4" /><line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#052A14" strokeWidth="2.8" strokeLinecap="round" /></svg>
+      {/* ── FOOTER ───────────────────────────────────────────── */}
+      <footer style={{ background: '#040F07', borderTop: DIVIDE, padding: isMobile ? '48px 22px 96px' : '64px 40px 36px' }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1fr 1fr 1fr', gap: isMobile ? '32px 24px' : 40, marginBottom: 48 }}>
+            <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <div style={{ width: 28, height: 28, background: '#C8E600', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="15" height="15" viewBox="0 0 22 22" fill="none"><circle cx="9" cy="9" r="5.5" stroke="#061A0C" strokeWidth="2.2" /><circle cx="9" cy="9" r="2.5" fill="#061A0C" opacity="0.4" /><line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#061A0C" strokeWidth="2.8" strokeLinecap="round" /></svg>
                 </div>
-                <span style={{ fontSize: 16, fontWeight: 800 }}><span style={{ color: "#FFFFFF" }}>job</span><span style={{ color: "#C8E600" }}>sesame</span></span>
+                <span style={{ fontSize: 16, fontWeight: 800 }}><span style={{ color: '#fff' }}>job</span><span style={{ color: '#C8E600' }}>sesame</span></span>
               </div>
-              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.18)", lineHeight: 1.8, maxWidth: 220, marginBottom: 6 }}>AI-powered job applications for professionals who refuse to be ignored.</p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.1)", marginBottom: 6 }}>Jobsesame (Pty) Ltd · South Africa</p>
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.1)" }}><a href="mailto:support@jobsesame.co.za" style={{ color: "rgba(255,255,255,0.15)", textDecoration: "none" }}>support@jobsesame.co.za</a></p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.16)', lineHeight: 1.8, maxWidth: 220, marginBottom: 6 }}>AI-powered job applications for professionals who refuse to be ignored.</p>
+              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.1)', marginBottom: 6 }}>Jobsesame (Pty) Ltd · South Africa</p>
+              <a href="mailto:support@jobsesame.co.za" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none' }}>support@jobsesame.co.za</a>
             </div>
             {[
-              { heading: "Product", links: [{ label: "Find Jobs", href: "/jobs" }, { label: "CV Optimiser", href: "/optimise" }, { label: "Dashboard", href: "/dashboard" }] },
-              { heading: "Company", links: [{ label: "About", href: "/about" }, { label: "Recruiters", href: "/recruiters" }, { label: "Blog", href: "/blog" }, { label: "Contact", href: "mailto:hello@jobsesame.co.za" }] },
-              { heading: "Legal", links: [{ label: "Privacy Policy", href: "/privacy" }, { label: "Terms of Service", href: "/terms" }, { label: "Refund Policy", href: "/refund" }, { label: "Cookie Policy", href: "/privacy#cookies" }, { label: "Delete My Data", href: "/delete-data" }] },
+              { heading: 'Product', links: [['Find Jobs', '/jobs'], ['CV Optimiser', '/optimise'], ['UK Market', '/uk'], ['Dashboard', '/dashboard']] },
+              { heading: 'Company', links: [['About', '/about'], ['Recruiters', '/recruiters'], ['Blog', '/blog'], ['Contact', 'mailto:hello@jobsesame.co.za']] },
+              { heading: 'Legal',   links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Refund Policy', '/refund'], ['Delete My Data', '/delete-data']] },
             ].map(col => (
               <div key={col.heading}>
-                <div style={{ fontSize: 10, color: "#C8E600", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", marginBottom: 16 }}>{col.heading}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {col.links.map(l => (
-                    <a key={l.label} href={l.href} className="nav-link" style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", textDecoration: "none" }}>{l.label}</a>
-                  ))}
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 16 }}>{col.heading}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {col.links.map(([l, h]) => <a key={l} href={h} className="nav-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.24)', textDecoration: 'none' }}>{l}</a>)}
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: 20, display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.12)" }}>© 2025 Jobsesame (Pty) Ltd. All rights reserved.</span>
-              <div style={{ display: "flex", gap: 20 }}>
-                {["Twitter", "LinkedIn", "Instagram"].map(s => <span key={s} style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", cursor: "pointer" }}>{s}</span>)}
+          <div style={{ borderTop: DIVIDE, paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.12)' }}>© 2025 Jobsesame (Pty) Ltd. All rights reserved.</span>
+              <div style={{ display: 'flex', gap: 20 }}>
+                {['Twitter', 'LinkedIn', 'Instagram'].map(s => <span key={s} style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', cursor: 'pointer' }}>{s}</span>)}
               </div>
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center" }}>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.1)" }}>Jobsesame is registered with the South African Information Regulator under POPIA</span>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.1)" }}>support@jobsesame.co.za</span>
-              <a href="/unsubscribe" style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", textDecoration: "none" }}>Unsubscribe from emails</a>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.1)' }}>Registered with the South African Information Regulator under POPIA</span>
+              <a href="/unsubscribe" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none' }}>Unsubscribe from emails</a>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* MOBILE STICKY BOTTOM BAR */}
+      {/* MOBILE STICKY BAR */}
       {isMobile && !isSignedIn && (
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 300, background: "rgba(3,15,7,0.96)", backdropFilter: "blur(20px)", borderTop: "1px solid rgba(200,230,0,0.2)", padding: "12px 20px", paddingBottom: "calc(12px + env(safe-area-inset-bottom))" }}>
-          <a href="/sign-up" style={{ display: "block", background: "#C8E600", color: "#052A14", fontSize: 15, fontWeight: 800, padding: "16px 24px", borderRadius: 99, textDecoration: "none", textAlign: "center", boxShadow: "0 4px 24px rgba(200,230,0,0.35)" }}>
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300, background: 'rgba(4,12,6,0.97)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(200,230,0,0.15)', padding: '12px 20px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
+          <a href="/sign-up" style={{ display: 'block', background: '#C8E600', color: BG, fontSize: 15, fontWeight: 800, padding: '15px 24px', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>
             Get started free — 3 free applications
           </a>
         </div>

@@ -239,11 +239,6 @@ export default function UKPage() {
 
           {/* Left: headline */}
           <div>
-            <div style={{ display:'inline-flex', alignItems:'center', gap:7, marginBottom:24, background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.08)', borderRadius:6, padding:'5px 12px' }}>
-              <span style={{ width:5, height:5, borderRadius:'50%', background:'#C8E600', display:'inline-block', flexShrink:0 }} />
-              <span style={{ fontSize:12, color:'rgba(255,255,255,.5)', fontWeight:500, letterSpacing:.2 }}>UK job market · AI-powered applications</span>
-            </div>
-
             <h1 style={{ fontSize: isMobile ? 'clamp(36px,10vw,46px)' : 'clamp(46px,4.5vw,64px)', fontWeight:800, color:'#fff', lineHeight:1.04, marginBottom:22, letterSpacing:-2 }}>
               Get every UK<br />job application<br /><span style={{ color:'#C8E600' }}>actually seen.</span>
             </h1>
