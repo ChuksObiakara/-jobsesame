@@ -8,7 +8,7 @@ const PHOTOS = [
   'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
   'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face',
-  'https://images.unsplash.com/photo-1507152927303-50cbf7093570?w=80&h=80&fit=crop&crop=face',
+  'https://images.unsplash.com/photo-1531384441138-2736e62e0919?w=80&h=80&fit=crop&crop=face',
 ];
 
 export default function Home() {
@@ -212,13 +212,6 @@ export default function Home() {
         transition: "all 0.3s",
       }}>
         <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flexShrink: 0 }}>
-          <div style={{ width: 36, height: 36, background: "#C8E600", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-              <circle cx="9" cy="9" r="5.5" stroke="#052A14" strokeWidth="2.2" />
-              <circle cx="9" cy="9" r="2.5" fill="#052A14" opacity="0.4" />
-              <line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#052A14" strokeWidth="2.8" strokeLinecap="round" />
-            </svg>
-          </div>
           <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.5 }}>
             <span style={{ color: "#FFFFFF" }}>job</span><span style={{ color: "#C8E600" }}>sesame</span>
           </span>
