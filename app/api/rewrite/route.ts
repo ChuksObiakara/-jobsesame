@@ -18,18 +18,17 @@ function checkRateLimit(userId: string, maxRequests: number): boolean {
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
-    if (userId && !checkRateLimit(userId, 20)) {
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!checkRateLimit(userId, 20)) {
       return NextResponse.json({ error: 'Rate limit exceeded. Try again in an hour.' }, { status: 429 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const creditsResponse = await fetch(`${baseUrl}/api/credits`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'deduct' }),
-    });
-    const creditsData = await creditsResponse.json();
-    if (creditsData.paywall) return NextResponse.json({ error: 'No credits remaining', paywall: true }, { status: 402 });
+    // Credit check via Prisma directly (server-side HTTP fetch can't pass auth cookies)
+    const { prisma } = await import('@/app/lib/prisma');
+    const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (dbUser && !dbUser.isPro && dbUser.credits <= 0) {
+      return NextResponse.json({ error: 'No credits remaining', paywall: true }, { status: 402 });
+    }
 
     const body = await request.json();
     const { cvData, jobTitle, jobDescription, jobCompany, company, userPrompt, coverLetter } = body;

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const reference = `jobsesame_${plan}_${Date.now()}`;
-    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/payment/success`;
+    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co.za'}/payment/success`;
 
     const res = await fetch('https://api.paystack.co/transaction/initialize', {
       method: 'POST',

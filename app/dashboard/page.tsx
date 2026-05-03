@@ -120,7 +120,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (isSignedIn && user) {
-      sendWelcomeEmailOnce();
       // Defer referral link — non-critical, load after main content
       setTimeout(() => generateReferralLink(), 2000);
       // Sync user to database
@@ -298,6 +297,11 @@ export default function Dashboard() {
     const updated = applications.map(a => a.id === id ? { ...a, status } : a);
     setApplications(updated);
     localStorage.setItem('jobsesame_applications', JSON.stringify(updated));
+    fetch('/api/user/applications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ applicationId: id, status }),
+    }).catch(() => {});
   };
 
   const sendWelcomeEmailOnce = async () => {

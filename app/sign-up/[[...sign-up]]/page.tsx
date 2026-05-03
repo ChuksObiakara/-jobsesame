@@ -7,7 +7,7 @@ export default function Page() {
           Job<span style={{color:"#DFFF00"}}>sesame</span>
         </span>
       </div>
-      <SignUp forceRedirectUrl="/dashboard" fallbackRedirectUrl="/dashboard" />
+      <SignUp forceRedirectUrl="/onboarding" fallbackRedirectUrl="/onboarding" />
     </main>
   );
 }

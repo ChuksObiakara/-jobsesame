@@ -1,11 +1,12 @@
-// IMPORTANT — verify jobsesame.co.za domain on resend.com before this will work in production.
-// The DNS records needed are shown in the Resend dashboard under Domains.
-
 export const dynamic = 'force-dynamic';
+import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { employerEmail, jobTitle, jobCompany, candidateName, candidateEmail, cvData } = await req.json();
 
     if (!employerEmail || !jobTitle || !candidateEmail) {

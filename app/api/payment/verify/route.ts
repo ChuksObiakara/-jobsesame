@@ -1,6 +1,6 @@
+export const dynamic = 'force-dynamic';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
     // Reference format: jobsesame_${plan}_${timestamp}
     const plan = reference.split('_')[1] as string | undefined;
 
+    const { prisma } = await import('@/app/lib/prisma');
     const { userId } = await auth();
     let user = userId ? await prisma.user.findUnique({ where: { clerkId: userId } }) : null;
 
