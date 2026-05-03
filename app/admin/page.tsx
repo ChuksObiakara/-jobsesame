@@ -49,6 +49,12 @@ export default function AdminPage() {
   const [savedJobsCount, setSavedJobsCount] = useState(0);
   const [localPosts, setLocalPosts] = useState<Post[]>([]);
 
+  // DB stats
+  interface DbStats { userCount: number; applicationCount: number; cvCount: number; savedJobCount: number; revenueZAR: string; todayApplicationCount: number; }
+  const [dbStats, setDbStats] = useState<DbStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [statsUpdatedAt, setStatsUpdatedAt] = useState<string | null>(null);
+
   // New post form
   const [newTitle, setNewTitle] = useState('');
   const [newSlug, setNewSlug] = useState('');
@@ -74,6 +80,18 @@ export default function AdminPage() {
       const stored = localStorage.getItem('jobsesame_blog_posts');
       setLocalPosts(stored ? JSON.parse(stored) : []);
     } catch {}
+
+    setLoadingStats(true);
+    fetch(`/api/admin/stats?pw=${encodeURIComponent(ADMIN_PASSWORD)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (!d.error) {
+          setDbStats({ userCount: d.userCount, applicationCount: d.applicationCount, cvCount: d.cvCount, savedJobCount: d.savedJobCount, revenueZAR: d.revenueZAR, todayApplicationCount: d.todayApplicationCount });
+          setStatsUpdatedAt(d.lastUpdated);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingStats(false));
   }, [authed]);
 
   const allPosts = [...localPosts, ...HARDCODED_POSTS];
@@ -222,12 +240,14 @@ export default function AdminPage() {
         {tab === 'overview' && (
           <>
             {/* Stats grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 8 }}>
               {[
+                { label: 'Total users', value: loadingStats ? '…' : (dbStats?.userCount ?? '—'), icon: '👤', color: '#C8E600' },
+                { label: 'Applications tracked', value: loadingStats ? '…' : (dbStats?.applicationCount ?? applications.length), icon: '📤', color: '#90C898' },
+                { label: 'CVs uploaded', value: loadingStats ? '…' : (dbStats?.cvCount ?? '—'), icon: '📄', color: '#A8D8B0' },
+                { label: 'Revenue (ZAR)', value: loadingStats ? '…' : (dbStats ? `R${Number(dbStats.revenueZAR).toLocaleString()}` : '—'), icon: '💰', color: '#FFA500' },
                 { label: 'Published posts', value: publishedCount, icon: '📝', color: '#C8E600' },
                 { label: 'Recruiter signups', value: recruiterSubs.length, icon: '🏢', color: '#FFA500' },
-                { label: 'Applications tracked', value: applications.length, icon: '📤', color: '#90C898' },
-                { label: 'Saved jobs', value: savedJobsCount, icon: '🔖', color: '#A8D8B0' },
               ].map(s => (
                 <div key={s.label} style={{ background: '#072E16', border: '1.5px solid #1A4A2A', borderRadius: 14, padding: '20px 22px' }}>
                   <div style={{ fontSize: 11, color: '#3A7A4A', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>{s.icon} {s.label}</div>
@@ -235,6 +255,16 @@ export default function AdminPage() {
                 </div>
               ))}
             </div>
+            {statsUpdatedAt && (
+              <div style={{ fontSize: 11, color: '#3A7A4A', marginBottom: 24, textAlign: 'right' }}>
+                Last updated: {new Date(statsUpdatedAt).toLocaleString()}
+              </div>
+            )}
+            {!statsUpdatedAt && !loadingStats && (
+              <div style={{ fontSize: 11, color: '#5A2020', marginBottom: 24, textAlign: 'right' }}>
+                DB stats unavailable — check API
+              </div>
+            )}
 
             {/* Quick actions */}
             <div style={{ ...cardStyle, marginBottom: 24 }}>
@@ -262,7 +292,7 @@ export default function AdminPage() {
                 <div>
                   <div style={{ fontSize: 11, color: '#3A7A4A', fontWeight: 700 }}>APPLICATIONS TODAY</div>
                   <div style={{ fontSize: 26, fontWeight: 800, color: '#C8E600' }}>
-                    {applications.filter(a => a.dateApplied?.startsWith(todayStr)).length}
+                    {loadingStats ? '…' : (dbStats?.todayApplicationCount ?? applications.filter(a => a.dateApplied?.startsWith(todayStr)).length)}
                   </div>
                 </div>
                 <div>
