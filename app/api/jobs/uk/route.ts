@@ -156,7 +156,6 @@ async function fetchReed(skip = 0): Promise<UKJob[]> {
       resultsToTake: '100',
       resultsToSkip: String(skip),
     });
-    // Reed uses HTTP Basic auth: API key as username, empty password
     const credentials = Buffer.from(`${apiKey}:`).toString('base64');
     const res = await fetch(`https://www.reed.co.uk/api/1.0/search?${params}`, {
       headers: { Authorization: `Basic ${credentials}` },
@@ -194,7 +193,7 @@ async function fetchReed(skip = 0): Promise<UKJob[]> {
 }
 
 // ── Arbeitnow ─────────────────────────────────────────────────────────────────
-// Free, no auth required — https://arbeitnow.com/api/job-board-api
+// Free, no auth — https://arbeitnow.com/api/job-board-api
 async function fetchArbeitnow(page = 1): Promise<UKJob[]> {
   try {
     const res = await fetch(`https://arbeitnow.com/api/job-board-api?page=${page}`, {
@@ -207,7 +206,6 @@ async function fetchArbeitnow(page = 1): Promise<UKJob[]> {
     const data = await res.json();
     return (data.data || [])
       .filter((job: any) => {
-        // Keep jobs that are remote or mention UK in location/tags
         const loc = (job.location || '').toLowerCase();
         const tags = ((job.tags || []) as string[]).join(' ').toLowerCase();
         return (
@@ -231,10 +229,7 @@ async function fetchArbeitnow(page = 1): Promise<UKJob[]> {
           url: rawUrl,
           source: 'Arbeitnow',
           description: (job.description || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
-          tags: [
-            ...(job.tags || []).slice(0, 2),
-            job.remote ? 'Remote' : null,
-          ].filter(Boolean) as string[],
+          tags: [...(job.tags || []).slice(0, 2), job.remote ? 'Remote' : null].filter(Boolean) as string[],
           postedAt: job.created_at ? new Date(job.created_at * 1000).toISOString() : '',
           applyType: applyType(rawUrl),
           applyUrl: rawUrl,
@@ -242,6 +237,142 @@ async function fetchArbeitnow(page = 1): Promise<UKJob[]> {
       });
   } catch (err) {
     console.error(`[UK Jobs] Arbeitnow page ${page} error:`, err);
+    return [];
+  }
+}
+
+// ── Jooble ────────────────────────────────────────────────────────────────────
+// Free API key from https://jooble.org/api/about — aggregates 140k+ sources
+async function fetchJooble(page = 1): Promise<UKJob[]> {
+  const apiKey = process.env.JOOBLE_API_KEY;
+  if (!apiKey) return [];
+  try {
+    const res = await fetch(`https://jooble.org/api/${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keywords: '', location: 'United Kingdom', page }),
+      next: { revalidate: 1800 },
+    });
+    if (!res.ok) {
+      console.warn(`[UK Jobs] Jooble page ${page} → HTTP ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    return (data.jobs || []).map((job: any): UKJob => {
+      const rawUrl = job.link || '#';
+      return {
+        id: `jooble-${Buffer.from(rawUrl).toString('base64').substring(0, 16)}`,
+        title: job.title || '',
+        company: job.company || 'Company',
+        location: job.location || 'United Kingdom',
+        salary: job.salary || '',
+        url: rawUrl,
+        source: 'Jooble',
+        description: (job.snippet || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+        tags: [job.type].filter(Boolean) as string[],
+        postedAt: job.updated || '',
+        applyType: applyType(rawUrl),
+        applyUrl: rawUrl,
+      };
+    });
+  } catch (err) {
+    console.error(`[UK Jobs] Jooble page ${page} error:`, err);
+    return [];
+  }
+}
+
+// ── The Muse ──────────────────────────────────────────────────────────────────
+// Free, no auth — https://www.themuse.com/developers/api/v2
+async function fetchTheMuse(page = 0): Promise<UKJob[]> {
+  try {
+    const params = new URLSearchParams({
+      location: 'London, England, United Kingdom',
+      page: String(page),
+      descending: 'true',
+    });
+    const res = await fetch(`https://www.themuse.com/api/public/jobs?${params}`, {
+      next: { revalidate: 1800 },
+    });
+    if (!res.ok) {
+      console.warn(`[UK Jobs] The Muse page ${page} → HTTP ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    return (data.results || []).map((job: any): UKJob => {
+      const rawUrl = job.refs?.landing_page || '#';
+      const location = (job.locations || []).map((l: any) => l.name).join(', ') || 'United Kingdom';
+      const level = (job.levels || []).map((l: any) => l.name).join(', ');
+      const category = (job.categories || []).map((c: any) => c.name)[0] || '';
+      return {
+        id: `muse-${job.id}`,
+        title: job.name || '',
+        company: job.company?.name || 'Company',
+        location,
+        salary: '',
+        url: rawUrl,
+        source: 'The Muse',
+        description: (job.contents || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+        tags: [level, category].filter(Boolean) as string[],
+        postedAt: job.publication_date || '',
+        applyType: applyType(rawUrl),
+        applyUrl: rawUrl,
+      };
+    });
+  } catch (err) {
+    console.error(`[UK Jobs] The Muse page ${page} error:`, err);
+    return [];
+  }
+}
+
+// ── Careerjet ─────────────────────────────────────────────────────────────────
+// Free affiliate key from https://www.careerjet.co.uk/partners/search — set CAREERJET_AFFILIATE_ID
+async function fetchCareerjet(page = 1): Promise<UKJob[]> {
+  const affid = process.env.CAREERJET_AFFILIATE_ID;
+  if (!affid) return [];
+  try {
+    const params = new URLSearchParams({
+      affid,
+      keywords: '',
+      location: 'United Kingdom',
+      locale_code: 'en_GB',
+      user_ip: '127.0.0.1',
+      user_agent: 'Jobsesame/1.0',
+      url: 'https://www.jobsesame.co.za/uk/jobs',
+      sort: 'date',
+      pagesize: '99',
+      page: String(page),
+    });
+    const res = await fetch(`https://public.api.careerjet.net/search?${params}`, {
+      next: { revalidate: 1800 },
+    });
+    if (!res.ok) {
+      console.warn(`[UK Jobs] Careerjet page ${page} → HTTP ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    if (data.type === 'ERROR') {
+      console.warn('[UK Jobs] Careerjet error:', data.error);
+      return [];
+    }
+    return (data.jobs || []).map((job: any): UKJob => {
+      const rawUrl = job.url || '#';
+      return {
+        id: `careerjet-${Buffer.from(rawUrl).toString('base64').substring(0, 16)}`,
+        title: job.title || '',
+        company: job.company || 'Company',
+        location: job.locations || 'United Kingdom',
+        salary: job.salary || '',
+        url: rawUrl,
+        source: 'Careerjet',
+        description: (job.description || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+        tags: [],
+        postedAt: job.date || '',
+        applyType: applyType(rawUrl),
+        applyUrl: rawUrl,
+      };
+    });
+  } catch (err) {
+    console.error(`[UK Jobs] Careerjet page ${page} error:`, err);
     return [];
   }
 }
@@ -261,29 +392,23 @@ function dedupe(jobs: UKJob[]): UKJob[] {
 export async function GET() {
   try {
     const [
-      adzunaPage1,
-      adzunaPage2,
-      adzunaPage3,
-      adzunaPage4,
-      adzunaPage5,
+      adzunaPage1, adzunaPage2, adzunaPage3, adzunaPage4, adzunaPage5,
       jsearchJobs,
       remotiveJobs,
-      reedBatch1,
-      reedBatch2,
-      arbeitnowPage1,
-      arbeitnowPage2,
+      reedBatch1, reedBatch2,
+      arbeitnowPage1, arbeitnowPage2,
+      jooble1, jooble2,
+      muse1, muse2,
+      careerjet1, careerjet2,
     ] = await Promise.all([
-      fetchAdzunaGB(1),
-      fetchAdzunaGB(2),
-      fetchAdzunaGB(3),
-      fetchAdzunaGB(4),
-      fetchAdzunaGB(5),
+      fetchAdzunaGB(1), fetchAdzunaGB(2), fetchAdzunaGB(3), fetchAdzunaGB(4), fetchAdzunaGB(5),
       fetchJSearchUK(),
       fetchRemotive(),
-      fetchReed(0),
-      fetchReed(100),
-      fetchArbeitnow(1),
-      fetchArbeitnow(2),
+      fetchReed(0), fetchReed(100),
+      fetchArbeitnow(1), fetchArbeitnow(2),
+      fetchJooble(1), fetchJooble(2),
+      fetchTheMuse(0), fetchTheMuse(1),
+      fetchCareerjet(1), fetchCareerjet(2),
     ]);
 
     const all = [
@@ -292,22 +417,29 @@ export async function GET() {
       ...remotiveJobs,
       ...reedBatch1, ...reedBatch2,
       ...arbeitnowPage1, ...arbeitnowPage2,
+      ...jooble1, ...jooble2,
+      ...muse1, ...muse2,
+      ...careerjet1, ...careerjet2,
     ];
     const jobs = dedupe(all);
 
+    const adzunaTotal = adzunaPage1.length + adzunaPage2.length + adzunaPage3.length + adzunaPage4.length + adzunaPage5.length;
     console.log(
-      `[UK Jobs] Adzuna=${adzunaPage1.length + adzunaPage2.length + adzunaPage3.length + adzunaPage4.length + adzunaPage5.length}` +
+      `[UK Jobs] Adzuna=${adzunaTotal}` +
       ` JSearch=${jsearchJobs.length}` +
       ` Remotive=${remotiveJobs.length}` +
       ` Reed=${reedBatch1.length + reedBatch2.length}` +
       ` Arbeitnow=${arbeitnowPage1.length + arbeitnowPage2.length}` +
+      ` Jooble=${jooble1.length + jooble2.length}` +
+      ` Muse=${muse1.length + muse2.length}` +
+      ` Careerjet=${careerjet1.length + careerjet2.length}` +
       ` → deduped=${jobs.length}`
     );
 
     return NextResponse.json({
       jobs,
       total: jobs.length,
-      source: 'Adzuna GB + JSearch + Remotive + Reed + Arbeitnow',
+      source: 'Adzuna + JSearch + Remotive + Reed + Arbeitnow + Jooble + The Muse + Careerjet',
     });
   } catch (err) {
     console.error('[UK Jobs] Fatal error:', err);
