@@ -145,6 +145,107 @@ async function fetchRemotive(): Promise<UKJob[]> {
   }
 }
 
+// ── Reed.co.uk ────────────────────────────────────────────────────────────────
+// Sign up at https://www.reed.co.uk/developers/jobseeker — set REED_API_KEY in env
+async function fetchReed(skip = 0): Promise<UKJob[]> {
+  const apiKey = process.env.REED_API_KEY;
+  if (!apiKey) return [];
+  try {
+    const params = new URLSearchParams({
+      locationName: 'United Kingdom',
+      resultsToTake: '100',
+      resultsToSkip: String(skip),
+    });
+    // Reed uses HTTP Basic auth: API key as username, empty password
+    const credentials = Buffer.from(`${apiKey}:`).toString('base64');
+    const res = await fetch(`https://www.reed.co.uk/api/1.0/search?${params}`, {
+      headers: { Authorization: `Basic ${credentials}` },
+      next: { revalidate: 1800 },
+    });
+    if (!res.ok) {
+      console.warn(`[UK Jobs] Reed skip=${skip} → HTTP ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    return (data.results || []).map((job: any): UKJob => {
+      const rawUrl = job.jobUrl || `https://www.reed.co.uk/jobs/${job.jobId}`;
+      const salary = job.minimumSalary
+        ? `£${Math.round(job.minimumSalary).toLocaleString()}${job.maximumSalary ? ` – £${Math.round(job.maximumSalary).toLocaleString()}` : ''}`
+        : job.salary || '';
+      return {
+        id: `reed-${job.jobId}`,
+        title: job.jobTitle || '',
+        company: job.employerName || 'Company',
+        location: job.locationName || 'United Kingdom',
+        salary,
+        url: rawUrl,
+        source: 'Reed',
+        description: (job.jobDescription || job.snippet || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+        tags: [job.contractType, job.partTime ? 'Part-time' : job.fullTime ? 'Full-time' : null].filter(Boolean) as string[],
+        postedAt: job.date || '',
+        applyType: applyType(rawUrl),
+        applyUrl: job.jobUrl || rawUrl,
+      };
+    });
+  } catch (err) {
+    console.error(`[UK Jobs] Reed skip=${skip} error:`, err);
+    return [];
+  }
+}
+
+// ── Arbeitnow ─────────────────────────────────────────────────────────────────
+// Free, no auth required — https://arbeitnow.com/api/job-board-api
+async function fetchArbeitnow(page = 1): Promise<UKJob[]> {
+  try {
+    const res = await fetch(`https://arbeitnow.com/api/job-board-api?page=${page}`, {
+      next: { revalidate: 1800 },
+    });
+    if (!res.ok) {
+      console.warn(`[UK Jobs] Arbeitnow page ${page} → HTTP ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    return (data.data || [])
+      .filter((job: any) => {
+        // Keep jobs that are remote or mention UK in location/tags
+        const loc = (job.location || '').toLowerCase();
+        const tags = ((job.tags || []) as string[]).join(' ').toLowerCase();
+        return (
+          job.remote === true ||
+          loc.includes('uk') ||
+          loc.includes('united kingdom') ||
+          loc.includes('london') ||
+          loc.includes('remote') ||
+          tags.includes('uk') ||
+          tags.includes('remote')
+        );
+      })
+      .map((job: any): UKJob => {
+        const rawUrl = job.url || '#';
+        return {
+          id: `arbeitnow-${job.slug}`,
+          title: job.title || '',
+          company: job.company_name || 'Company',
+          location: job.location || (job.remote ? 'Remote' : 'United Kingdom'),
+          salary: '',
+          url: rawUrl,
+          source: 'Arbeitnow',
+          description: (job.description || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+          tags: [
+            ...(job.tags || []).slice(0, 2),
+            job.remote ? 'Remote' : null,
+          ].filter(Boolean) as string[],
+          postedAt: job.created_at ? new Date(job.created_at * 1000).toISOString() : '',
+          applyType: applyType(rawUrl),
+          applyUrl: rawUrl,
+        };
+      });
+  } catch (err) {
+    console.error(`[UK Jobs] Arbeitnow page ${page} error:`, err);
+    return [];
+  }
+}
+
 // ── Deduplicate by title + company ────────────────────────────────────────────
 function dedupe(jobs: UKJob[]): UKJob[] {
   const seen = new Set<string>();
@@ -159,24 +260,55 @@ function dedupe(jobs: UKJob[]): UKJob[] {
 // ── Handler ───────────────────────────────────────────────────────────────────
 export async function GET() {
   try {
-    const [adzunaPage1, adzunaPage2, jsearchJobs, remotiveJobs] = await Promise.all([
+    const [
+      adzunaPage1,
+      adzunaPage2,
+      adzunaPage3,
+      adzunaPage4,
+      adzunaPage5,
+      jsearchJobs,
+      remotiveJobs,
+      reedBatch1,
+      reedBatch2,
+      arbeitnowPage1,
+      arbeitnowPage2,
+    ] = await Promise.all([
       fetchAdzunaGB(1),
       fetchAdzunaGB(2),
+      fetchAdzunaGB(3),
+      fetchAdzunaGB(4),
+      fetchAdzunaGB(5),
       fetchJSearchUK(),
       fetchRemotive(),
+      fetchReed(0),
+      fetchReed(100),
+      fetchArbeitnow(1),
+      fetchArbeitnow(2),
     ]);
 
-    const all = [...adzunaPage1, ...adzunaPage2, ...jsearchJobs, ...remotiveJobs];
+    const all = [
+      ...adzunaPage1, ...adzunaPage2, ...adzunaPage3, ...adzunaPage4, ...adzunaPage5,
+      ...jsearchJobs,
+      ...remotiveJobs,
+      ...reedBatch1, ...reedBatch2,
+      ...arbeitnowPage1, ...arbeitnowPage2,
+    ];
     const jobs = dedupe(all);
 
     console.log(
-      `[UK Jobs] Adzuna=${adzunaPage1.length + adzunaPage2.length}` +
+      `[UK Jobs] Adzuna=${adzunaPage1.length + adzunaPage2.length + adzunaPage3.length + adzunaPage4.length + adzunaPage5.length}` +
       ` JSearch=${jsearchJobs.length}` +
       ` Remotive=${remotiveJobs.length}` +
+      ` Reed=${reedBatch1.length + reedBatch2.length}` +
+      ` Arbeitnow=${arbeitnowPage1.length + arbeitnowPage2.length}` +
       ` → deduped=${jobs.length}`
     );
 
-    return NextResponse.json({ jobs, total: jobs.length, source: 'Adzuna GB + JSearch + Remotive' });
+    return NextResponse.json({
+      jobs,
+      total: jobs.length,
+      source: 'Adzuna GB + JSearch + Remotive + Reed + Arbeitnow',
+    });
   } catch (err) {
     console.error('[UK Jobs] Fatal error:', err);
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch UK jobs' });
