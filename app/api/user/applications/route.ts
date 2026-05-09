@@ -3,14 +3,17 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ applications: [] });
     const { prisma } = await import('@/app/lib/prisma');
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) return NextResponse.json({ applications: [] });
-    const applications = await prisma.application.findMany({ where: { userId: user.id }, orderBy: { appliedAt: 'desc' } });
+    const market = new URL(request.url).searchParams.get('market');
+    const where: any = { userId: user.id };
+    if (market) where.market = market;
+    const applications = await prisma.application.findMany({ where, orderBy: { appliedAt: 'desc' } });
     return NextResponse.json({ applications });
   } catch (error: any) {
     return NextResponse.json({ applications: [] });

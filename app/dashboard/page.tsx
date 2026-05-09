@@ -131,7 +131,7 @@ export default function Dashboard() {
         if (typeof d.isPro === 'boolean') setIsPro(d.isPro);
       }).catch(() => {});
       // Fetch applications from database
-      fetch('/api/user/applications')
+      fetch('/api/user/applications?market=ZA')
         .then(r => r.json())
         .then(d => {
           const mapped = (d.applications || []).map((a: any) => ({

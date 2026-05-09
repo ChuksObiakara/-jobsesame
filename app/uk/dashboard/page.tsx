@@ -206,10 +206,10 @@ export default function UKDashboard() {
 
   useEffect(() => {
     if (!isSignedIn) return;
-    fetch('/api/user/applications')
+    fetch('/api/user/applications?market=GB')
       .then(r => r.json())
       .then(data => {
-        setApplications((data.applications || []).filter((a: any) => a.market === 'GB'));
+        setApplications(data.applications || []);
         setAppsLoading(false);
       })
       .catch(() => setAppsLoading(false));

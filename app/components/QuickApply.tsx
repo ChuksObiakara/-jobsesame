@@ -325,6 +325,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       body: JSON.stringify({
         jobTitle: job.title, company: job.company, location: job.location,
         jobUrl: job.url, jobSource: job.type || 'web', matchScore: rewrittenMatchPct,
+        market: 'ZA',
       }),
     }).catch(() => {});
   };
