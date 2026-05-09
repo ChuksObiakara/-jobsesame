@@ -76,10 +76,10 @@ function scoreJobMatch(cv: any, job: any): number {
   const skills: string[] = (cv.skills || []).map((s: string) => s.toLowerCase());
   const cvTitle = (cv.title || '').toLowerCase().split(' ')[0];
   const text = ((job.title || '') + ' ' + (job.description || '') + ' ' + (job.tags || []).join(' ')).toLowerCase();
-  let score = 0;
-  skills.forEach(s => { if (s.length > 2 && text.includes(s)) score += 8; });
-  if (cvTitle.length > 2 && (job.title || '').toLowerCase().includes(cvTitle)) score += 20;
-  return Math.min(97, 35 + score);
+  let skillScore = 0;
+  skills.forEach(s => { if (s.length > 2 && text.includes(s)) skillScore += 8; });
+  const titleBonus = cvTitle.length > 2 && (job.title || '').toLowerCase().includes(cvTitle) ? 20 : 0;
+  return Math.min(97, 35 + Math.min(40, skillScore) + titleBonus);
 }
 
 function getTopMatchedJobs(cv: any, jobs: any[]): any[] {
@@ -223,7 +223,13 @@ export default function UKDashboard() {
     if (ukJobs.length > 0) return; // already loaded
     fetch('/api/jobs/uk')
       .then(r => r.json())
-      .then(data => setUkJobs(data.jobs || []))
+      .then(data => {
+        const jobs: any[] = data.jobs || [];
+        const sorted = cvData
+          ? [...jobs].sort((a, b) => scoreJobMatch(cvData, b) - scoreJobMatch(cvData, a))
+          : jobs;
+        setUkJobs(sorted);
+      })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvData]);

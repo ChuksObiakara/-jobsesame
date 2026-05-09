@@ -72,7 +72,7 @@ async function fetchJSearchUK(): Promise<UKJob[]> {
     const params = new URLSearchParams({
       query: 'jobs in United Kingdom',
       page: '1',
-      num_pages: '2',
+      num_pages: '3',
     });
     const res = await fetch(`https://jsearch.p.rapidapi.com/search?${params}`, {
       headers: {
@@ -423,17 +423,16 @@ export async function GET() {
     ];
     const jobs = dedupe(all);
 
-    const adzunaTotal = adzunaPage1.length + adzunaPage2.length + adzunaPage3.length + adzunaPage4.length + adzunaPage5.length;
     console.log(
-      `[UK Jobs] Adzuna=${adzunaTotal}` +
-      ` JSearch=${jsearchJobs.length}` +
-      ` Remotive=${remotiveJobs.length}` +
-      ` Reed=${reedBatch1.length + reedBatch2.length}` +
-      ` Arbeitnow=${arbeitnowPage1.length + arbeitnowPage2.length}` +
-      ` Jooble=${jooble1.length + jooble2.length}` +
-      ` Muse=${muse1.length + muse2.length}` +
-      ` Careerjet=${careerjet1.length + careerjet2.length}` +
-      ` → deduped=${jobs.length}`
+      `[UK Jobs] Adzuna p1=${adzunaPage1.length} p2=${adzunaPage2.length} p3=${adzunaPage3.length} p4=${adzunaPage4.length} p5=${adzunaPage5.length}` +
+      ` | JSearch=${jsearchJobs.length}` +
+      ` | Remotive=${remotiveJobs.length}` +
+      ` | Reed=${reedBatch1.length}+${reedBatch2.length}` +
+      ` | Arbeitnow=${arbeitnowPage1.length}+${arbeitnowPage2.length}` +
+      ` | Jooble=${jooble1.length}+${jooble2.length}` +
+      ` | Muse=${muse1.length}+${muse2.length}` +
+      ` | Careerjet=${careerjet1.length}+${careerjet2.length}` +
+      ` | raw=${all.length} → deduped=${jobs.length}`
     );
 
     return NextResponse.json({
