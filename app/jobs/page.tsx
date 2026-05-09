@@ -3,6 +3,187 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
 
+// ── AI Search Assistant ───────────────────────────────────────────────────────
+const SA_SUGGESTIONS = [
+  'React developer Cape Town',
+  'Remote data scientist',
+  'Nurse jobs London relocation',
+  'Teach English South Korea',
+];
+
+function AISearchAssistant({
+  onResult,
+  onClear,
+  hasActiveAI,
+  isMobile,
+}: {
+  onResult: (params: any) => void;
+  onClear: () => void;
+  hasActiveAI: boolean;
+  isMobile: boolean;
+}) {
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [reply, setReply] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const submit = async (query: string) => {
+    if (!query.trim() || loading) return;
+    setInput(query);
+    setLoading(true);
+    setReply('');
+    try {
+      const res = await fetch('/api/ai-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      setReply(data.reply || '');
+      onResult(data);
+    } catch {
+      setReply("Something went wrong — try again.");
+    }
+    setLoading(false);
+  };
+
+  const clear = () => {
+    setInput('');
+    setReply('');
+    onClear();
+    inputRef.current?.focus();
+  };
+
+  return (
+    <div style={{
+      background: '#FDFFF5',
+      border: '2px solid #C8E600',
+      borderRadius: 14,
+      padding: isMobile ? '14px' : '18px 22px',
+      marginBottom: 16,
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 15 }}>✦</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: '#052A14' }}>AI Job Search</span>
+          <span style={{ fontSize: 10, color: '#4A8A5A', fontWeight: 500 }}>powered by Claude</span>
+        </div>
+        {hasActiveAI && (
+          <button
+            onClick={clear}
+            style={{ fontSize: 11, color: '#4A8A5A', background: '#EAF5EA', border: '1px solid #C8E6C8', borderRadius: 99, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Clear AI filters
+          </button>
+        )}
+      </div>
+
+      {/* Input row */}
+      <form onSubmit={e => { e.preventDefault(); submit(input); }} style={{ display: 'flex', gap: 8 }}>
+        <input
+          ref={inputRef}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder='e.g. "React developer in Cape Town" or "remote data scientist"'
+          disabled={loading}
+          style={{
+            flex: 1,
+            background: '#fff',
+            border: '2px solid #C8E600',
+            borderRadius: 10,
+            padding: '11px 15px',
+            fontSize: 14,
+            color: '#052A14',
+            outline: 'none',
+            fontFamily: 'inherit',
+            fontWeight: 600,
+            opacity: loading ? 0.7 : 1,
+          }}
+        />
+        <button
+          type="submit"
+          disabled={!input.trim() || loading}
+          style={{
+            background: input.trim() && !loading ? '#C8E600' : '#E8F4C8',
+            color: '#052A14',
+            border: 'none',
+            borderRadius: 10,
+            padding: '11px 20px',
+            fontSize: 14,
+            fontWeight: 800,
+            cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
+            whiteSpace: 'nowrap',
+            minWidth: 80,
+            transition: 'all 0.15s',
+          }}
+        >
+          {loading ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 12, height: 12, border: '2px solid rgba(5,42,20,0.2)', borderTopColor: '#052A14', borderRadius: '50%', display: 'inline-block', animation: 'aispin 0.7s linear infinite' }} />
+              {!isMobile && 'Searching'}
+            </span>
+          ) : 'Search →'}
+        </button>
+      </form>
+
+      {/* Suggestion chips */}
+      {!reply && !loading && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+          {SA_SUGGESTIONS.map(s => (
+            <button
+              key={s}
+              onClick={() => submit(s)}
+              style={{
+                fontSize: 11,
+                color: '#1A5A2A',
+                background: '#EAF5EA',
+                border: '1px solid #C8E6C8',
+                borderRadius: 99,
+                padding: '5px 12px',
+                cursor: 'pointer',
+                fontWeight: 600,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#C8E600'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#EAF5EA'; }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* AI reply bubble */}
+      {reply && !loading && (
+        <div style={{
+          marginTop: 10,
+          background: '#EAF5EA',
+          border: '1px solid #C8E6C8',
+          borderRadius: 10,
+          padding: '10px 14px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 8,
+        }}>
+          <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>✦</span>
+          <p style={{ fontSize: 13, color: '#1A4A2A', margin: 0, lineHeight: 1.55, fontWeight: 500 }}>{reply}</p>
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 13, height: 13, border: '2px solid #C8E6C8', borderTopColor: '#052A14', borderRadius: '50%', display: 'inline-block', animation: 'aispin 0.7s linear infinite' }} />
+          <span style={{ fontSize: 12, color: '#4A8A5A' }}>Analysing your request...</span>
+        </div>
+      )}
+
+      <style>{`@keyframes aispin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
 interface Job {
   id: string;
   title: string;
@@ -45,6 +226,7 @@ export default function JobsPage() {
   const [strongMatchOnly, setStrongMatchOnly] = useState(false);
   const [sortMode, setSortMode] = useState<'match' | 'date'>('match');
   const [lastSearchQuery, setLastSearchQuery] = useState('');
+  const [aiActive, setAiActive] = useState(false);
 
   const toggleSaveJob = (job: Job) => {
     const saved = localStorage.getItem('jobsesame_saved_jobs');
@@ -167,6 +349,27 @@ export default function JobsPage() {
     const nextPage = page + 1;
     setPage(nextPage);
     fetchJobs(activeTab, query, location, nextPage, true);
+  };
+
+  const handleAIResult = (params: any) => {
+    const newTab = (params.tab || 'all') as 'all' | 'remote' | 'relocation' | 'teaching';
+    const newQuery = params.keywords || '';
+    const newLocation = params.location || '';
+    setActiveTab(newTab);
+    setQuery(newQuery);
+    setLocation(newLocation);
+    setPage(1);
+    setAiActive(true);
+    fetchJobs(newTab, newQuery, newLocation, 1, false);
+  };
+
+  const handleAIClear = () => {
+    setQuery('');
+    setLocation('');
+    setActiveTab('all');
+    setPage(1);
+    setAiActive(false);
+    fetchJobs('all', '', '', 1, false);
   };
 
   const locationKeywords: Record<string, string[]> = {
@@ -306,6 +509,17 @@ export default function JobsPage() {
           <p style={{fontSize:12,color:"#5A9A6A",marginBottom:14,fontStyle:"italic"}}>
             {activeTab === 'all' ? 'Browse millions of jobs worldwide' : activeTab === 'remote' ? 'Work from anywhere — worldwide remote positions' : activeTab === 'teaching' ? 'Teach English in China, South Korea, Japan and UAE — $2,000–$3,500/month tax-free' : 'Jobs in London, Dubai, Toronto, Singapore and more'}
           </p>
+          <AISearchAssistant
+            onResult={handleAIResult}
+            onClear={handleAIClear}
+            hasActiveAI={aiActive}
+            isMobile={isMobile}
+          />
+
+          <p style={{fontSize:11,color:"#5A9A6A",fontWeight:600,letterSpacing:"0.5px",textTransform:"uppercase",marginBottom:8}}>
+            Or search manually
+          </p>
+
           <form onSubmit={handleSearch} style={{display:"flex",gap:8,flexDirection:isMobile?"column":"row",flexWrap:isMobile?"nowrap":"wrap"}}>
             <input
               value={query}
