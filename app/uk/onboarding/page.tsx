@@ -113,10 +113,11 @@ export default function UKOnboarding() {
       if (!res.ok || data.error) {
         setCvError(data.error || 'Failed to parse CV. Please try a different file.');
       } else {
-        setCvData(data);
+        const parsed = data.cvData || data;
+        setCvData(parsed);
         // Merge onboarding preferences into cvData
         const enriched = {
-          ...data,
+          ...parsed,
           ukPreferences: { targetRole, locations, jobType, salaryBand },
         };
         localStorage.setItem('jobsesame_cv_data', JSON.stringify(enriched));

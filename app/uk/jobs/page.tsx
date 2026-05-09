@@ -412,7 +412,7 @@ function ApplyModal({ job, user, cvData, onClose, onSuccess }: {
               <div style={{ background: cvData ? 'rgba(200,230,0,0.06)' : 'rgba(255,100,100,0.06)', border: `1px solid ${cvData ? 'rgba(200,230,0,0.2)' : 'rgba(255,100,100,0.2)'}`, borderRadius: 10, padding: '10px 14px', fontSize: 13 }}>
                 {cvData
                   ? <span style={{ color: '#C8E600' }}>✓ CV loaded — {cvData.name || 'Your CV'} {cvData.skills?.length ? `· ${cvData.skills.length} skills` : ''}</span>
-                  : <span style={{ color: 'rgba(255,150,150,0.8)' }}>⚠ No CV found — <a href="/dashboard" style={{ color: '#C8E600', textDecoration: 'none' }}>upload your CV first</a></span>
+                  : <span style={{ color: 'rgba(255,150,150,0.8)' }}>⚠ No CV found — <a href="/uk/dashboard" style={{ color: '#C8E600', textDecoration: 'none' }}>upload your CV first</a></span>
                 }
               </div>
 
@@ -590,6 +590,11 @@ export default function UKJobsPage() {
           onClose={() => setSelectedJob(null)}
           onSuccess={() => {
             setAppliedIds(prev => new Set(prev).add(selectedJob.id));
+            fetch('/api/user/applications', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ jobTitle: selectedJob.title, company: selectedJob.company, location: selectedJob.location, jobUrl: selectedJob.applyUrl, jobSource: selectedJob.source, market: 'GB' }),
+            }).catch(() => {});
             setSelectedJob(null);
             if (sub?.plan === 'credits') setSub(s => s ? { ...s, credits: s.credits - 1 } : s);
           }}
@@ -615,7 +620,7 @@ export default function UKJobsPage() {
           )}
           {!isMobile && (
             <>
-              <a href="/dashboard" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontWeight: 500 }}>Dashboard</a>
+              <a href="/uk/dashboard" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontWeight: 500 }}>Dashboard</a>
               <a href="/uk" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontWeight: 500 }}>UK Home</a>
             </>
           )}

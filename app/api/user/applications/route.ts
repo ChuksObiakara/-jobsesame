@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
     const application = await prisma.application.create({
-      data: { userId: user.id, jobTitle: body.jobTitle, company: body.company, location: body.location, jobUrl: body.jobUrl, jobSource: body.jobSource, matchScore: body.matchScore },
+      data: { userId: user.id, jobTitle: body.jobTitle, company: body.company, location: body.location, jobUrl: body.jobUrl, jobSource: body.jobSource, matchScore: body.matchScore, market: body.market || 'ZA' },
     });
     return NextResponse.json({ success: true, application });
   } catch (error: any) {

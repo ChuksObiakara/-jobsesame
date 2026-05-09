@@ -421,12 +421,11 @@ export default function UKDashboard() {
                     </div>
                   )}
                   <button
-                    onClick={() => { setCvData(null); setRewriteResult(null); fileRef.current?.click(); }}
+                    onClick={() => { setCvData(null); setRewriteResult(null); }}
                     style={{ alignSelf: 'flex-start', marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.35)', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '5px 12px', cursor: 'pointer' }}
                   >
                     Replace CV
                   </button>
-                  <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => handleFile(e.target.files?.[0] || null)} />
                 </div>
               )}
 

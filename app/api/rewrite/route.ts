@@ -83,7 +83,7 @@ Description: ${jobDescription || 'Not provided'}`,
     }
 
     // ── CV rewrite mode ───────────────────────────────────────────────────────
-    const response = await client.messages.create({
+    const response = await createMessage({
       model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [
