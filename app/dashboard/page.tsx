@@ -613,7 +613,7 @@ export default function Dashboard() {
           {/* Welcome + stats */}
           <div style={{width:220,height:28,borderRadius:8,background:"#1A4A2A",marginBottom:8,animation:"shimmer 1.5s ease infinite"}}/>
           <div style={{width:140,height:14,borderRadius:6,background:"#0D3A1A",marginBottom:20,animation:"shimmer 1.5s ease infinite"}}/>
-          <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:10,marginBottom:24}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,1fr)",gap:10,marginBottom:24}}>
             {[1,2,3,4].map(i=>(
               <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px",height:72,animation:"shimmer 1.5s ease infinite"}}/>
             ))}
@@ -903,7 +903,7 @@ export default function Dashboard() {
           </div>
 
           {/* Quick stats row */}
-          <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:10}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,1fr)",gap:10}}>
             {[
               {label:"CVs tailored",value:applications.length,color:"#C8E600",icon:"✨"},
               {label:"Applications sent",value:applications.length,color:"#90C898",icon:"📤"},

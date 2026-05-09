@@ -53,6 +53,14 @@ export default function OptimiseModal({ job, cvData, sub: subProp, onClose }: Pr
   const [applying, setApplying] = useState(false);
   const [applyDone, setApplyDone] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     if (step !== 'loading') return;
@@ -182,7 +190,7 @@ export default function OptimiseModal({ job, cvData, sub: subProp, onClose }: Pr
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.86)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: "'Plus Jakarta Sans',sans-serif" }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.86)', zIndex: 600, display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'center', padding: isMobile ? 0 : '20px', fontFamily: "'Plus Jakarta Sans',sans-serif" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <style>{`
@@ -194,7 +202,7 @@ export default function OptimiseModal({ job, cvData, sub: subProp, onClose }: Pr
         @keyframes omUpgradeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
       `}</style>
 
-      <div style={{ background: '#0A2E18', border: '1.5px solid rgba(200,230,0,0.22)', borderRadius: 22, padding: '32px 28px', maxWidth: 600, width: '100%', maxHeight: '92vh', overflowY: 'auto', position: 'relative', animation: 'omFadeUp 0.3s ease-out' }}>
+      <div style={{ background: '#0A2E18', border: isMobile ? 'none' : '1.5px solid rgba(200,230,0,0.22)', borderRadius: isMobile ? 0 : 22, padding: isMobile ? '24px 18px' : '32px 28px', maxWidth: isMobile ? '100%' : 600, width: '100%', maxHeight: '90vh', height: isMobile ? '100dvh' : 'auto', overflowY: 'auto', position: 'relative', animation: 'omFadeUp 0.3s ease-out' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 16, background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>✕</button>
 
         {/* ── STEP 1: Confirm ─────────────────────────────────────── */}

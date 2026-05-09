@@ -366,10 +366,18 @@ function ApplyModal({ job, user, cvData, onClose, onSuccess }: {
     setSubmitting(false);
   };
 
+  const [isApplyMobile, setIsApplyMobile] = useState(false);
+  useEffect(() => {
+    const c = () => setIsApplyMobile(window.innerWidth < 768);
+    c();
+    window.addEventListener('resize', c);
+    return () => window.removeEventListener('resize', c);
+  }, []);
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 500, display: 'flex', alignItems: isApplyMobile ? 'flex-start' : 'center', justifyContent: 'center', padding: isApplyMobile ? 0 : 20 }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{ background: '#0A2E18', border: '1.5px solid rgba(200,230,0,0.25)', borderRadius: 20, padding: '32px 28px', maxWidth: 520, width: '100%', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+      <div style={{ background: '#0A2E18', border: isApplyMobile ? 'none' : '1.5px solid rgba(200,230,0,0.25)', borderRadius: isApplyMobile ? 0 : 20, padding: isApplyMobile ? '24px 18px' : '32px 28px', maxWidth: isApplyMobile ? '100%' : 520, width: '100%', maxHeight: '90vh', height: isApplyMobile ? '100dvh' : 'auto', overflowY: 'auto', position: 'relative' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 16, background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: 20, cursor: 'pointer' }}>✕</button>
 
         {status === 'success' ? (
@@ -472,6 +480,7 @@ export default function UKJobsPage() {
   const router = useRouter();
 
   const [isMobile, setIsMobile] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [sub, setSub] = useState<Sub | null>(null);
   const [subLoading, setSubLoading] = useState(true);
   const [jobs, setJobs] = useState<UKJob[]>([]);
@@ -493,7 +502,10 @@ export default function UKJobsPage() {
   const [pendingJobId, setPendingJobId] = useState<string | null>(null);
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
+    const check = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsDesktop(window.innerWidth >= 1024);
+    };
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
@@ -653,19 +665,17 @@ export default function UKJobsPage() {
           borderBottom: '1px solid rgba(200,230,0,0.14)',
           padding: isMobile ? '10px 16px' : '10px 24px',
         }}>
-          <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 10, flexDirection: isMobile ? 'column' : 'row' }}>
             <div style={{ fontSize: isMobile ? 12 : 13, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>
               Browsing <span style={{ color: '#C8E600', fontWeight: 800 }}>{jobs.length > 0 ? jobs.length.toLocaleString() : '...'}</span> UK jobs — subscribe to apply
             </div>
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-              <a href="/uk/subscribe?plan=credits" style={{ background: '#C8E600', color: '#052A14', fontSize: 12, fontWeight: 800, padding: '7px 16px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
+              <a href="/uk/subscribe?plan=credits" style={{ background: '#C8E600', color: '#052A14', fontSize: 12, fontWeight: 800, padding: '7px 16px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap', flex: isMobile ? 1 : 'none', textAlign: 'center' }}>
                 Get 20 Credits — £10
               </a>
-              {!isMobile && (
-                <a href="/uk/subscribe?plan=pro" style={{ background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.28)', color: '#C8E600', fontSize: 12, fontWeight: 700, padding: '7px 16px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-                  Go Pro — £21/month
-                </a>
-              )}
+              <a href="/uk/subscribe?plan=pro" style={{ background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.28)', color: '#C8E600', fontSize: 12, fontWeight: 700, padding: '7px 16px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap', flex: isMobile ? 1 : 'none', textAlign: 'center' }}>
+                Go Pro — £21/month
+              </a>
             </div>
           </div>
         </div>
@@ -732,7 +742,7 @@ export default function UKJobsPage() {
           {/* JOB LIST */}
           <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '16px' : '24px' }}>
             {jobsLoading ? (
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isDesktop ? 'repeat(3,1fr)' : '1fr 1fr', gap: 14 }}>
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: '20px 22px', minHeight: 130 }}>
                     <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 6, height: 16, width: '55%', marginBottom: 10 }} />
@@ -751,7 +761,7 @@ export default function UKJobsPage() {
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, animation: 'fadeIn 0.3s ease-out' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isDesktop ? 'repeat(3,1fr)' : '1fr 1fr', gap: 14, animation: 'fadeIn 0.3s ease-out' }}>
                   {visible.map(job => {
                     const matchPct = calcMatch(job, cvData);
                     const badge = matchPct !== null ? matchBadge(matchPct) : null;

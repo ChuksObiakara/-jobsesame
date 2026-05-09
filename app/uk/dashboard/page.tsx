@@ -475,7 +475,7 @@ export default function UKDashboard() {
         </div>
 
         {/* TABS */}
-        <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'rgba(255,255,255,0.03)', border: BORDER, borderRadius: 12, padding: 4 }}>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'rgba(255,255,255,0.03)', border: BORDER, borderRadius: 12, padding: 4, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
           {([
             { id: 'overview', label: 'Overview' },
             { id: 'cv',       label: 'My CV' },
@@ -541,7 +541,7 @@ export default function UKDashboard() {
             </div>
 
             {/* Stats row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 12 }}>
               {[
                 { label: 'Applied', value: appStats.applied, color: ACCENT },
                 { label: 'Interviews', value: appStats.interview, color: '#50B4FF' },

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Props {
   cvData: any;
@@ -8,6 +8,7 @@ interface Props {
 }
 
 export default function CoverLetter({ cvData, userName, onClose }: Props) {
+  const [isMobile, setIsMobile] = useState(false);
   const [jobTitle, setJobTitle] = useState('');
   const [company, setCompany] = useState('');
   const [jobDescription, setJobDescription] = useState('');
@@ -15,6 +16,13 @@ export default function CoverLetter({ cvData, userName, onClose }: Props) {
   const [coverLetterText, setCoverLetterText] = useState('');
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   async function generate() {
     if (!jobTitle.trim()) { setError('Please enter the job title'); return; }
@@ -81,12 +89,13 @@ export default function CoverLetter({ cvData, userName, onClose }: Props) {
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      zIndex: 1000, padding: '16px',
+      display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'center',
+      zIndex: 1000, padding: isMobile ? 0 : '16px',
     }}>
       <div style={{
-        background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '640px',
-        maxHeight: '90vh', overflowY: 'auto', padding: '32px',
+        background: '#fff', borderRadius: isMobile ? 0 : '16px', width: '100%', maxWidth: isMobile ? '100%' : '640px',
+        maxHeight: '90vh', overflowY: 'auto', padding: isMobile ? '24px 18px' : '32px',
+        height: isMobile ? '100dvh' : 'auto',
         boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
