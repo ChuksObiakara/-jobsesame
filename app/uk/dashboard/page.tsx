@@ -38,6 +38,105 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
 
 type Tab = 'overview' | 'cv' | 'applications';
 
+// ── Salary lookup ─────────────────────────────────────────────────────────────
+function getSalaryRange(title: string): { min: string; max: string } {
+  const t = (title || '').toLowerCase();
+  if (t.includes('software engineer') || t.includes('software developer') || t.includes('full stack') || t.includes('fullstack')) return { min: '£55,000', max: '£95,000' };
+  if (t.includes('data scientist') || t.includes('data science') || t.includes('machine learning') || t.includes('ml engineer')) return { min: '£50,000', max: '£85,000' };
+  if (t.includes('product manager') || t.includes('product management')) return { min: '£60,000', max: '£100,000' };
+  if (t.includes('designer') || t.includes('ux') || t.includes('ui design') || t.includes('graphic')) return { min: '£35,000', max: '£65,000' };
+  if (t.includes('marketing')) return { min: '£40,000', max: '£70,000' };
+  if (t.includes('accountant') || t.includes('accounting') || t.includes('finance') || t.includes('financial analyst')) return { min: '£35,000', max: '£65,000' };
+  if (t.includes('project manager') || t.includes('programme manager')) return { min: '£45,000', max: '£75,000' };
+  if (t.includes('devops') || t.includes('cloud') || t.includes('infrastructure') || t.includes('sre')) return { min: '£60,000', max: '£100,000' };
+  if (t.includes('nurse') || t.includes('nursing') || t.includes('registered nurse')) return { min: '£28,000', max: '£45,000' };
+  if (t.includes('teacher') || t.includes('teaching')) return { min: '£28,000', max: '£48,000' };
+  return { min: '£30,000', max: '£55,000' };
+}
+
+// ── CV score ──────────────────────────────────────────────────────────────────
+function calcCvScore(cv: any): number {
+  if (!cv) return 0;
+  let s = 0;
+  if (cv.name)     s += 5;
+  if (cv.email)    s += 5;
+  if (cv.phone)    s += 5;
+  if (cv.location) s += 5;
+  if (cv.title)    s += 5;
+  if (cv.summary)  s += 10;
+  if (cv.education) s += 10;
+  s += Math.min(20, (Number(cv.experience_years) || 0) * 4);
+  s += Math.min(25, (cv.skills?.length || 0) * 3);
+  s += Math.min(10, (cv.experience?.length || 0) * 3);
+  return Math.min(100, s);
+}
+
+// ── Job matching ──────────────────────────────────────────────────────────────
+function scoreJobMatch(cv: any, job: any): number {
+  const skills: string[] = (cv.skills || []).map((s: string) => s.toLowerCase());
+  const cvTitle = (cv.title || '').toLowerCase().split(' ')[0];
+  const text = ((job.title || '') + ' ' + (job.description || '') + ' ' + (job.tags || []).join(' ')).toLowerCase();
+  let score = 0;
+  skills.forEach(s => { if (s.length > 2 && text.includes(s)) score += 8; });
+  if (cvTitle.length > 2 && (job.title || '').toLowerCase().includes(cvTitle)) score += 20;
+  return Math.min(97, 35 + score);
+}
+
+function getTopMatchedJobs(cv: any, jobs: any[]): any[] {
+  if (!cv || !jobs.length) return [];
+  return [...jobs]
+    .map(j => ({ ...j, _matchScore: scoreJobMatch(cv, j) }))
+    .sort((a, b) => b._matchScore - a._matchScore)
+    .slice(0, 3);
+}
+
+function getMatchCount(cv: any, jobs: any[]): number {
+  if (!cv || !jobs.length) return 0;
+  const skills: string[] = (cv.skills || []).map((s: string) => s.toLowerCase());
+  const cvTitle = (cv.title || '').toLowerCase().split(' ')[0];
+  return jobs.filter(j => {
+    const text = ((j.title || '') + ' ' + (j.description || '') + ' ' + (j.tags || []).join(' ')).toLowerCase();
+    return skills.some(s => s.length > 2 && text.includes(s)) ||
+           (cvTitle.length > 2 && (j.title || '').toLowerCase().includes(cvTitle));
+  }).length;
+}
+
+// ── In-demand UK skills ───────────────────────────────────────────────────────
+const UK_IN_DEMAND = new Set([
+  'python','javascript','typescript','react','node.js','node','aws','azure','gcp','sql','excel',
+  'agile','scrum','leadership','machine learning','data analysis','docker','kubernetes','devops',
+  'java','c#','product management','figma','accounting','nursing','teaching','sales','salesforce',
+  'power bi','tableau','finance','communication','git','terraform','risk management','compliance',
+  'django','flask','spring','ci/cd','jira','ux design','ui design','digital marketing','seo',
+]);
+
+function getTopDemandSkills(cv: any): { skill: string; inDemand: boolean }[] {
+  const skills: string[] = cv.skills || [];
+  const tagged = skills.map(s => ({ skill: s, inDemand: UK_IN_DEMAND.has(s.toLowerCase()) }));
+  return [...tagged.filter(s => s.inDemand), ...tagged.filter(s => !s.inDemand)].slice(0, 5);
+}
+
+// ── Circular score ring ───────────────────────────────────────────────────────
+function ScoreRing({ score }: { score: number }) {
+  const R = 38;
+  const C = 2 * Math.PI * R;
+  const filled = (score / 100) * C;
+  const color = score >= 80 ? '#50DC78' : score >= 60 ? '#FFA500' : '#FF8080';
+  return (
+    <svg width="96" height="96" viewBox="0 0 96 96" style={{ display: 'block' }}>
+      <circle cx="48" cy="48" r={R} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="7" />
+      <circle cx="48" cy="48" r={R} fill="none" stroke={color} strokeWidth="7"
+        strokeDasharray={`${filled.toFixed(1)} ${C.toFixed(1)}`}
+        strokeLinecap="round" transform="rotate(-90 48 48)"
+        style={{ transition: 'stroke-dasharray 1s ease-out' }} />
+      <text x="48" y="45" textAnchor="middle" dominantBaseline="middle"
+        fill={color} fontSize="22" fontWeight="800" fontFamily="Plus Jakarta Sans,sans-serif">{score}</text>
+      <text x="48" y="62" textAnchor="middle" dominantBaseline="middle"
+        fill="rgba(255,255,255,0.3)" fontSize="9" fontFamily="Plus Jakarta Sans,sans-serif">/100</text>
+    </svg>
+  );
+}
+
 const ANALYSIS_MSGS = [
   'Reading your CV...',
   'Extracting skills and experience...',
@@ -70,6 +169,8 @@ export default function UKDashboard() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [msgVisible, setMsgVisible] = useState(true);
+
+  const [ukJobs, setUkJobs] = useState<any[]>([]);
 
   const [rewriteJob, setRewriteJob] = useState('');
   const [rewriting, setRewriting] = useState(false);
@@ -115,6 +216,17 @@ export default function UKDashboard() {
       if (s) setCvData(JSON.parse(s));
     } catch {}
   }, []);
+
+  // Fetch UK jobs for matching whenever we have CV data
+  useEffect(() => {
+    if (!cvData) { setUkJobs([]); return; }
+    if (ukJobs.length > 0) return; // already loaded
+    fetch('/api/jobs/uk')
+      .then(r => r.json())
+      .then(data => setUkJobs(data.jobs || []))
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cvData]);
 
   // Rotate analysis messages while uploading
   useEffect(() => {
@@ -242,6 +354,7 @@ export default function UKDashboard() {
         @keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes msgOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-8px)}}
         @keyframes overlayIn{from{opacity:0}to{opacity:1}}
+        @keyframes cardReveal{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
         input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2)}
         input:focus,textarea:focus{border-color:rgba(200,230,0,0.35)!important;outline:none}
         select{appearance:none;-webkit-appearance:none}
@@ -627,7 +740,7 @@ export default function UKDashboard() {
                     </div>
                   )}
                   <button
-                    onClick={() => { setCvData(null); setRewriteResult(null); }}
+                    onClick={() => { setCvData(null); setRewriteResult(null); setUkJobs([]); }}
                     style={{ alignSelf: 'flex-start', marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.35)', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '5px 12px', cursor: 'pointer' }}
                   >
                     Replace CV
@@ -642,6 +755,129 @@ export default function UKDashboard() {
                 </div>
               )}
             </div>
+
+            {/* ── RESULTS REVEAL ──────────────────────────────────────────── */}
+            {cvData && ukJobs.length > 0 && (() => {
+              const score = calcCvScore(cvData);
+              const scoreColor = score >= 80 ? '#50DC78' : score >= 60 ? '#FFA500' : '#FF8080';
+              const matchCount = getMatchCount(cvData, ukJobs);
+              const topJobs = getTopMatchedJobs(cvData, ukJobs);
+              const salary = getSalaryRange(cvData.title || '');
+              const topSkills = getTopDemandSkills(cvData);
+              const cardStyle = (delay: number): React.CSSProperties => ({
+                background: CARD, border: BORDER, borderRadius: 16,
+                animation: `cardReveal 0.45s ease-out ${delay}ms both`,
+              });
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+                  {/* Card 1: CV Score */}
+                  <div style={{ ...cardStyle(0), padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 20 }}>
+                    <ScoreRing score={score} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>CV Score</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: scoreColor, marginBottom: 4 }}>{score >= 80 ? 'Strong' : score >= 60 ? 'Good' : 'Needs Work'}</div>
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>
+                        {score >= 80 ? 'Your CV is well-structured and ATS-ready for UK employers.'
+                          : score >= 60 ? 'Good foundation — add more skills and experience details to improve.'
+                          : 'Fill in more profile details and add experience bullets to boost your score.'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: UK Job Matches */}
+                  <div style={{ ...cardStyle(300), padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ width: 52, height: 52, background: 'rgba(80,180,255,0.1)', border: '1.5px solid rgba(80,180,255,0.25)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+                        <circle cx="11" cy="11" r="7" stroke="#50B4FF" strokeWidth="2"/>
+                        <line x1="16.5" y1="16.5" x2="23" y2="23" stroke="#50B4FF" strokeWidth="2.2" strokeLinecap="round"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>UK Job Matches</div>
+                      <div style={{ fontSize: 26, fontWeight: 800, color: '#50B4FF', lineHeight: 1 }}>{matchCount.toLocaleString()}</div>
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>live roles match your profile right now</div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Top 3 Matched Jobs */}
+                  <div style={{ ...cardStyle(600), padding: '20px 22px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 14 }}>Top Matched Roles</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {topJobs.map((job, i) => (
+                        <div key={job.id || i} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px' }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 10, background: `hsl(${(job.company?.charCodeAt(0) || 65) * 7 % 360},50%,25%)`, border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                            {(job.company?.[0] || '?').toUpperCase()}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.title}</div>
+                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{job.company} · {job.location}</div>
+                            {job.salary && <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 2 }}>{job.salary}</div>}
+                          </div>
+                          <div style={{ flexShrink: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, color: ACCENT, background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '3px 9px', whiteSpace: 'nowrap' }}>
+                              {job._matchScore}% match
+                            </div>
+                            <div style={{ marginTop: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '3px 10px', fontSize: 10, color: 'rgba(255,255,255,0.2)', textAlign: 'center', filter: 'blur(2px)', userSelect: 'none' }}>
+                              Apply →
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <a href="/uk/jobs" style={{ display: 'block', marginTop: 12, textAlign: 'center', fontSize: 12, color: ACCENT, fontWeight: 700, textDecoration: 'none', opacity: 0.7 }}>
+                      View all {matchCount} matching roles →
+                    </a>
+                  </div>
+
+                  {/* Card 4: UK Salary Range */}
+                  <div style={{ ...cardStyle(900), padding: '20px 22px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 14 }}>UK Salary Range for Your Role</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>Minimum</div>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>{salary.min}</div>
+                      </div>
+                      <div style={{ fontSize: 20, color: 'rgba(255,255,255,0.2)', padding: '0 8px' }}>→</div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 2 }}>Maximum</div>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: ACCENT }}>{salary.max}</div>
+                      </div>
+                    </div>
+                    {/* Range bar */}
+                    <div style={{ height: 6, background: 'rgba(255,255,255,0.07)', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: '100%', background: `linear-gradient(90deg, rgba(200,230,0,0.4), #C8E600)`, borderRadius: 99 }} />
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 8 }}>
+                      Based on your role: <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{cvData.title || 'General'}</span> · UK market 2025
+                    </div>
+                  </div>
+
+                  {/* Card 5: Top Skills */}
+                  <div style={{ ...cardStyle(1200), padding: '20px 22px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 14 }}>Your Top Skills in the UK Market</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {topSkills.map(({ skill, inDemand }, i) => (
+                        <div key={skill} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 22, height: 22, borderRadius: 6, background: inDemand ? 'rgba(200,230,0,0.12)' : 'rgba(255,255,255,0.05)', border: `1px solid ${inDemand ? 'rgba(200,230,0,0.3)' : 'rgba(255,255,255,0.08)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <span style={{ fontSize: 11, color: inDemand ? ACCENT : 'rgba(255,255,255,0.3)' }}>{i + 1}</span>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{skill}</span>
+                          </div>
+                          {inDemand && (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: '#50DC78', background: 'rgba(80,220,120,0.1)', border: '1px solid rgba(80,220,120,0.2)', borderRadius: 99, padding: '2px 8px', flexShrink: 0 }}>
+                              In demand
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })()}
 
             {/* Rewrite for UK role */}
             {cvData && (
