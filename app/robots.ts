@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: ['/', '/uk', '/uk/jobs', '/uk/subscribe'],
-      disallow: ['/api/', '/dashboard', '/uk/dashboard', '/admin', '/onboarding', '/payment/'],
+      disallow: ['/api/', '/dashboard', '/uk/dashboard', '/admin', '/onboarding', '/payment/', '/saved-jobs'],
     },
     sitemap: 'https://www.jobsesame.co.za/sitemap.xml',
   };

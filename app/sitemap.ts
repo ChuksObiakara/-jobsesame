@@ -20,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/uk`,                  lastModified: now, changeFrequency: 'daily',   priority: 0.9 },
     { url: `${BASE}/uk/jobs`,             lastModified: now, changeFrequency: 'hourly',  priority: 0.9 },
     { url: `${BASE}/uk/subscribe`,        lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
+    { url: `${BASE}/optimise`,            lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/blog`,                lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
     { url: `${BASE}/about`,               lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/recruiters`,          lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
