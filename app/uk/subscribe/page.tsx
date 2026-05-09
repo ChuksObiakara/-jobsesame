@@ -1,6 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
+import { useSearchParams } from 'next/navigation';
 const PLANS = [
   {
     id: 'free',
@@ -77,7 +78,26 @@ const FAQS = [
 
 export default function SubscribePage() {
   const { isSignedIn } = useAuth();
+  const searchParams = useSearchParams();
+  const highlightPlan = searchParams.get('plan'); // 'credits' | 'pro' | null
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [pendingCV, setPendingCV] = useState<{ jobTitle: string; company: string } | null>(null);
+
+  useEffect(() => {
+    // Find any optimised CV saved from the optimise modal
+    try {
+      const key = Object.keys(localStorage).find(k => k.startsWith('jobsesame_uk_optimised_cv_'));
+      if (key) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.jobTitle && parsed.company) {
+            setPendingCV({ jobTitle: parsed.jobTitle, company: parsed.company });
+          }
+        }
+      }
+    } catch {}
+  }, []);
 
   return (
     <main style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", background: '#061A0C', minHeight: '100vh', margin: 0, padding: 0, overflowX: 'hidden' }}>
@@ -105,6 +125,21 @@ export default function SubscribePage() {
         </div>
       </nav>
 
+      {/* PENDING OPTIMISED CV BANNER */}
+      {pendingCV && (
+        <div style={{ maxWidth: 680, margin: '28px auto 0', padding: '0 24px' }}>
+          <div style={{ background: 'rgba(200,230,0,0.07)', border: '1.5px solid rgba(200,230,0,0.28)', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 22, flexShrink: 0 }}>📄</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
+                Your optimised CV for <span style={{ color: '#C8E600' }}>{pendingCV.jobTitle}</span> at <span style={{ color: '#C8E600' }}>{pendingCV.company}</span> is ready and waiting
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>Subscribe below to apply instantly with your AI-optimised CV</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* HERO */}
       <section style={{ textAlign: 'center', padding: '72px 24px 48px', maxWidth: 640, margin: '0 auto', animation: 'fadeInUp 0.5s ease-out' }}>
         <h1 style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.1, marginBottom: 18, letterSpacing: -1 }}>
@@ -119,16 +154,19 @@ export default function SubscribePage() {
       {/* PLAN CARDS */}
       <section style={{ maxWidth: 960, margin: '0 auto', padding: '0 24px 72px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18, alignItems: 'start' }}>
-          {PLANS.map(plan => (
+          {PLANS.map(plan => {
+            const isHighlighted = plan.highlight || plan.id === highlightPlan;
+            return (
             <div
               key={plan.id}
               style={{
-                background: plan.highlight ? 'rgba(200,230,0,0.05)' : 'rgba(255,255,255,0.02)',
-                border: `1.5px solid ${plan.highlight ? 'rgba(200,230,0,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                background: isHighlighted ? 'rgba(200,230,0,0.06)' : 'rgba(255,255,255,0.02)',
+                border: `1.5px solid ${isHighlighted ? 'rgba(200,230,0,0.38)' : 'rgba(255,255,255,0.07)'}`,
                 borderRadius: 16,
                 padding: '26px 22px',
                 position: 'relative',
                 transition: 'transform 0.2s',
+                boxShadow: isHighlighted ? '0 0 0 4px rgba(200,230,0,0.06)' : 'none',
               }}
             >
               {plan.tag && (
@@ -172,7 +210,8 @@ export default function SubscribePage() {
                 </div>
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
 
         <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.25)', marginTop: 24 }}>

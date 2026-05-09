@@ -26,7 +26,24 @@ const LOADING_MSGS = [
   'Almost done...',
 ];
 
-export default function OptimiseModal({ job, cvData, sub, onClose }: Props) {
+const ACCENT = '#C8E600';
+
+function storageKey(job: OptimiseJob) {
+  return `jobsesame_uk_optimised_cv_${job.id || job.title.replace(/\s+/g, '_').toLowerCase()}`;
+}
+
+function saveToStorage(job: OptimiseJob, optimisedCV: any) {
+  try {
+    localStorage.setItem(storageKey(job), JSON.stringify({
+      jobId: job.id,
+      jobTitle: job.title,
+      company: job.company,
+      optimisedCV,
+    }));
+  } catch {}
+}
+
+export default function OptimiseModal({ job, cvData, sub: subProp, onClose }: Props) {
   const [step, setStep] = useState<'confirm' | 'loading' | 'result'>('confirm');
   const [optimisedCV, setOptimisedCV] = useState<any>(null);
   const [changes, setChanges] = useState<string[]>([]);
@@ -35,6 +52,7 @@ export default function OptimiseModal({ job, cvData, sub, onClose }: Props) {
   const [msgVisible, setMsgVisible] = useState(true);
   const [applying, setApplying] = useState(false);
   const [applyDone, setApplyDone] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   useEffect(() => {
     if (step !== 'loading') return;
@@ -70,6 +88,8 @@ export default function OptimiseModal({ job, cvData, sub, onClose }: Props) {
       if (!res.ok || data.error) throw new Error(data.error || 'Optimisation failed');
       setOptimisedCV(data.optimisedCV);
       setChanges(data.changes || []);
+      // Save immediately so the CV is not lost if the user navigates away to subscribe
+      saveToStorage(job, data.optimisedCV);
       setStep('result');
     } catch (e: any) {
       setError(e.message || 'Something went wrong. Please try again.');
@@ -84,7 +104,7 @@ export default function OptimiseModal({ job, cvData, sub, onClose }: Props) {
     const maxW = 210 - margin * 2;
     let y = margin;
 
-    const line = (text: string, size: number, bold = false, rgb: [number,number,number] = [230, 230, 230]) => {
+    const line = (text: string, size: number, bold = false, rgb: [number, number, number] = [230, 230, 230]) => {
       doc.setFontSize(size);
       doc.setFont('helvetica', bold ? 'bold' : 'normal');
       doc.setTextColor(...rgb);
@@ -125,13 +145,21 @@ export default function OptimiseModal({ job, cvData, sub, onClose }: Props) {
   };
 
   const applyWithCV = async () => {
-    if (!sub?.active) {
-      window.location.href = '/uk/subscribe?message=Subscribe+to+apply+with+your+optimised+CV';
-      return;
-    }
     setApplying(true);
     setError('');
     try {
+      // Always fetch live subscription status — prop may be stale
+      const subRes = await fetch('/api/uk/subscription');
+      const subData = await subRes.json();
+
+      if (!subData.active) {
+        // CV already saved to localStorage in optimise(); ensure it's there
+        saveToStorage(job, optimisedCV);
+        setShowUpgrade(true);
+        setApplying(false);
+        return;
+      }
+
       const res = await fetch('/api/auto-apply/uk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,7 +179,6 @@ export default function OptimiseModal({ job, cvData, sub, onClose }: Props) {
   };
 
   const msg = LOADING_MSGS[msgIdx].replace('{company}', job.company);
-  const ACCENT = '#C8E600';
 
   return (
     <div
@@ -164,6 +191,7 @@ export default function OptimiseModal({ job, cvData, sub, onClose }: Props) {
         @keyframes omMsgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         @keyframes omMsgOut{from{opacity:1}to{opacity:0}}
         @keyframes omBar{from{width:0%}to{width:100%}}
+        @keyframes omUpgradeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
       `}</style>
 
       <div style={{ background: '#0A2E18', border: '1.5px solid rgba(200,230,0,0.22)', borderRadius: 22, padding: '32px 28px', maxWidth: 600, width: '100%', maxHeight: '92vh', overflowY: 'auto', position: 'relative', animation: 'omFadeUp 0.3s ease-out' }}>
@@ -266,32 +294,55 @@ export default function OptimiseModal({ job, cvData, sub, onClose }: Props) {
 
                 {error && <div style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#FF8080', marginBottom: 14 }}>{error}</div>}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <button
-                    onClick={downloadPDF}
-                    style={{ width: '100%', background: ACCENT, color: '#052A14', fontSize: 14, fontWeight: 800, padding: '13px', borderRadius: 99, border: 'none', cursor: 'pointer' }}
-                  >
-                    ↓ Download Optimised CV
-                  </button>
-                  {sub?.active ? (
+                {/* ── Inline upgrade prompt (replaces apply button when not subscribed) */}
+                {showUpgrade ? (
+                  <div style={{ background: 'rgba(200,230,0,0.05)', border: '1.5px solid rgba(200,230,0,0.22)', borderRadius: 16, padding: '22px 20px', animation: 'omUpgradeIn 0.3s ease-out' }}>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 6, lineHeight: 1.3 }}>
+                      Your optimised CV is ready — subscribe to send it to <span style={{ color: ACCENT }}>{job.company}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 18 }}>
+                      Your optimised CV will be saved and ready to use after subscribing
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                      <a
+                        href="/uk/subscribe?plan=credits"
+                        style={{ display: 'block', background: ACCENT, color: '#052A14', fontSize: 13, fontWeight: 800, padding: '13px 10px', borderRadius: 99, textDecoration: 'none', textAlign: 'center' }}
+                      >
+                        Get 20 Credits — £10
+                      </a>
+                      <a
+                        href="/uk/subscribe?plan=pro"
+                        style={{ display: 'block', background: 'rgba(200,230,0,0.1)', border: '1.5px solid rgba(200,230,0,0.3)', color: ACCENT, fontSize: 13, fontWeight: 800, padding: '13px 10px', borderRadius: 99, textDecoration: 'none', textAlign: 'center' }}
+                      >
+                        Go Pro — £21/month
+                      </a>
+                    </div>
+                    <button
+                      onClick={() => setShowUpgrade(false)}
+                      style={{ width: '100%', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 12, cursor: 'pointer', padding: '4px 0' }}
+                    >
+                      ← Back to CV preview
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <button
+                      onClick={downloadPDF}
+                      style={{ width: '100%', background: ACCENT, color: '#052A14', fontSize: 14, fontWeight: 800, padding: '13px', borderRadius: 99, border: 'none', cursor: 'pointer' }}
+                    >
+                      ↓ Download Optimised CV
+                    </button>
                     <button
                       onClick={applyWithCV}
                       disabled={applying}
-                      style={{ width: '100%', background: 'rgba(200,230,0,0.1)', border: '1.5px solid rgba(200,230,0,0.28)', color: ACCENT, fontSize: 14, fontWeight: 800, padding: '13px', borderRadius: 99, cursor: applying ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                      style={{ width: '100%', background: 'rgba(200,230,0,0.1)', border: '1.5px solid rgba(200,230,0,0.28)', color: ACCENT, fontSize: 14, fontWeight: 800, padding: '13px', borderRadius: 99, cursor: applying ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, textDecoration: 'none' }}
                     >
                       {applying
-                        ? <><span style={{ width: 14, height: 14, border: '2px solid rgba(200,230,0,0.2)', borderTopColor: ACCENT, borderRadius: '50%', display: 'inline-block', animation: 'omSpin 0.7s linear infinite' }} /> Applying...</>
+                        ? <><span style={{ width: 14, height: 14, border: '2px solid rgba(200,230,0,0.2)', borderTopColor: ACCENT, borderRadius: '50%', display: 'inline-block', animation: 'omSpin 0.7s linear infinite' }} /> Checking subscription...</>
                         : '⚡ Apply with this CV'}
                     </button>
-                  ) : (
-                    <a
-                      href="/uk/subscribe?message=Subscribe+to+apply+with+your+optimised+CV"
-                      style={{ width: '100%', background: 'rgba(200,230,0,0.1)', border: '1.5px solid rgba(200,230,0,0.28)', color: ACCENT, fontSize: 14, fontWeight: 800, padding: '13px', borderRadius: 99, textDecoration: 'none', display: 'block', textAlign: 'center' }}
-                    >
-                      Subscribe to Apply with this CV →
-                    </a>
-                  )}
-                </div>
+                  </div>
+                )}
               </>
             )}
           </div>
