@@ -40,6 +40,13 @@ export async function PATCH(request: Request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { applicationId, status } = await request.json();
     const { prisma } = await import('@/app/lib/prisma');
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    // Verify ownership before update
+    const existing = await prisma.application.findUnique({ where: { id: applicationId } });
+    if (!existing || existing.userId !== user.id) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
     const application = await prisma.application.update({ where: { id: applicationId }, data: { status } });
     return NextResponse.json({ success: true, application });
   } catch (error: any) {

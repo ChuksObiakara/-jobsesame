@@ -10,6 +10,11 @@ export async function GET() {
     const { prisma } = await import('@/app/lib/prisma');
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) return NextResponse.json({ credits: 3, isPro: false });
+    // Auto-expire Pro if past proExpiresAt
+    if (user.isPro && user.proExpiresAt && new Date() > user.proExpiresAt) {
+      await prisma.user.update({ where: { clerkId: userId }, data: { isPro: false } });
+      return NextResponse.json({ credits: user.credits, isPro: false, proExpiresAt: user.proExpiresAt });
+    }
     return NextResponse.json({ credits: user.credits, isPro: user.isPro, proExpiresAt: user.proExpiresAt });
   } catch (error: any) {
     return NextResponse.json({ credits: 0, isPro: false });

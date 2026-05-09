@@ -71,14 +71,21 @@ export async function POST(request: NextRequest) {
     const cvData = JSON.parse(clean);
     console.log('Parsed CV for:', cvData.name);
 
-    try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      await fetch(`${baseUrl}/api/user/cv`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': request.headers.get('Authorization') || '' },
-        body: JSON.stringify({ cvData }),
-      });
-    } catch (e) { console.log('CV save to DB skipped:', e); }
+    if (userId) {
+      try {
+        const { prisma } = await import('@/app/lib/prisma');
+        let user = await prisma.user.findUnique({ where: { clerkId: userId } });
+        if (!user) {
+          const referralCode = Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase();
+          user = await prisma.user.create({ data: { clerkId: userId, email: cvData.email || '', credits: 3, referralCode } });
+        }
+        await prisma.cV.upsert({
+          where: { userId: user.id },
+          update: { ...cvData, skills: cvData.skills || [], languages: cvData.languages || [], experience: cvData.experience || [] },
+          create: { userId: user.id, ...cvData, skills: cvData.skills || [], languages: cvData.languages || [], experience: cvData.experience || [] },
+        });
+      } catch (e) { console.log('CV save to DB skipped:', e); }
+    }
 
     return NextResponse.json({ success: true, cvData });
 
