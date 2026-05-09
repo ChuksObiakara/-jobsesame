@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+import { createMessage } from '@/app/lib/anthropic-retry';
 
 export interface AISearchParams {
   keywords: string;
@@ -39,7 +37,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Query required' }, { status: 400 });
     }
 
-    const message = await client.messages.create({
+    const message = await createMessage({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 300,
       system: SYSTEM,

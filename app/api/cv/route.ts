@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import { createMessage } from '@/app/lib/anthropic-retry';
 import { auth } from '@clerk/nextjs/server';
 
 export const dynamic = 'force-dynamic';
@@ -55,10 +55,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
     console.log('Calling Claude...');
-    const response = await client.messages.create({
+    const response = await createMessage({
       model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{
@@ -97,10 +95,6 @@ export async function POST(request: NextRequest) {
     if (error?.status === 401) {
       return NextResponse.json({ error: 'API configuration error. Contact support.' }, { status: 500 });
     }
-    if (error?.status === 529 || msg.includes('overloaded')) {
-      return NextResponse.json({ error: 'AI is busy right now. Please try again in a moment.' }, { status: 503 });
-    }
-
     return NextResponse.json({ error: error?.message || 'Failed to process CV' }, { status: 500 });
   }
 }

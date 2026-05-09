@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Anthropic from '@anthropic-ai/sdk';
+import { createMessage } from '@/app/lib/anthropic-retry';
 import { auth } from '@clerk/nextjs/server';
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -38,10 +38,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing CV data or job title' }, { status: 400 });
     }
 
-    const client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-
     // ── Cover letter mode ─────────────────────────────────────────────────────
     if (coverLetter) {
       const candidateSection = cvData
@@ -55,7 +51,7 @@ ${cvData.experience ? `Recent roles: ${cvData.experience.map((e: any) => `${e.ti
 Education: ${cvData.education || ''}`
         : '';
 
-      const response = await client.messages.create({
+      const response = await createMessage({
         model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         messages: [
