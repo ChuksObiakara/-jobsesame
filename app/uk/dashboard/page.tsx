@@ -781,6 +781,7 @@ export default function UKDashboard() {
               const scoreColor = score >= 80 ? '#50DC78' : score >= 60 ? '#FFA500' : '#FF8080';
               const matchCount = getMatchCount(cvData, ukJobs);
               const topJobs = getTopMatchedJobs(cvData, ukJobs);
+              const top6Jobs = ukJobs.slice(0, 6).map((j: any) => ({ ...j, _matchScore: scoreJobMatch(cvData, j) }));
               const salary = getSalaryRange(cvData.title || '');
               const topSkills = getTopDemandSkills(cvData);
               const cardStyle = (delay: number): React.CSSProperties => ({
@@ -899,73 +900,104 @@ export default function UKDashboard() {
                     </div>
                   </div>
 
-                  {/* Conversion paywall / subscribed CTA */}
-                  <div style={{ animation: `cardReveal 0.45s ease-out 1500ms both` }}>
+                  {/* Card 6: Top 6 Matched Jobs Grid */}
+                  <div style={{ animation: `cardReveal 0.45s ease-out 1500ms both`, background: CARD, border: BORDER, borderRadius: 16, padding: '20px 22px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 14 }}>
+                      Your Top Matched Jobs
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
+                      {top6Jobs.map((job: any, i: number) => (
+                        <div key={job.id || i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {/* Job header */}
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                            <div style={{ width: 34, height: 34, borderRadius: 9, background: `hsl(${(job.company?.charCodeAt(0) || 65) * 7 % 360},45%,22%)`, border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                              {(job.company?.[0] || '?').toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 2 }}>{job.title}</div>
+                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.company}</div>
+                            </div>
+                            <div style={{ fontSize: 10, fontWeight: 800, color: ACCENT, background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '2px 7px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                              {job._matchScore}%
+                            </div>
+                          </div>
+
+                          {/* Location + salary visible */}
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {job.location && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>📍 {job.location}</span>}
+                            {job.salary && <span style={{ fontSize: 11, color: ACCENT, fontWeight: 700 }}>{job.salary}</span>}
+                          </div>
+
+                          {/* Tags blurred */}
+                          {job.tags?.length > 0 && (
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', filter: 'blur(4px)', userSelect: 'none', pointerEvents: 'none' }}>
+                              {job.tags.slice(0, 3).map((t: string) => (
+                                <span key={t} style={{ fontSize: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '2px 7px', color: 'rgba(255,255,255,0.5)' }}>{t}</span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Action buttons */}
+                          {sub?.active ? (
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <a
+                                href={job.url || job.jobUrl || '#'}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ flex: 1, background: ACCENT, color: '#052A14', fontSize: 11, fontWeight: 800, padding: '7px 0', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}
+                              >
+                                ⚡ Apply Now
+                              </a>
+                              <button
+                                onClick={() => setOptimiseJob(job)}
+                                style={{ flex: 1, background: 'rgba(200,230,0,0.07)', border: '1px solid rgba(200,230,0,0.18)', color: ACCENT, fontSize: 11, fontWeight: 700, padding: '7px 0', borderRadius: 8, cursor: 'pointer' }}
+                              >
+                                ✦ Optimise
+                              </button>
+                            </div>
+                          ) : (
+                            <a
+                              href="/uk/subscribe"
+                              style={{ display: 'block', width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(200,230,0,0.2)', color: 'rgba(200,230,0,0.7)', fontSize: 11, fontWeight: 700, padding: '7px 0', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}
+                            >
+                              🔒 Subscribe to Apply
+                            </a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* CTA Banner */}
+                  <div style={{ animation: `cardReveal 0.45s ease-out 1800ms both` }}>
                     {sub?.active ? (
                       <div style={{ background: 'rgba(200,230,0,0.06)', border: '1.5px solid rgba(200,230,0,0.22)', borderRadius: 16, padding: '22px', textAlign: 'center' }}>
                         <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 6 }}>Your CV is ready — start applying</div>
-                        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 18 }}>You have {sub.plan === 'credits' ? `${sub.credits} credit${sub.credits === 1 ? '' : 's'}` : 'unlimited'} applications available</div>
+                        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 18 }}>
+                          You have {sub.plan === 'credits' ? `${sub.credits} credit${sub.credits === 1 ? '' : 's'}` : 'unlimited'} applications available
+                        </div>
                         <a href="/uk/jobs" style={{ display: 'inline-block', background: ACCENT, color: '#052A14', fontSize: 14, fontWeight: 800, padding: '13px 32px', borderRadius: 99, textDecoration: 'none' }}>
-                          Apply to your {matchCount} matched jobs →
+                          Browse all {matchCount} matched jobs →
                         </a>
                       </div>
                     ) : (
-                      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1.5px solid rgba(200,230,0,0.18)', borderRadius: 16, padding: '26px 22px' }}>
-                        <div style={{ textAlign: 'center', marginBottom: 22 }}>
-                          <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 6, lineHeight: 1.25 }}>Your CV is ready for the UK market</div>
-                          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>Subscribe to apply to your <span style={{ color: ACCENT, fontWeight: 700 }}>{matchCount}</span> matched jobs</div>
+                      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1.5px solid rgba(200,230,0,0.22)', borderRadius: 16, padding: '26px 22px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 8, lineHeight: 1.25 }}>
+                          You matched <span style={{ color: ACCENT }}>{matchCount}</span> UK jobs — subscribe to apply to all of them
                         </div>
-
-                        {/* Plan cards */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
-                          {/* Credits plan */}
-                          <a href="/uk/subscribe" style={{ textDecoration: 'none', display: 'block', background: 'rgba(200,230,0,0.05)', border: '1.5px solid rgba(200,230,0,0.28)', borderRadius: 14, padding: '18px 16px' }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 6 }}>Credits</div>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 12 }}>
-                              <span style={{ fontSize: 30, fontWeight: 800, color: '#fff', lineHeight: 1 }}>£10</span>
-                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>one-time</span>
-                            </div>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              {['20 UK applications', 'AI CV rewriter', 'Quick Apply'].map(f => (
-                                <li key={f} style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                  <span style={{ color: ACCENT, fontWeight: 700, fontSize: 10 }}>✓</span>{f}
-                                </li>
-                              ))}
-                            </ul>
-                            <div style={{ background: ACCENT, color: '#052A14', fontSize: 12, fontWeight: 800, padding: '9px 0', borderRadius: 99, textAlign: 'center' }}>
-                              Buy Credits
-                            </div>
+                        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', marginBottom: 22 }}>
+                          Your AI-optimised CV is ready. One click to apply.
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, maxWidth: 400, margin: '0 auto 16px' }}>
+                          <a href="/uk/subscribe?plan=credits" style={{ display: 'block', background: ACCENT, color: '#052A14', fontSize: 13, fontWeight: 800, padding: '13px 0', borderRadius: 99, textDecoration: 'none', textAlign: 'center' }}>
+                            Get 20 Credits — £10
                           </a>
-
-                          {/* Pro plan */}
-                          <a href="/uk/subscribe" style={{ textDecoration: 'none', display: 'block', position: 'relative', background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '18px 16px' }}>
-                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: ACCENT, color: '#052A14', fontSize: 9, fontWeight: 800, padding: '2px 10px', borderRadius: 4, whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>MOST POPULAR</div>
-                            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 6 }}>Pro</div>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 12 }}>
-                              <span style={{ fontSize: 30, fontWeight: 800, color: '#fff', lineHeight: 1 }}>£21</span>
-                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>/mo</span>
-                            </div>
-                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              {['Unlimited applications', 'Priority matching', 'Cover letter AI', 'Salary intelligence'].map(f => (
-                                <li key={f} style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                  <span style={{ color: ACCENT, fontWeight: 700, fontSize: 10 }}>✓</span>{f}
-                                </li>
-                              ))}
-                            </ul>
-                            <div style={{ background: 'rgba(200,230,0,0.12)', color: ACCENT, fontSize: 12, fontWeight: 800, padding: '9px 0', borderRadius: 99, textAlign: 'center', border: '1px solid rgba(200,230,0,0.25)' }}>
-                              Subscribe Pro
-                            </div>
+                          <a href="/uk/subscribe?plan=pro" style={{ display: 'block', background: 'rgba(200,230,0,0.1)', border: '1.5px solid rgba(200,230,0,0.3)', color: ACCENT, fontSize: 13, fontWeight: 800, padding: '13px 0', borderRadius: 99, textDecoration: 'none', textAlign: 'center' }}>
+                            Go Pro — £21/month
                           </a>
                         </div>
-
-                        {/* Social proof + urgency */}
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginBottom: 6 }}>
-                            Join professionals already applying to UK jobs
-                          </div>
-                          <div style={{ fontSize: 11, color: 'rgba(255,80,80,0.7)', fontWeight: 600 }}>
-                            ⚡ Your top matched jobs are filling fast
-                          </div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,80,80,0.6)', fontWeight: 600 }}>
+                          ⚡ Your top matched jobs are filling fast
                         </div>
                       </div>
                     )}
