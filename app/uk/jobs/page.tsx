@@ -487,6 +487,7 @@ export default function UKJobsPage() {
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [optimiseJob, setOptimiseJob] = useState<UKJob | null>(null);
+  const [pendingJobId, setPendingJobId] = useState<string | null>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -516,7 +517,31 @@ export default function UKJobsPage() {
       const stored = localStorage.getItem('jobsesame_cv_data');
       if (stored) setCvData(JSON.parse(stored));
     } catch {}
+    // Check for pending job saved before subscribe redirect
+    try {
+      const raw = localStorage.getItem('jobsesame_uk_pending_job');
+      if (raw) {
+        const pending = JSON.parse(raw);
+        if (pending?.id) setPendingJobId(pending.id);
+        localStorage.removeItem('jobsesame_uk_pending_job');
+      }
+    } catch {}
   }, []);
+
+  // Scroll to the pending job once jobs have rendered
+  useEffect(() => {
+    if (!pendingJobId || jobsLoading) return;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`job-${pendingJobId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.borderColor = 'rgba(200,230,0,0.55)';
+        setTimeout(() => { el.style.borderColor = ''; }, 2200);
+      }
+      setPendingJobId(null);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [pendingJobId, jobsLoading]);
 
   const handleAIResult = (params: any) => {
     setSearch(params.keywords || '');
@@ -632,6 +657,36 @@ export default function UKJobsPage() {
         </div>
       </nav>
 
+      {/* STICKY SUBSCRIBE BANNER — unsubscribed users only */}
+      {!sub?.active && (
+        <div style={{
+          position: 'sticky',
+          top: 64,
+          zIndex: 190,
+          background: 'rgba(4,30,15,0.97)',
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
+          borderBottom: '1px solid rgba(200,230,0,0.14)',
+          padding: isMobile ? '10px 16px' : '10px 24px',
+        }}>
+          <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: isMobile ? 12 : 13, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>
+              Browsing <span style={{ color: '#C8E600', fontWeight: 800 }}>{jobs.length > 0 ? jobs.length.toLocaleString() : '...'}</span> UK jobs — subscribe to apply
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <a href="/uk/subscribe?plan=credits" style={{ background: '#C8E600', color: '#052A14', fontSize: 12, fontWeight: 800, padding: '7px 16px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                Get 20 Credits — £10
+              </a>
+              {!isMobile && (
+                <a href="/uk/subscribe?plan=pro" style={{ background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.28)', color: '#C8E600', fontSize: 12, fontWeight: 700, padding: '7px 16px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                  Go Pro — £21/month
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* HEADER */}
           <div style={{ background: '#041E0F', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: isMobile ? '16px 16px 0' : '24px 24px 0' }}>
             <div style={{ maxWidth: 1000, margin: '0 auto' }}>
@@ -692,17 +747,6 @@ export default function UKJobsPage() {
 
           {/* JOB LIST */}
           <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '16px' : '24px' }}>
-            {/* Subscribe nudge for unsubscribed users */}
-            {!sub?.active && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: 'rgba(200,230,0,0.05)', border: '1px solid rgba(200,230,0,0.18)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, flexWrap: 'wrap' }}>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
-                  <span style={{ fontSize: 15 }}>🔒</span> Browse freely — <span style={{ color: '#C8E600', fontWeight: 700 }}>subscribe to apply</span> to any role
-                </div>
-                <a href="/uk/subscribe" style={{ background: '#C8E600', color: '#052A14', fontSize: 12, fontWeight: 800, padding: '8px 20px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                  Subscribe from £10 →
-                </a>
-              </div>
-            )}
             {jobsLoading ? (
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
                 {Array.from({ length: 8 }).map((_, i) => (
@@ -730,7 +774,7 @@ export default function UKJobsPage() {
                     const applied = appliedIds.has(job.id);
                     const locked = !sub?.active;
                     return (
-                      <div key={job.id} className="job-card" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${applied ? 'rgba(200,230,0,0.3)' : locked ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative' }}>
+                      <div key={job.id} id={`job-${job.id}`} className="job-card" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${applied ? 'rgba(200,230,0,0.3)' : locked ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
@@ -766,12 +810,17 @@ export default function UKJobsPage() {
 
                         <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                           {locked ? (
-                            <a
-                              href="/uk/subscribe"
-                              style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 700, padding: '10px 16px', borderRadius: 99, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                            <button
+                              onClick={() => {
+                                try {
+                                  localStorage.setItem('jobsesame_uk_pending_job', JSON.stringify(job));
+                                } catch {}
+                                router.push('/uk/subscribe');
+                              }}
+                              style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 700, padding: '10px 16px', borderRadius: 99, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                             >
                               🔒 Subscribe to Apply
-                            </a>
+                            </button>
                           ) : applied ? (
                             <div style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#C8E600', padding: '10px', background: 'rgba(200,230,0,0.08)', borderRadius: 99, border: '1px solid rgba(200,230,0,0.2)' }}>
                               ✓ Applied
