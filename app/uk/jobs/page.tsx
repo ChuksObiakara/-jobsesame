@@ -501,13 +501,6 @@ export default function UKJobsPage() {
       .then(data => {
         setSub(data);
         setSubLoading(false);
-        // New users (no subscription ever) go to onboarding, expired go to subscribe
-        if (!data.active) {
-          if (!data.hasSubscription) {
-            router.replace('/uk/onboarding');
-          }
-          // else: expired trial/subscription — stay and show upgrade UI
-        }
       })
       .catch(() => { setSub({ active: false, plan: null, credits: 0 }); setSubLoading(false); });
   }, [isLoaded, isSignedIn, router]);
@@ -627,42 +620,7 @@ export default function UKJobsPage() {
         </div>
       </nav>
 
-      {/* LOCKED STATE */}
-      {!sub?.active ? (
-        <div style={{ maxWidth: 640, margin: '80px auto', padding: '0 24px', textAlign: 'center' }}>
-          <div style={{ background: 'rgba(200,230,0,0.05)', border: '1.5px solid rgba(200,230,0,0.2)', borderRadius: 24, padding: '48px 40px' }}>
-            <div style={{ fontSize: 48, marginBottom: 20 }}>🔒</div>
-            <h2 style={{ fontSize: 26, fontWeight: 800, color: '#FFFFFF', marginBottom: 14, lineHeight: 1.2 }}>
-              Subscribe to access UK jobs
-            </h2>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', lineHeight: 1.7, marginBottom: 28 }}>
-              Subscribe to access UK jobs — £10 for 20 applications or £21/month Pro
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-              <div style={{ background: 'rgba(200,230,0,0.08)', border: '1px solid rgba(200,230,0,0.2)', borderRadius: 12, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>Credits</div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>20 AI applications, one-time</div>
-                </div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: '#C8E600' }}>£10</div>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF' }}>Pro</div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>Unlimited applications + priority matching</div>
-                </div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: '#C8E600' }}>£21<span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>/mo</span></div>
-              </div>
-            </div>
-            <a href="/uk/subscribe" style={{ display: 'block', background: '#C8E600', color: '#052A14', fontSize: 15, fontWeight: 800, padding: '14px 32px', borderRadius: 99, textDecoration: 'none', marginBottom: 12 }}>
-              Subscribe now →
-            </a>
-            <a href="/uk" style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}>← Back to UK home</a>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* HEADER */}
+      {/* HEADER */}
           <div style={{ background: '#041E0F', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: isMobile ? '16px 16px 0' : '24px 24px 0' }}>
             <div style={{ maxWidth: 1000, margin: '0 auto' }}>
               <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
@@ -722,6 +680,17 @@ export default function UKJobsPage() {
 
           {/* JOB LIST */}
           <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '16px' : '24px' }}>
+            {/* Subscribe nudge for unsubscribed users */}
+            {!sub?.active && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: 'rgba(200,230,0,0.05)', border: '1px solid rgba(200,230,0,0.18)', borderRadius: 12, padding: '12px 18px', marginBottom: 18, flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
+                  <span style={{ fontSize: 15 }}>🔒</span> Browse freely — <span style={{ color: '#C8E600', fontWeight: 700 }}>subscribe to apply</span> to any role
+                </div>
+                <a href="/uk/subscribe" style={{ background: '#C8E600', color: '#052A14', fontSize: 12, fontWeight: 800, padding: '8px 20px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  Subscribe from £10 →
+                </a>
+              </div>
+            )}
             {jobsLoading ? (
               <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
                 {Array.from({ length: 8 }).map((_, i) => (
@@ -747,8 +716,9 @@ export default function UKJobsPage() {
                     const matchPct = calcMatch(job, cvData);
                     const badge = matchPct !== null ? matchBadge(matchPct) : null;
                     const applied = appliedIds.has(job.id);
+                    const locked = !sub?.active;
                     return (
-                      <div key={job.id} className="job-card" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${applied ? 'rgba(200,230,0,0.3)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div key={job.id} className="job-card" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${applied ? 'rgba(200,230,0,0.3)' : locked ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
@@ -768,7 +738,7 @@ export default function UKJobsPage() {
                         </div>
 
                         {job.tags.length > 0 && (
-                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', filter: locked ? 'blur(4px)' : 'none', userSelect: locked ? 'none' : 'auto', pointerEvents: locked ? 'none' : 'auto' }}>
                             {job.tags.slice(0, 3).map(tag => (
                               <span key={tag} style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: '2px 7px', fontWeight: 600 }}>{tag}</span>
                             ))}
@@ -776,7 +746,14 @@ export default function UKJobsPage() {
                         )}
 
                         <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
-                          {applied ? (
+                          {locked ? (
+                            <a
+                              href="/uk/subscribe"
+                              style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 700, padding: '10px 16px', borderRadius: 99, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                            >
+                              🔒 Subscribe to Apply
+                            </a>
+                          ) : applied ? (
                             <div style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#C8E600', padding: '10px', background: 'rgba(200,230,0,0.08)', borderRadius: 99, border: '1px solid rgba(200,230,0,0.2)' }}>
                               ✓ Applied
                             </div>
@@ -815,8 +792,6 @@ export default function UKJobsPage() {
               </>
             )}
           </div>
-        </>
-      )}
 
       {/* FAQ */}
       <section style={{ maxWidth: 700, margin: '0 auto', padding: '48px 24px 80px' }}>
