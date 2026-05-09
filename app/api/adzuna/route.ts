@@ -1,9 +1,4 @@
 export const dynamic = 'force-dynamic';
-// REMINDER: Add to Vercel environment variables:
-//   ADZUNA_APP_ID=73658bdc  (or set as env var)
-//   ADZUNA_API_KEY=<your key>
-//   RAPIDAPI_KEY=1cb2b63fbcmsh4c622757de46e24p1c4669jsnfcb9df96f3a8
-
 import { NextRequest, NextResponse } from 'next/server';
 
 const HARDCODED_APP_ID = '73658bdc';

@@ -1,12 +1,10 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Jobsesame2024Admin';
-
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const pw = searchParams.get('pw') || req.headers.get('x-admin-password') || '';
-  if (pw !== ADMIN_PASSWORD) {
+  const authHeader = req.headers.get('authorization');
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword || authHeader !== `Bearer ${adminPassword}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

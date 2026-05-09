@@ -54,11 +54,11 @@ export async function GET() {
 
 // ── POST: manually activate (admin/testing) ───────────────────────────────────
 export async function POST(req: NextRequest) {
-  const adminPassword = process.env.ADMIN_PASSWORD || 'Jobsesame2024Admin';
+  const adminPassword = process.env.ADMIN_PASSWORD;
   const body = await req.json();
   const { password, userId: targetUserId, plan, credits } = body;
 
-  if (!password || password !== adminPassword) {
+  if (!adminPassword || !password || password !== adminPassword) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
   if (!targetUserId || !plan) {

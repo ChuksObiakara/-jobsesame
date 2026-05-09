@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 const PLAN_AMOUNTS: Record<string, Record<string, number>> = {
   credits: { ZAR: 9900, USD: 599 },
@@ -7,11 +8,22 @@ const PLAN_AMOUNTS: Record<string, Record<string, number>> = {
 };
 
 export async function POST(req: NextRequest) {
-  try {
-    const { email, plan, currency } = await req.json();
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-    if (!email || !plan || !currency) {
+  try {
+    const { plan, currency } = await req.json();
+
+    if (!plan || !currency) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    const clerkUser = await currentUser();
+    const email = clerkUser?.emailAddresses?.[0]?.emailAddress;
+    if (!email) {
+      return NextResponse.json({ error: 'No email found for account' }, { status: 400 });
     }
 
     const resolvedCurrency = currency === 'ZAR' ? 'ZAR' : 'USD';

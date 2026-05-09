@@ -1,4 +1,6 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { createMessage } from '@/app/lib/anthropic-retry';
 
 export interface AISearchParams {
@@ -30,7 +32,25 @@ Rules:
 - keywords should be the core role/skill, not the full query
 - reply must be warm and specific, e.g. "Showing you senior React developer roles in London paying £70k+ — sorted by best match."`;
 
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
 export async function POST(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (entry && now < entry.resetAt && entry.count >= 20) {
+    return NextResponse.json({ error: 'Rate limit exceeded. Try again later.' }, { status: 429 });
+  }
+  if (!entry || now >= entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
+  } else {
+    entry.count++;
+  }
+
   try {
     const { query } = await req.json();
     if (!query?.trim()) {
@@ -45,8 +65,6 @@ export async function POST(req: Request) {
     });
 
     const raw = (message.content[0] as { type: string; text: string }).text.trim();
-
-    // Strip any accidental markdown fences
     const cleaned = raw.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
     const params: AISearchParams = JSON.parse(cleaned);
 

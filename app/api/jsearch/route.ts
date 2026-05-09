@@ -1,7 +1,4 @@
 export const dynamic = 'force-dynamic';
-// REMINDER: Add to Vercel environment variables:
-//   RAPIDAPI_KEY=1cb2b63fbcmsh4c622757de46e24p1c4669jsnfcb9df96f3a8
-
 import { NextRequest, NextResponse } from 'next/server';
 
 function mapJob(job: any): any {

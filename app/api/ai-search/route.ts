@@ -1,4 +1,6 @@
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { createMessage } from '@/app/lib/anthropic-retry';
 
 export interface SASearchParams {
@@ -43,7 +45,25 @@ User: "I want to teach English in South Korea"
 User: "Software engineer jobs in London, I want to relocate"
 → {"keywords":"software engineer","location":"London","tab":"relocation","reply":"Showing software engineering relocation opportunities in London — visa sponsorship roles included."}`;
 
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
 export async function POST(req: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (entry && now < entry.resetAt && entry.count >= 20) {
+    return NextResponse.json({ error: 'Rate limit exceeded. Try again later.' }, { status: 429 });
+  }
+  if (!entry || now >= entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + 60 * 60 * 1000 });
+  } else {
+    entry.count++;
+  }
+
   try {
     const { query } = await req.json();
     if (!query?.trim()) {
