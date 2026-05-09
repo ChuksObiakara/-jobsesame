@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { useAuth, UserButton } from '@clerk/nextjs';
+import NavSA from '../components/NavSA';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
 
 // ── AI Search Assistant ───────────────────────────────────────────────────────
@@ -198,7 +198,6 @@ interface Job {
 }
 
 export default function JobsPage() {
-  const { isSignedIn } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
@@ -209,7 +208,6 @@ export default function JobsPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const jobsSectionRef = useRef<HTMLDivElement>(null);
   const jobsFetchedRef = useRef(false);
   const [savedJobs, setSavedJobs] = useState<string[]>(() => {
@@ -437,52 +435,7 @@ export default function JobsPage() {
         />
       )}
 
-      {/* NAV */}
-      <nav style={{background:"#052A14",padding:"0 24px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,boxShadow:"0 2px 20px rgba(0,0,0,0.3)"}}>
-        <a href="/" style={{display:"flex",alignItems:"center",gap:11,textDecoration:"none"}}>
-          <div style={{width:38,height:38,background:"#C8E600",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <circle cx="9" cy="9" r="5.5" stroke="#052A14" strokeWidth="2.2"/>
-              <circle cx="9" cy="9" r="2.5" fill="#052A14" opacity="0.4"/>
-              <line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#052A14" strokeWidth="2.8" strokeLinecap="round"/>
-              <line x1="16" y1="14" x2="14.5" y2="17" stroke="#052A14" strokeWidth="2" strokeLinecap="round"/>
-              <line x1="19" y1="17" x2="17.5" y2="20" stroke="#052A14" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <span style={{fontSize:20,fontWeight:800,letterSpacing:-0.5}}>
-            <span style={{color:"#FFFFFF"}}>job</span>
-            <span style={{color:"#C8E600"}}>sesame</span>
-          </span>
-        </a>
-        <div style={{display:"flex",gap:16,alignItems:"center"}}>
-          {!isMobile && <>
-            <a href="/jobs" style={{fontSize:13,color:"#C8E600",fontWeight:700,textDecoration:"none",borderBottom:"2px solid #C8E600",paddingBottom:2}}>Find Jobs</a>
-            <a href="/optimise" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>CV Optimiser</a>
-            {isSignedIn && <a href="/dashboard" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none"}}>Dashboard</a>}
-          </>}
-          {isSignedIn
-            ? <UserButton afterSignOutUrl="/" />
-            : <a href="/sign-up" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"9px 22px",borderRadius:99,textDecoration:"none",whiteSpace:"nowrap"}}>Get Started</a>
-          }
-          {isMobile && (
-            <button onClick={()=>setMenuOpen(!menuOpen)} style={{background:"transparent",border:"none",color:"#C8E600",fontSize:24,cursor:"pointer",padding:"4px",lineHeight:1}}>
-              {menuOpen ? '✕' : '☰'}
-            </button>
-          )}
-        </div>
-      </nav>
-
-      {/* MOBILE MENU */}
-      {isMobile && menuOpen && (
-        <div style={{position:"fixed",top:64,left:0,right:0,background:"#052A14",zIndex:99,borderTop:"1px solid #1A5A2A",padding:"20px 24px",display:"flex",flexDirection:"column",gap:20,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
-          <a href="/jobs" onClick={()=>setMenuOpen(false)} style={{fontSize:16,color:"#C8E600",fontWeight:700,textDecoration:"none"}}>Find Jobs</a>
-          <a href="/optimise" onClick={()=>setMenuOpen(false)} style={{fontSize:16,color:"#A8D8B0",fontWeight:600,textDecoration:"none"}}>CV Optimiser</a>
-          {isSignedIn
-            ? <a href="/dashboard" onClick={()=>setMenuOpen(false)} style={{fontSize:16,color:"#A8D8B0",fontWeight:600,textDecoration:"none"}}>Dashboard</a>
-            : <a href="/sign-up" onClick={()=>setMenuOpen(false)} style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px 24px",borderRadius:99,textDecoration:"none",textAlign:"center"}}>Get Started — free</a>
-          }
-        </div>
-      )}
+      <NavSA />
 
       {/* PAGE HEADER */}
       <div style={{background:"#052A14",padding:isMobile?"12px 12px 0":"28px 28px 0",overflowX:"hidden"}}>

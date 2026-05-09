@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
-import { useAuth, UserButton } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
 import { useSearchParams } from 'next/navigation';
+import NavUK from '../../components/NavUK';
 const PLANS = [
   {
     id: 'free',
@@ -111,21 +112,7 @@ function SubscribePageInner() {
         input:focus { border-color: rgba(200,230,0,0.4) !important; outline: none; }
       `}</style>
 
-      {/* NAV */}
-      <nav style={{ height: 64, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', position: 'sticky', top: 0, zIndex: 200, background: 'rgba(6,26,12,0.94)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' }}>
-        <a href="/uk" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-          <span style={{ fontSize: 17, fontWeight: 800 }}>
-            <span style={{ color: '#FFFFFF' }}>job</span><span style={{ color: '#C8E600' }}>sesame</span>
-          </span>
-          <span style={{ fontSize: 10, background: 'rgba(200,230,0,0.12)', color: '#C8E600', border: '1px solid rgba(200,230,0,0.24)', borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>🇬🇧 UK</span>
-        </a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {isSignedIn
-            ? <UserButton afterSignOutUrl="/uk" />
-            : <a href="/sign-up" style={{ background: '#C8E600', color: '#061A0C', fontSize: 13, fontWeight: 800, padding: '8px 20px', borderRadius: 8, textDecoration: 'none' }}>Get started</a>
-          }
-        </div>
-      </nav>
+      <NavUK />
 
       {/* PENDING OPTIMISED CV BANNER */}
       {pendingCV && (

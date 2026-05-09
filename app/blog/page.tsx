@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { POSTS } from './posts';
+import NavSA from '../components/NavSA';
 
 const CATEGORIES = ['All', 'CV Tips', 'Career Advice', 'Relocation', 'Remote Work', 'Salary'];
 
@@ -38,26 +39,7 @@ export default function BlogPage() {
   return (
     <main style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#F4FCF4', minHeight: '100vh', margin: 0 }}>
 
-      {/* NAV */}
-      <nav style={{ background: '#052A14', padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <div style={{ width: 36, height: 36, background: '#C8E600', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-              <circle cx="9" cy="9" r="5.5" stroke="#052A14" strokeWidth="2.2"/>
-              <circle cx="9" cy="9" r="2.5" fill="#052A14" opacity="0.4"/>
-              <line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#052A14" strokeWidth="2.8" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <span style={{ fontSize: 18, fontWeight: 800 }}>
-            <span style={{ color: '#FFFFFF' }}>job</span>
-            <span style={{ color: '#C8E600' }}>sesame</span>
-          </span>
-        </a>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <a href="/jobs" style={{ fontSize: 13, color: '#A8D8B0', fontWeight: 500, textDecoration: 'none' }}>Find Jobs</a>
-          <a href="/sign-up" style={{ background: '#C8E600', color: '#052A14', fontSize: 13, fontWeight: 800, padding: '9px 22px', borderRadius: 99, textDecoration: 'none' }}>Get Started</a>
-        </div>
-      </nav>
+      <NavSA />
 
       {/* HEADER */}
       <div style={{ background: '#052A14', padding: '52px 24px 40px' }}>

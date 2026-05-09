@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { useUser, UserButton } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
+import NavUK from '../../components/NavUK';
 import { useRouter } from 'next/navigation';
-import MarketSwitcher from '../../components/MarketSwitcher';
 import OptimiseModal from '../components/OptimiseModal';
 
 const BG = '#052A14';
@@ -458,27 +458,7 @@ export default function UKDashboard() {
         </div>
       )}
 
-      {/* NAV */}
-      <nav style={{ background: NAV_BG, borderBottom: BORDER, height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <a href="/uk" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }}>
-          <span style={{ fontSize: 17, fontWeight: 800 }}>
-            <span style={{ color: '#fff' }}>job</span><span style={{ color: ACCENT }}>sesame</span>
-          </span>
-          <span style={{ fontSize: 10, background: 'rgba(200,230,0,0.12)', color: ACCENT, border: '1px solid rgba(200,230,0,0.25)', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>🇬🇧</span>
-        </a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
-          {planBadge && (
-            <div style={{ background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.22)', borderRadius: 99, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: ACCENT, flexShrink: 0 }}>
-              {planBadge}
-            </div>
-          )}
-          {!isMobile && (
-            <a href="/uk/jobs" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontWeight: 500 }}>Browse Jobs</a>
-          )}
-          <MarketSwitcher compact={isMobile} />
-          <UserButton afterSignOutUrl="/uk" />
-        </div>
-      </nav>
+      <NavUK planBadge={planBadge} />
 
       <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '36px 24px 72px', animation: 'fadeIn 0.35s ease-out' }}>
 

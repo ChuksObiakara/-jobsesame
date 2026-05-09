@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { useUser, UserButton } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
+import NavUK from '../../components/NavUK';
 import { useRouter } from 'next/navigation';
 import OptimiseModal from '../components/OptimiseModal';
 interface UKJob {
@@ -576,6 +577,12 @@ export default function UKJobsPage() {
     );
   }
 
+  const planBadge = sub?.active
+    ? sub.plan === 'trial' ? `🎁 ${sub.trialDaysLeft ?? 7}d free trial`
+    : sub.plan === 'credits' ? `${sub.credits} credits`
+    : sub.plan === 'pro' ? '∞ Pro' : null
+    : null;
+
   const filtered = filterJobs(jobs, activeTab, search, locationFilter, minSalary);
   const sorted = cvData ? [...filtered].sort((a, b) => (calcMatch(b, cvData) ?? 0) - (calcMatch(a, cvData) ?? 0)) : filtered;
   const visible = sorted.slice(0, page * PAGE_SIZE);
@@ -632,32 +639,7 @@ export default function UKJobsPage() {
         />
       )}
 
-      {/* NAV */}
-      <nav style={{ background: '#041E0F', borderBottom: '1px solid rgba(255,255,255,0.06)', height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 200 }}>
-        <a href="/uk" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-          <span style={{ fontSize: 17, fontWeight: 800 }}><span style={{ color: '#FFFFFF' }}>job</span><span style={{ color: '#C8E600' }}>sesame</span></span>
-          <span style={{ fontSize: 10, background: 'rgba(200,230,0,0.12)', color: '#C8E600', border: '1px solid rgba(200,230,0,0.25)', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>🇬🇧</span>
-        </a>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
-          {sub?.active && (
-            <div style={{ background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.25)', borderRadius: 99, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#C8E600', flexShrink: 0 }}>
-              {sub.plan === 'trial'
-                ? `🎁 ${sub.trialDaysLeft ?? 7}d free trial`
-                : sub.plan === 'credits'
-                ? `${sub.credits} credits`
-                : sub.plan === 'pro' ? '∞ Pro' : ''}
-            </div>
-          )}
-          {!isMobile && (
-            <>
-              <a href="/uk/dashboard" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontWeight: 500 }}>Dashboard</a>
-              <a href="/uk" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontWeight: 500 }}>UK Home</a>
-            </>
-          )}
-          <UserButton afterSignOutUrl="/uk" />
-        </div>
-      </nav>
+      <NavUK planBadge={planBadge} />
 
       {/* STICKY SUBSCRIBE BANNER — unsubscribed users only */}
       {!sub?.active && (

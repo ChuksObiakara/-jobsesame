@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { useAuth, UserButton } from '@clerk/nextjs';
-import MarketSwitcher from './components/MarketSwitcher';
+import { useAuth } from '@clerk/nextjs';
+import NavSA from './components/NavSA';
+import FooterSA from './components/FooterSA';
 
 const PHOTOS = [
   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face',
@@ -15,11 +16,9 @@ const PHOTOS = [
 export default function Home() {
   const { isSignedIn } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [currency, setCurrency] = useState<'ZAR' | 'USD'>('ZAR');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [faqSearch, setFaqSearch] = useState('');
-  const [scrolled, setScrolled] = useState(false);
   const [demoStage, setDemoStage] = useState<'idle' | 'loading' | 'done'>('idle');
   const [demoAts, setDemoAts] = useState(42);
   const [notifVisible, setNotifVisible] = useState(false);
@@ -37,12 +36,6 @@ export default function Home() {
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
-  }, []);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
@@ -92,7 +85,6 @@ export default function Home() {
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    setMenuOpen(false);
   };
 
   const handleCvAnalysis = async (file: File) => {
@@ -207,64 +199,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* ── NAV ───────────────────────────────────────────────── */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 200, height: 64,
-        padding: '0 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: scrolled ? 'rgba(4,12,6,0.92)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
-        borderBottom: scrolled ? DIVIDE : 'none',
-        transition: 'all 0.3s', gap: 12,
-      }}>
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.5 }}>
-            <span style={{ color: '#fff' }}>job</span><span style={{ color: '#C8E600' }}>sesame</span>
-          </span>
-        </a>
-
-        <div className="hide-mobile" style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          {[{ label: 'How it works', id: 'how-it-works' }, { label: 'Features', id: 'features' }, { label: 'Pricing', id: 'pricing' }, { label: 'FAQ', id: 'faq' }].map(item => (
-            <button key={item.id} onClick={() => scrollTo(item.id)} className="nav-link" style={{ background: 'transparent', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.52)', fontWeight: 500, padding: '8px 14px', borderRadius: 6, cursor: 'pointer' }}>{item.label}</button>
-          ))}
-          <a href="/recruiters" className="nav-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.52)', fontWeight: 500, padding: '8px 14px', textDecoration: 'none' }}>Recruiters</a>
-          <a href="/blog" className="nav-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.52)', fontWeight: 500, padding: '8px 14px', textDecoration: 'none' }}>Blog</a>
-        </div>
-
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <MarketSwitcher compact={isMobile} />
-          {!isMobile && !isSignedIn && <a href="/sign-in" className="nav-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.48)', fontWeight: 500, textDecoration: 'none', padding: '8px 12px' }}>Sign in</a>}
-          {!isMobile && isSignedIn && <a href="/dashboard" style={{ fontSize: 13, color: '#C8E600', fontWeight: 700, textDecoration: 'none', padding: '8px 16px', background: 'rgba(200,230,0,0.08)', borderRadius: 8, border: '1px solid rgba(200,230,0,0.22)' }}>Dashboard</a>}
-          {isSignedIn
-            ? <UserButton afterSignOutUrl="/" />
-            : <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '9px 22px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>Get started free</a>
-          }
-          {isMobile && (
-            <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)', fontSize: 22, cursor: 'pointer', padding: 4, lineHeight: 1 }}>
-              {menuOpen ? '✕' : '☰'}
-            </button>
-          )}
-        </div>
-      </nav>
-
-      {/* MOBILE MENU */}
-      {isMobile && menuOpen && (
-        <div style={{ position: 'fixed', top: 64, left: 0, right: 0, background: 'rgba(4,12,6,0.98)', backdropFilter: 'blur(20px)', zIndex: 199, borderTop: DIVIDE, padding: '24px 24px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {[{ label: 'How it works', id: 'how-it-works' }, { label: 'Features', id: 'features' }, { label: 'Pricing', id: 'pricing' }, { label: 'FAQ', id: 'faq' }].map(item => (
-            <button key={item.id} onClick={() => scrollTo(item.id)} style={{ background: 'transparent', border: 'none', fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textAlign: 'left', cursor: 'pointer', padding: '4px 0' }}>{item.label}</button>
-          ))}
-          <a href="/recruiters" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Recruiters</a>
-          <a href="/blog" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Blog</a>
-          <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
-          {isSignedIn
-            ? <a href="/dashboard" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: '#C8E600', fontWeight: 700, textDecoration: 'none' }}>Dashboard →</a>
-            : <>
-              <a href="/sign-in" onClick={() => setMenuOpen(false)} style={{ fontSize: 15, color: 'rgba(255,255,255,0.45)', fontWeight: 500, textDecoration: 'none' }}>Sign in</a>
-              <a href="/sign-up" onClick={() => setMenuOpen(false)} style={{ background: '#C8E600', color: BG, fontSize: 15, fontWeight: 800, padding: '14px 24px', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>Get started — free</a>
-            </>
-          }
-        </div>
-      )}
+      <NavSA home />
 
       {/* ── HERO ─────────────────────────────────────────────── */}
       <section style={{ padding: isMobile ? '80px 22px 72px' : '100px 40px 80px', maxWidth: 1240, margin: '0 auto', animation: 'fadeInUp 0.6s ease-out' }}>
@@ -786,48 +721,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── FOOTER ───────────────────────────────────────────── */}
-      <footer style={{ background: '#040F07', borderTop: DIVIDE, padding: isMobile ? '48px 22px 96px' : '64px 40px 36px' }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1fr 1fr 1fr', gap: isMobile ? '32px 24px' : 40, marginBottom: 48 }}>
-            <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                <div style={{ width: 28, height: 28, background: '#C8E600', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="15" height="15" viewBox="0 0 22 22" fill="none"><circle cx="9" cy="9" r="5.5" stroke="#061A0C" strokeWidth="2.2" /><circle cx="9" cy="9" r="2.5" fill="#061A0C" opacity="0.4" /><line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#061A0C" strokeWidth="2.8" strokeLinecap="round" /></svg>
-                </div>
-                <span style={{ fontSize: 16, fontWeight: 800 }}><span style={{ color: '#fff' }}>job</span><span style={{ color: '#C8E600' }}>sesame</span></span>
-              </div>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.16)', lineHeight: 1.8, maxWidth: 220, marginBottom: 6 }}>AI-powered job applications for professionals who refuse to be ignored.</p>
-              <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.1)', marginBottom: 6 }}>Jobsesame (Pty) Ltd · South Africa</p>
-              <a href="mailto:support@jobsesame.co.za" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none' }}>support@jobsesame.co.za</a>
-            </div>
-            {[
-              { heading: 'Product', links: [['Find Jobs', '/jobs'], ['CV Optimiser', '/optimise'], ['UK Market', '/uk'], ['Dashboard', '/dashboard']] },
-              { heading: 'Company', links: [['About', '/about'], ['Recruiters', '/recruiters'], ['Blog', '/blog'], ['Contact', 'mailto:hello@jobsesame.co.za']] },
-              { heading: 'Legal',   links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Refund Policy', '/refund'], ['Delete My Data', '/delete-data']] },
-            ].map(col => (
-              <div key={col.heading}>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 16 }}>{col.heading}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {col.links.map(([l, h]) => <a key={l} href={h} className="nav-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.24)', textDecoration: 'none' }}>{l}</a>)}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ borderTop: DIVIDE, paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.12)' }}>© 2025 Jobsesame (Pty) Ltd. All rights reserved.</span>
-              <div style={{ display: 'flex', gap: 20 }}>
-                {['Twitter', 'LinkedIn', 'Instagram'].map(s => <span key={s} style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', cursor: 'pointer' }}>{s}</span>)}
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.1)' }}>Registered with the South African Information Regulator under POPIA</span>
-              <a href="/unsubscribe" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none' }}>Unsubscribe from emails</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <FooterSA />
 
       {/* MOBILE STICKY BAR */}
       {isMobile && !isSignedIn && (

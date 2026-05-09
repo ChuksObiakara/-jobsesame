@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { useAuth, UserButton } from '@clerk/nextjs';
-import MarketSwitcher from '../components/MarketSwitcher';
+import { useAuth } from '@clerk/nextjs';
+import NavUK from '../components/NavUK';
+import FooterUK from '../components/FooterUK';
 
 interface UKJob {
   id: string; title: string; company: string; location: string;
@@ -76,8 +77,6 @@ export const dynamic = 'force-dynamic';
 export default function UKPage() {
   const { isSignedIn } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [jobs, setJobs] = useState<UKJob[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -93,12 +92,6 @@ export default function UKPage() {
     const check = () => setIsMobile(window.innerWidth < 768);
     check(); window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
-  }, []);
-
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', fn);
-    return () => window.removeEventListener('scroll', fn);
   }, []);
 
   useEffect(() => {
@@ -131,7 +124,6 @@ export default function UKPage() {
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    setMenuOpen(false);
   };
 
   const runDemo = () => {
@@ -200,40 +192,7 @@ export default function UKPage() {
         </div>
       )}
 
-      {/* NAV */}
-      <nav style={{ position:'sticky', top:0, zIndex:200, height:64, padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', background: scrolled ? 'rgba(6,18,8,.94)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none', WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none', borderBottom: scrolled ? '1px solid rgba(255,255,255,.05)' : 'none', transition:'all .3s', gap:12 }}>
-        <a href="/uk" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none', flexShrink:0 }}>
-          <span style={{ fontSize:18, fontWeight:800, letterSpacing:-.5 }}><span style={{ color:'#fff' }}>job</span><span style={{ color:'#C8E600' }}>sesame</span></span>
-          <span style={{ fontSize:10, background:'rgba(200,230,0,.12)', color:'#C8E600', border:'1px solid rgba(200,230,0,.24)', borderRadius:4, padding:'2px 7px', fontWeight:700, letterSpacing:.3 }}>🇬🇧 UK</span>
-        </a>
-
-        <div className="hide-mobile" style={{ display:'flex', gap:2, alignItems:'center' }}>
-          {[['Features','features'],['Jobs','jobs'],['Pricing','pricing'],['FAQ','faq']].map(([l,id]) => (
-            <button key={id} onClick={() => scrollTo(id)} className="nav-link" style={{ background:'transparent', border:'none', fontSize:13, color:'rgba(255,255,255,.5)', fontWeight:500, padding:'8px 12px', borderRadius:6, cursor:'pointer', transition:'color .15s' }}>{l}</button>
-          ))}
-        </div>
-
-        <div style={{ display:'flex', gap:8, alignItems:'center', flexShrink:0 }}>
-          <MarketSwitcher compact={isMobile} />
-          {!isMobile && !isSignedIn && <a href="/sign-in" className="nav-link" style={{ fontSize:13, color:'rgba(255,255,255,.45)', fontWeight:500, textDecoration:'none', padding:'8px 10px', transition:'color .15s' }}>Sign in</a>}
-          {!isMobile && isSignedIn && <a href="/uk/dashboard" style={{ fontSize:13, color:'#C8E600', fontWeight:700, textDecoration:'none', padding:'8px 14px', background:'rgba(200,230,0,.08)', borderRadius:8, border:'1px solid rgba(200,230,0,.22)' }}>Dashboard</a>}
-          {isSignedIn ? <UserButton afterSignOutUrl="/uk" /> : <a href="/sign-up" style={{ background:'#C8E600', color:'#061A0C', fontSize:13, fontWeight:800, padding:'9px 20px', borderRadius:8, textDecoration:'none', whiteSpace:'nowrap' }}>Get started free</a>}
-          {isMobile && <button onClick={() => setMenuOpen(!menuOpen)} style={{ background:'transparent', border:'none', color:'rgba(255,255,255,.7)', fontSize:20, cursor:'pointer', padding:4, lineHeight:1 }}>{menuOpen ? '✕' : '☰'}</button>}
-        </div>
-      </nav>
-
-      {/* MOBILE MENU */}
-      {isMobile && menuOpen && (
-        <div style={{ position:'fixed', top:64, left:0, right:0, background:'rgba(6,18,8,.99)', backdropFilter:'blur(20px)', zIndex:199, borderTop:'1px solid rgba(255,255,255,.05)', padding:'24px 24px 32px', display:'flex', flexDirection:'column', gap:14 }}>
-          {[['Features','features'],['Jobs','jobs'],['Pricing','pricing'],['FAQ','faq']].map(([l,id]) => (
-            <button key={id} onClick={() => scrollTo(id)} style={{ background:'transparent', border:'none', fontSize:16, color:'rgba(255,255,255,.7)', fontWeight:600, textAlign:'left', cursor:'pointer', padding:'4px 0' }}>{l}</button>
-          ))}
-          <div style={{ height:1, background:'rgba(255,255,255,.06)' }} />
-          {isSignedIn
-            ? <a href="/uk/dashboard" onClick={() => setMenuOpen(false)} style={{ fontSize:16, color:'#C8E600', fontWeight:700, textDecoration:'none' }}>UK Dashboard →</a>
-            : <a href="/sign-up" onClick={() => setMenuOpen(false)} style={{ background:'#C8E600', color:'#061A0C', fontSize:15, fontWeight:800, padding:'14px 24px', borderRadius:8, textDecoration:'none', textAlign:'center' }}>Get started free</a>}
-        </div>
-      )}
+      <NavUK home />
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section style={{ padding: isMobile ? '56px 22px 48px' : '80px 40px 64px', maxWidth:1200, margin:'0 auto', animation:'fadeUp .55s ease-out' }}>
@@ -589,40 +548,7 @@ export default function UKPage() {
         <p style={{ fontSize:12, color:'rgba(255,255,255,.15)', marginTop:14 }}>Free forever · GDPR compliant · Cancel anytime</p>
       </section>
 
-      {/* ── FOOTER ───────────────────────────────────────────────────── */}
-      <footer style={{ background:'#040F07', borderTop:'1px solid rgba(255,255,255,.04)', padding: isMobile ? '44px 22px 80px' : '56px 40px 32px' }}>
-        <div style={{ maxWidth:1200, margin:'0 auto' }}>
-          <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1fr 1fr 1fr', gap: isMobile ? '28px 20px' : 40, marginBottom:44 }}>
-            <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
-                <span style={{ fontSize:15, fontWeight:800 }}><span style={{ color:'#fff' }}>job</span><span style={{ color:'#C8E600' }}>sesame</span></span>
-                <span style={{ fontSize:10, background:'rgba(200,230,0,.1)', color:'#C8E600', border:'1px solid rgba(200,230,0,.2)', borderRadius:4, padding:'2px 7px', fontWeight:700 }}>🇬🇧 UK</span>
-              </div>
-              <p style={{ fontSize:13, color:'rgba(255,255,255,.15)', lineHeight:1.75, maxWidth:200, marginBottom:8 }}>AI-powered job applications. Built for the UK market.</p>
-              <p style={{ fontSize:11, color:'rgba(255,255,255,.1)', marginBottom:4 }}>GDPR compliant · United Kingdom</p>
-              <a href="mailto:uk@jobsesame.co.za" style={{ fontSize:11, color:'rgba(255,255,255,.15)', textDecoration:'none' }}>uk@jobsesame.co.za</a>
-            </div>
-            {[
-              { h:'Product', links:[['UK Jobs','#jobs'],['Pricing','#pricing'],['Dashboard','/uk/dashboard'],['CV Optimiser','/optimise']] },
-              { h:'Company', links:[['About','/about'],['Blog','/blog'],['Recruiters','/recruiters'],['Contact','mailto:uk@jobsesame.co.za']] },
-              { h:'Legal',   links:[['Privacy Policy','/privacy'],['Terms','/terms'],['Refund Policy','/refund'],['Delete Data','/delete-data']] },
-            ].map(col => (
-              <div key={col.h}>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,.2)', fontWeight:700, letterSpacing:'1.5px', textTransform:'uppercase', marginBottom:14 }}>{col.h}</div>
-                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                  {col.links.map(([l,h]) => <a key={l} href={h} className="nav-link" style={{ fontSize:13, color:'rgba(255,255,255,.2)', textDecoration:'none', transition:'color .15s' }}>{l}</a>)}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ borderTop:'1px solid rgba(255,255,255,.04)', paddingTop:18, display:'flex', flexWrap:'wrap', gap:12, alignItems:'center', justifyContent:'space-between' }}>
-            <span style={{ fontSize:11, color:'rgba(255,255,255,.1)' }}>© 2025 Jobsesame. All rights reserved. GDPR compliant.</span>
-            <div style={{ display:'flex', gap:18 }}>
-              {['Twitter','LinkedIn'].map(s => <span key={s} style={{ fontSize:11, color:'rgba(255,255,255,.12)', cursor:'pointer' }}>{s}</span>)}
-            </div>
-          </div>
-        </div>
-      </footer>
+      <FooterUK />
 
       {/* MOBILE STICKY CTA */}
       {isMobile && !isSignedIn && (
