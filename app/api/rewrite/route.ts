@@ -31,11 +31,70 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { cvData, jobTitle, jobDescription, jobCompany, company, userPrompt, coverLetter } = body;
+    const { cvData, jobTitle, jobDescription, jobCompany, company, userPrompt, coverLetter, ukOptimise } = body;
     const resolvedCompany = company || jobCompany || 'the company';
 
     if (!cvData || !jobTitle) {
       return NextResponse.json({ error: 'Missing CV data or job title' }, { status: 400 });
+    }
+
+    // ── UK Optimise mode ──────────────────────────────────────────────────────
+    if (ukOptimise) {
+      const cvJson = JSON.stringify({
+        name: cvData.name, title: cvData.title, location: cvData.location,
+        email: cvData.email || '', phone: cvData.phone || '',
+        summary: cvData.summary, skills: cvData.skills,
+        experience_years: cvData.experience_years, education: cvData.education,
+        languages: cvData.languages,
+        experience: cvData.experience,
+      });
+
+      const response = await createMessage({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2500,
+        messages: [{
+          role: 'user',
+          content: `You are an expert UK CV writer. Rewrite this CV specifically for a ${jobTitle} role at ${resolvedCompany}.
+
+UK EMPLOYER RULES — FOLLOW EXACTLY:
+1. Maximum 2 pages worth of content
+2. Personal statement / summary at top, 3 sentences, British English spelling (organisation not organization, etc.)
+3. Quantify every achievement where possible — use numbers, percentages, time saved
+4. Extract the key skills and keywords from the job description and weave them into summary, skills list, and bullet points
+5. NEVER change company names, job titles held, or dates — only rewrite bullets and summary
+6. List 8-10 skills that match the job description most closely
+
+JOB DETAILS:
+Title: ${jobTitle}
+Company: ${resolvedCompany}
+Description: ${(jobDescription || '').substring(0, 1500)}
+
+CANDIDATE CV:
+${cvJson}
+
+Return ONLY valid JSON, no markdown:
+{
+  "name": "unchanged",
+  "title": "role-targeted title",
+  "location": "unchanged",
+  "email": "unchanged",
+  "phone": "unchanged",
+  "summary": "UK-optimised 3 sentence summary using British spelling",
+  "skills": ["8 to 10 skills matching this job"],
+  "experience_years": unchanged_number,
+  "education": "unchanged",
+  "languages": ["unchanged"],
+  "experience": [{"title": "EXACT original title","company": "EXACT original company","duration": "unchanged","bullets": ["rewritten achievement with metric","rewritten achievement"]}],
+  "changes": ["Rewrote summary for ${resolvedCompany} role", "Added N UK-relevant keywords", "Strengthened X experience with quantified results", "Applied British spelling throughout"]
+}`,
+        }],
+      });
+
+      const raw = response.content[0].type === 'text' ? response.content[0].text : '';
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+      const { changes, ...optimisedCV } = parsed;
+      return NextResponse.json({ success: true, optimisedCV, changes: changes || [] });
     }
 
     // ── Cover letter mode ─────────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import OptimiseModal from '../components/OptimiseModal';
 interface UKJob {
   id: string;
   title: string;
@@ -485,6 +486,7 @@ export default function UKJobsPage() {
   const [selectedJob, setSelectedJob] = useState<UKJob | null>(null);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [optimiseJob, setOptimiseJob] = useState<UKJob | null>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -573,7 +575,17 @@ export default function UKJobsPage() {
         ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(200,230,0,0.2); border-radius: 3px; }
       `}</style>
 
-      {/* MODAL */}
+      {/* OPTIMISE MODAL */}
+      {optimiseJob && (
+        <OptimiseModal
+          job={optimiseJob}
+          cvData={cvData}
+          sub={sub}
+          onClose={() => setOptimiseJob(null)}
+        />
+      )}
+
+      {/* APPLY MODAL */}
       {selectedJob && (
         <ApplyModal
           job={selectedJob}
@@ -744,6 +756,13 @@ export default function UKJobsPage() {
                             ))}
                           </div>
                         )}
+
+                        <button
+                          onClick={() => setOptimiseJob(job)}
+                          style={{ width: '100%', background: 'rgba(200,230,0,0.07)', border: '1px solid rgba(200,230,0,0.2)', color: '#C8E600', fontSize: 12, fontWeight: 700, padding: '8px', borderRadius: 8, cursor: 'pointer', textAlign: 'center' }}
+                        >
+                          ✦ Optimise CV for this job
+                        </button>
 
                         <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                           {locked ? (

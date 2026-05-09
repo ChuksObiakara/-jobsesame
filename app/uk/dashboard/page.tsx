@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import MarketSwitcher from '../../components/MarketSwitcher';
+import OptimiseModal from '../components/OptimiseModal';
 
 const BG = '#052A14';
 const NAV_BG = '#041E0F';
@@ -176,6 +177,8 @@ export default function UKDashboard() {
   const [rewriting, setRewriting] = useState(false);
   const [rewriteResult, setRewriteResult] = useState<any>(null);
   const [rewriteError, setRewriteError] = useState('');
+
+  const [optimiseJob, setOptimiseJob] = useState<any>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -366,6 +369,16 @@ export default function UKDashboard() {
         select{appearance:none;-webkit-appearance:none}
         ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(200,230,0,0.15);border-radius:3px}
       `}</style>
+
+      {/* ── OPTIMISE MODAL ─────────────────────────────────────────────────── */}
+      {optimiseJob && (
+        <OptimiseModal
+          job={optimiseJob}
+          cvData={cvData}
+          sub={sub}
+          onClose={() => setOptimiseJob(null)}
+        />
+      )}
 
       {/* ── ANALYSIS OVERLAY ───────────────────────────────────────────────── */}
       {uploading && (
@@ -811,23 +824,28 @@ export default function UKDashboard() {
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 14 }}>Top Matched Roles</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {topJobs.map((job, i) => (
-                        <div key={job.id || i} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px' }}>
-                          <div style={{ width: 36, height: 36, borderRadius: 10, background: `hsl(${(job.company?.charCodeAt(0) || 65) * 7 % 360},50%,25%)`, border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
-                            {(job.company?.[0] || '?').toUpperCase()}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.title}</div>
-                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{job.company} · {job.location}</div>
-                            {job.salary && <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 2 }}>{job.salary}</div>}
-                          </div>
-                          <div style={{ flexShrink: 0 }}>
-                            <div style={{ fontSize: 11, fontWeight: 800, color: ACCENT, background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '3px 9px', whiteSpace: 'nowrap' }}>
-                              {job._matchScore}% match
+                        <div key={job.id || i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 10, background: `hsl(${(job.company?.charCodeAt(0) || 65) * 7 % 360},50%,25%)`, border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0 }}>
+                              {(job.company?.[0] || '?').toUpperCase()}
                             </div>
-                            <div style={{ marginTop: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '3px 10px', fontSize: 10, color: 'rgba(255,255,255,0.2)', textAlign: 'center', filter: 'blur(2px)', userSelect: 'none' }}>
-                              Apply →
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.title}</div>
+                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{job.company} · {job.location}</div>
+                              {job.salary && <div style={{ fontSize: 11, color: ACCENT, fontWeight: 700, marginTop: 2 }}>{job.salary}</div>}
+                            </div>
+                            <div style={{ flexShrink: 0 }}>
+                              <div style={{ fontSize: 11, fontWeight: 800, color: ACCENT, background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '3px 9px', whiteSpace: 'nowrap' }}>
+                                {job._matchScore}% match
+                              </div>
                             </div>
                           </div>
+                          <button
+                            onClick={() => setOptimiseJob(job)}
+                            style={{ width: '100%', background: 'rgba(200,230,0,0.07)', border: '1px solid rgba(200,230,0,0.18)', color: ACCENT, fontSize: 11, fontWeight: 700, padding: '7px', borderRadius: 8, cursor: 'pointer' }}
+                          >
+                            ✦ Optimise CV for this job
+                          </button>
                         </div>
                       ))}
                     </div>
