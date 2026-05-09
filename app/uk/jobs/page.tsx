@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import MarketSwitcher from '../../components/MarketSwitcher';
@@ -23,6 +23,17 @@ interface Sub {
   active: boolean;
   plan: string | null;
   credits: number;
+}
+
+// ── Salary parser ─────────────────────────────────────────────────────────────
+function parseSalaryMin(salary: string): number | null {
+  if (!salary) return null;
+  const clean = salary.replace(/[£,\s]/g, '');
+  const match = clean.match(/(\d+)/);
+  if (!match) return null;
+  const n = parseInt(match[1]);
+  // Adzuna gives full numbers, others may give "45k"
+  return n < 1000 ? n * 1000 : n;
 }
 
 // ── Match score ───────────────────────────────────────────────────────────────
@@ -61,7 +72,13 @@ const TABS = [
 
 type TabId = typeof TABS[number]['id'];
 
-function filterJobs(jobs: UKJob[], tab: TabId, search: string, location: string): UKJob[] {
+function filterJobs(
+  jobs: UKJob[],
+  tab: TabId,
+  search: string,
+  location: string,
+  minSalary: number | null,
+): UKJob[] {
   let list = jobs;
   if (search) {
     const q = search.toLowerCase();
@@ -75,6 +92,12 @@ function filterJobs(jobs: UKJob[], tab: TabId, search: string, location: string)
     const loc = location.toLowerCase();
     list = list.filter(j => j.location.toLowerCase().includes(loc));
   }
+  if (minSalary) {
+    list = list.filter(j => {
+      const sal = parseSalaryMin(j.salary);
+      return sal === null || sal >= minSalary;
+    });
+  }
   if (tab === 'london') list = list.filter(j => j.location.toLowerCase().includes('london'));
   else if (tab === 'manchester') list = list.filter(j => j.location.toLowerCase().includes('manchester'));
   else if (tab === 'birmingham') list = list.filter(j => j.location.toLowerCase().includes('birmingham'));
@@ -83,6 +106,188 @@ function filterJobs(jobs: UKJob[], tab: TabId, search: string, location: string)
   else if (tab === 'finance') list = list.filter(j => /finance|account|banking|invest|audit|tax|treasury|fintech|actuar/i.test(j.title + ' ' + j.tags.join(' ')));
   else if (tab === 'healthcare') list = list.filter(j => /health|nurse|doctor|medical|pharma|clinic|nhs|care|dental|physio/i.test(j.title + ' ' + j.tags.join(' ')));
   return list;
+}
+
+// ── AI Search Assistant ───────────────────────────────────────────────────────
+const SUGGESTIONS = [
+  'Remote React developer £60k+',
+  'NHS nurse jobs London',
+  'Senior finance Manchester',
+  'Part-time marketing remote',
+];
+
+function AISearchAssistant({
+  onResult,
+  onClear,
+  hasActiveAI,
+  isMobile,
+}: {
+  onResult: (params: any) => void;
+  onClear: () => void;
+  hasActiveAI: boolean;
+  isMobile: boolean;
+}) {
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [reply, setReply] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const submit = async (query: string) => {
+    if (!query.trim() || loading) return;
+    setInput(query);
+    setLoading(true);
+    setReply('');
+    try {
+      const res = await fetch('/api/uk/ai-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+      const data = await res.json();
+      setReply(data.reply || '');
+      onResult(data);
+    } catch {
+      setReply("Something went wrong — try again.");
+    }
+    setLoading(false);
+  };
+
+  const clear = () => {
+    setInput('');
+    setReply('');
+    onClear();
+    inputRef.current?.focus();
+  };
+
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, rgba(200,230,0,0.06) 0%, rgba(5,42,20,0) 100%)',
+      border: '1px solid rgba(200,230,0,0.18)',
+      borderRadius: 16,
+      padding: isMobile ? '16px' : '20px 24px',
+      marginBottom: 16,
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 16 }}>✦</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: '#C8E600', letterSpacing: '0.5px' }}>AI Job Search</span>
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>powered by Claude</span>
+        </div>
+        {hasActiveAI && (
+          <button
+            onClick={clear}
+            style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Clear AI filters
+          </button>
+        )}
+      </div>
+
+      {/* Input row */}
+      <form
+        onSubmit={e => { e.preventDefault(); submit(input); }}
+        style={{ display: 'flex', gap: 8 }}
+      >
+        <input
+          ref={inputRef}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          placeholder='e.g. "Remote React developer paying £70k" or "NHS nurse in London"'
+          disabled={loading}
+          style={{
+            flex: 1,
+            background: 'rgba(255,255,255,0.07)',
+            border: '1px solid rgba(200,230,0,0.25)',
+            borderRadius: 10,
+            padding: '12px 16px',
+            fontSize: 14,
+            color: '#FFFFFF',
+            outline: 'none',
+            fontFamily: 'inherit',
+            opacity: loading ? 0.7 : 1,
+          }}
+        />
+        <button
+          type="submit"
+          disabled={!input.trim() || loading}
+          style={{
+            background: input.trim() && !loading ? '#C8E600' : 'rgba(200,230,0,0.2)',
+            color: input.trim() && !loading ? '#052A14' : 'rgba(200,230,0,0.5)',
+            border: 'none',
+            borderRadius: 10,
+            padding: '12px 20px',
+            fontSize: 14,
+            fontWeight: 800,
+            cursor: input.trim() && !loading ? 'pointer' : 'not-allowed',
+            whiteSpace: 'nowrap',
+            minWidth: 80,
+            transition: 'all 0.15s',
+          }}
+        >
+          {loading ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 12, height: 12, border: '2px solid rgba(200,230,0,0.3)', borderTopColor: '#C8E600', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+              {!isMobile && 'Searching'}
+            </span>
+          ) : 'Search →'}
+        </button>
+      </form>
+
+      {/* Suggestion chips */}
+      {!reply && !loading && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+          {SUGGESTIONS.map(s => (
+            <button
+              key={s}
+              onClick={() => submit(s)}
+              style={{
+                fontSize: 11,
+                color: 'rgba(255,255,255,0.5)',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 99,
+                padding: '5px 12px',
+                cursor: 'pointer',
+                fontWeight: 600,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(200,230,0,0.3)'; (e.currentTarget as HTMLButtonElement).style.color = '#C8E600'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.5)'; }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* AI reply bubble */}
+      {reply && !loading && (
+        <div style={{
+          marginTop: 12,
+          background: 'rgba(200,230,0,0.07)',
+          border: '1px solid rgba(200,230,0,0.15)',
+          borderRadius: 10,
+          padding: '11px 14px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 10,
+          animation: 'fadeIn 0.25s ease-out',
+        }}>
+          <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>✦</span>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', margin: 0, lineHeight: 1.55 }}>{reply}</p>
+        </div>
+      )}
+
+      {/* Loading state */}
+      {loading && (
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 14, height: 14, border: '2px solid rgba(200,230,0,0.2)', borderTopColor: '#C8E600', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>Analysing your request...</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Quick Apply Modal ─────────────────────────────────────────────────────────
@@ -202,7 +407,6 @@ function ApplyModal({ job, user, cvData, onClose, onSuccess }: {
                 </div>
               ))}
 
-              {/* CV status */}
               <div style={{ background: cvData ? 'rgba(200,230,0,0.06)' : 'rgba(255,100,100,0.06)', border: `1px solid ${cvData ? 'rgba(200,230,0,0.2)' : 'rgba(255,100,100,0.2)'}`, borderRadius: 10, padding: '10px 14px', fontSize: 13 }}>
                 {cvData
                   ? <span style={{ color: '#C8E600' }}>✓ CV loaded — {cvData.name || 'Your CV'} {cvData.skills?.length ? `· ${cvData.skills.length} skills` : ''}</span>
@@ -210,7 +414,6 @@ function ApplyModal({ job, user, cvData, onClose, onSuccess }: {
                 }
               </div>
 
-              {/* Cover letter */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
                   <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Cover Letter</label>
@@ -270,9 +473,14 @@ export default function UKJobsPage() {
   const [jobs, setJobs] = useState<UKJob[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [cvData, setCvData] = useState<any>(null);
+
+  // Filter state — AI and manual share these
   const [search, setSearch] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [activeTab, setActiveTab] = useState<TabId>('all');
+  const [minSalary, setMinSalary] = useState<number | null>(null);
+  const [aiActive, setAiActive] = useState(false);
+
   const [page, setPage] = useState(1);
   const [selectedJob, setSelectedJob] = useState<UKJob | null>(null);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
@@ -304,6 +512,25 @@ export default function UKJobsPage() {
     } catch {}
   }, []);
 
+  const handleAIResult = (params: any) => {
+    setSearch(params.keywords || '');
+    setLocationFilter(params.location || '');
+    setMinSalary(params.minSalary || null);
+    if (params.tab && params.tab !== 'all') setActiveTab(params.tab as TabId);
+    else if (params.jobType === 'remote') setActiveTab('remote');
+    setPage(1);
+    setAiActive(true);
+  };
+
+  const handleAIClear = () => {
+    setSearch('');
+    setLocationFilter('');
+    setMinSalary(null);
+    setActiveTab('all');
+    setPage(1);
+    setAiActive(false);
+  };
+
   if (!isLoaded || subLoading) {
     return (
       <main style={{ background: '#052A14', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -316,7 +543,7 @@ export default function UKJobsPage() {
     );
   }
 
-  const filtered = filterJobs(jobs, activeTab, search, locationFilter);
+  const filtered = filterJobs(jobs, activeTab, search, locationFilter, minSalary);
   const sorted = cvData ? [...filtered].sort((a, b) => (calcMatch(b, cvData) ?? 0) - (calcMatch(a, cvData) ?? 0)) : filtered;
   const visible = sorted.slice(0, page * PAGE_SIZE);
   const hasMore = visible.length < sorted.length;
@@ -365,7 +592,6 @@ export default function UKJobsPage() {
         </a>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
-          {/* Credits badge */}
           {sub?.active && (
             <div style={{ background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.25)', borderRadius: 99, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#C8E600', flexShrink: 0 }}>
               {sub.plan === 'credits'
@@ -427,6 +653,7 @@ export default function UKJobsPage() {
                   <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 800, color: '#FFFFFF', marginBottom: 4 }}>UK Jobs</h1>
                   <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
                     {jobs.length > 0 ? `${filtered.length.toLocaleString()} of ${jobs.length.toLocaleString()} jobs` : 'Loading jobs...'} · Updated every 30 min
+                    {minSalary ? ` · £${(minSalary / 1000).toFixed(0)}k+ salary` : ''}
                   </p>
                 </div>
                 {cvData && (
@@ -436,21 +663,34 @@ export default function UKJobsPage() {
                 )}
               </div>
 
-              {/* Search */}
-              <form onSubmit={e => { e.preventDefault(); setPage(1); }} style={{ display: 'flex', gap: 8, marginBottom: 16, flexDirection: isMobile ? 'column' : 'row' }}>
-                <input
-                  value={search}
-                  onChange={e => { setSearch(e.target.value); setPage(1); }}
-                  placeholder="Search job title, company, or skill..."
-                  style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 16px', fontSize: 14, color: '#FFFFFF', outline: 'none', fontFamily: 'inherit' }}
-                />
-                <input
-                  value={locationFilter}
-                  onChange={e => { setLocationFilter(e.target.value); setPage(1); }}
-                  placeholder="City or region..."
-                  style={{ width: isMobile ? '100%' : 180, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 16px', fontSize: 14, color: '#FFFFFF', outline: 'none', fontFamily: 'inherit' }}
-                />
-              </form>
+              {/* AI SEARCH ASSISTANT */}
+              <AISearchAssistant
+                onResult={handleAIResult}
+                onClear={handleAIClear}
+                hasActiveAI={aiActive}
+                isMobile={isMobile}
+              />
+
+              {/* Manual search */}
+              <div style={{ marginBottom: 12 }}>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', fontWeight: 600, letterSpacing: '0.6px', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Or search manually
+                </p>
+                <form onSubmit={e => { e.preventDefault(); setPage(1); }} style={{ display: 'flex', gap: 8, flexDirection: isMobile ? 'column' : 'row' }}>
+                  <input
+                    value={search}
+                    onChange={e => { setSearch(e.target.value); setPage(1); setAiActive(false); }}
+                    placeholder="Job title, company, or skill..."
+                    style={{ flex: 1, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 16px', fontSize: 14, color: '#FFFFFF', outline: 'none', fontFamily: 'inherit' }}
+                  />
+                  <input
+                    value={locationFilter}
+                    onChange={e => { setLocationFilter(e.target.value); setPage(1); setAiActive(false); }}
+                    placeholder="City or region..."
+                    style={{ width: isMobile ? '100%' : 180, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 16px', fontSize: 14, color: '#FFFFFF', outline: 'none', fontFamily: 'inherit' }}
+                  />
+                </form>
+              </div>
 
               {/* Tabs */}
               <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 12, scrollbarWidth: 'none' }}>
@@ -479,8 +719,8 @@ export default function UKJobsPage() {
               <div style={{ textAlign: 'center', padding: '64px 24px' }}>
                 <div style={{ fontSize: 40, marginBottom: 16 }}>🔍</div>
                 <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 15 }}>No jobs match your search. Try different keywords or clear filters.</p>
-                <button onClick={() => { setSearch(''); setLocationFilter(''); setActiveTab('all'); }} style={{ marginTop: 16, background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.25)', color: '#C8E600', fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 99, cursor: 'pointer' }}>
-                  Clear filters
+                <button onClick={handleAIClear} style={{ marginTop: 16, background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.25)', color: '#C8E600', fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 99, cursor: 'pointer' }}>
+                  Clear all filters
                 </button>
               </div>
             ) : (
@@ -492,7 +732,6 @@ export default function UKJobsPage() {
                     const applied = appliedIds.has(job.id);
                     return (
                       <div key={job.id} className="job-card" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${applied ? 'rgba(200,230,0,0.3)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {/* Header row */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
@@ -505,14 +744,12 @@ export default function UKJobsPage() {
                           )}
                         </div>
 
-                        {/* Meta row */}
                         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>📍 {job.location}</span>
                           {job.salary && <span style={{ fontSize: 12, color: '#C8E600', fontWeight: 700 }}>{job.salary}</span>}
                           <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.04)', borderRadius: 99, padding: '2px 7px' }}>{job.source}</span>
                         </div>
 
-                        {/* Tags */}
                         {job.tags.length > 0 && (
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                             {job.tags.slice(0, 3).map(tag => (
@@ -521,7 +758,6 @@ export default function UKJobsPage() {
                           </div>
                         )}
 
-                        {/* Actions */}
                         <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                           {applied ? (
                             <div style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#C8E600', padding: '10px', background: 'rgba(200,230,0,0.08)', borderRadius: 99, border: '1px solid rgba(200,230,0,0.2)' }}>
