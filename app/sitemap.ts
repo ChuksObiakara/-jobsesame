@@ -9,6 +9,12 @@ const BLOG_SLUGS = [
   'teaching-english-in-asia',
   'salary-negotiation-tips',
   'remote-work-guide-for-africans',
+  'how-to-get-a-job-in-the-uk-from-south-africa',
+  'south-african-cv-vs-uk-cv',
+  'best-cities-in-the-uk-to-work-2025',
+  'uk-skilled-worker-visa-guide-south-africans',
+  'average-uk-salaries-by-industry-2025',
+  'how-to-write-a-uk-cover-letter',
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
