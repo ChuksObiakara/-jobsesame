@@ -875,6 +875,78 @@ export default function UKDashboard() {
                     </div>
                   </div>
 
+                  {/* Conversion paywall / subscribed CTA */}
+                  <div style={{ animation: `cardReveal 0.45s ease-out 1500ms both` }}>
+                    {sub?.active ? (
+                      <div style={{ background: 'rgba(200,230,0,0.06)', border: '1.5px solid rgba(200,230,0,0.22)', borderRadius: 16, padding: '22px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 6 }}>Your CV is ready — start applying</div>
+                        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 18 }}>You have {sub.plan === 'credits' ? `${sub.credits} credit${sub.credits === 1 ? '' : 's'}` : 'unlimited'} applications available</div>
+                        <a href="/uk/jobs" style={{ display: 'inline-block', background: ACCENT, color: '#052A14', fontSize: 14, fontWeight: 800, padding: '13px 32px', borderRadius: 99, textDecoration: 'none' }}>
+                          Apply to your {matchCount} matched jobs →
+                        </a>
+                      </div>
+                    ) : (
+                      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1.5px solid rgba(200,230,0,0.18)', borderRadius: 16, padding: '26px 22px' }}>
+                        <div style={{ textAlign: 'center', marginBottom: 22 }}>
+                          <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 6, lineHeight: 1.25 }}>Your CV is ready for the UK market</div>
+                          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>Subscribe to apply to your <span style={{ color: ACCENT, fontWeight: 700 }}>{matchCount}</span> matched jobs</div>
+                        </div>
+
+                        {/* Plan cards */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+                          {/* Credits plan */}
+                          <a href="/uk/subscribe" style={{ textDecoration: 'none', display: 'block', background: 'rgba(200,230,0,0.05)', border: '1.5px solid rgba(200,230,0,0.28)', borderRadius: 14, padding: '18px 16px' }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 6 }}>Credits</div>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 12 }}>
+                              <span style={{ fontSize: 30, fontWeight: 800, color: '#fff', lineHeight: 1 }}>£10</span>
+                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>one-time</span>
+                            </div>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {['20 UK applications', 'AI CV rewriter', 'Quick Apply'].map(f => (
+                                <li key={f} style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                  <span style={{ color: ACCENT, fontWeight: 700, fontSize: 10 }}>✓</span>{f}
+                                </li>
+                              ))}
+                            </ul>
+                            <div style={{ background: ACCENT, color: '#052A14', fontSize: 12, fontWeight: 800, padding: '9px 0', borderRadius: 99, textAlign: 'center' }}>
+                              Buy Credits
+                            </div>
+                          </a>
+
+                          {/* Pro plan */}
+                          <a href="/uk/subscribe" style={{ textDecoration: 'none', display: 'block', position: 'relative', background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: '18px 16px' }}>
+                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: ACCENT, color: '#052A14', fontSize: 9, fontWeight: 800, padding: '2px 10px', borderRadius: 4, whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>MOST POPULAR</div>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 6 }}>Pro</div>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 12 }}>
+                              <span style={{ fontSize: 30, fontWeight: 800, color: '#fff', lineHeight: 1 }}>£21</span>
+                              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>/mo</span>
+                            </div>
+                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              {['Unlimited applications', 'Priority matching', 'Cover letter AI', 'Salary intelligence'].map(f => (
+                                <li key={f} style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                  <span style={{ color: ACCENT, fontWeight: 700, fontSize: 10 }}>✓</span>{f}
+                                </li>
+                              ))}
+                            </ul>
+                            <div style={{ background: 'rgba(200,230,0,0.12)', color: ACCENT, fontSize: 12, fontWeight: 800, padding: '9px 0', borderRadius: 99, textAlign: 'center', border: '1px solid rgba(200,230,0,0.25)' }}>
+                              Subscribe Pro
+                            </div>
+                          </a>
+                        </div>
+
+                        {/* Social proof + urgency */}
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginBottom: 6 }}>
+                            Join professionals already applying to UK jobs
+                          </div>
+                          <div style={{ fontSize: 11, color: 'rgba(255,80,80,0.7)', fontWeight: 600 }}>
+                            ⚡ Your top matched jobs are filling fast
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
               );
             })()}

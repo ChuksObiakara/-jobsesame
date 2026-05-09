@@ -1,8 +1,6 @@
 'use client';
 import { useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
-import MarketSwitcher from '../../components/MarketSwitcher';
-
 const PLANS = [
   {
     id: 'free',
@@ -56,7 +54,7 @@ const PLANS = [
 
 const FAQS = [
   {
-    q: 'Can I apply from South Africa?',
+    q: 'Can I apply from outside the UK?',
     a: 'Yes — all applications are submitted on your behalf. You don\'t need to be in the UK. Our AI fills in your details and submits directly to UK employers through their application portals.',
   },
   {
@@ -100,7 +98,6 @@ export default function SubscribePage() {
           <span style={{ fontSize: 10, background: 'rgba(200,230,0,0.12)', color: '#C8E600', border: '1px solid rgba(200,230,0,0.24)', borderRadius: 4, padding: '2px 7px', fontWeight: 700 }}>🇬🇧 UK</span>
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <MarketSwitcher compact />
           {isSignedIn
             ? <UserButton afterSignOutUrl="/uk" />
             : <a href="/sign-up" style={{ background: '#C8E600', color: '#061A0C', fontSize: 13, fontWeight: 800, padding: '8px 20px', borderRadius: 8, textDecoration: 'none' }}>Get started</a>
@@ -179,7 +176,7 @@ export default function SubscribePage() {
         </div>
 
         <p style={{ textAlign: 'center', fontSize: 13, color: 'rgba(255,255,255,0.25)', marginTop: 24 }}>
-          Stripe GBP payments launching soon. <a href="/sign-up" style={{ color: 'rgba(200,230,0,0.6)', textDecoration: 'none' }}>Sign up free</a> to be notified first.
+          Payments processed securely via Paystack. <a href="/sign-up" style={{ color: 'rgba(200,230,0,0.6)', textDecoration: 'none' }}>Sign up free</a> to get started.
         </p>
       </section>
 

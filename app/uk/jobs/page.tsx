@@ -2,8 +2,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import MarketSwitcher from '../../components/MarketSwitcher';
-
 interface UKJob {
   id: string;
   title: string;
@@ -486,6 +484,7 @@ export default function UKJobsPage() {
   const [page, setPage] = useState(1);
   const [selectedJob, setSelectedJob] = useState<UKJob | null>(null);
   const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -624,7 +623,6 @@ export default function UKJobsPage() {
               <a href="/uk" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontWeight: 500 }}>UK Home</a>
             </>
           )}
-          <MarketSwitcher compact={isMobile} />
           <UserButton afterSignOutUrl="/uk" />
         </div>
       </nav>
@@ -819,6 +817,54 @@ export default function UKJobsPage() {
           </div>
         </>
       )}
+
+      {/* FAQ */}
+      <section style={{ maxWidth: 700, margin: '0 auto', padding: '48px 24px 80px' }}>
+        <h2 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', letterSpacing: -0.4, marginBottom: 28 }}>Common questions from UK job seekers</h2>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          {[
+            {
+              q: 'Can I apply for UK jobs from outside the UK?',
+              a: 'Yes. Many UK employers actively hire internationally, especially in tech, healthcare, and finance. You can apply from anywhere — our AI tailors your CV to each role and submits directly through employer portals. Just make sure your CV mentions your visa status or right-to-work eligibility clearly.',
+            },
+            {
+              q: 'Which roles offer visa sponsorship in the UK?',
+              a: 'Tech (software engineers, data scientists), healthcare (doctors, nurses, allied health), engineering, and certain finance roles regularly offer Skilled Worker visa sponsorship. Filter by "Sponsorship available" when browsing, or look for companies on the official UK Home Office sponsor list. We tag jobs where sponsorship is mentioned in the description.',
+            },
+            {
+              q: 'What salary should I expect as an international applicant?',
+              a: 'UK salaries vary significantly by role and region. London typically pays 15–25% more than other cities. Entry-level tech roles start around £30k–£40k; senior engineers can earn £80k–£120k+. For Skilled Worker visas, you must meet the minimum salary threshold (currently £26,200 or the going rate for the role, whichever is higher). Our salary intelligence tool shows realistic ranges for your field.',
+            },
+            {
+              q: 'How does the AI CV rewriter work?',
+              a: 'Upload your existing CV once. When you click Quick Apply on a job, our AI reads the job description and rewrites your CV in under 30 seconds — adding relevant keywords, restructuring bullet points to match what that employer wants, and rewriting your profile statement. Your facts (job titles, companies, dates) are never changed. The result is a tailored CV that passes ATS screening.',
+            },
+            {
+              q: 'How fresh are the job listings?',
+              a: 'Jobs are pulled from Adzuna UK, JSearch, and Remotive every 30 minutes. We remove expired listings automatically. Most jobs you see were posted within the last 7 days — many within 24 hours. Roles from high-demand employers refresh fastest.',
+            },
+            {
+              q: 'What is the Skilled Worker visa and do I qualify?',
+              a: 'The Skilled Worker visa lets you work in the UK for an approved employer for up to 5 years (renewable). You need a job offer from a licensed sponsor, meet the salary threshold, and have the required English language level. Points-based eligibility is assessed automatically. Many of our listed roles are at employers already approved as sponsors — look for the "Sponsorship" tag on job cards.',
+            },
+          ].map((faq, i) => (
+            <div key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <button
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                style={{ width: '100%', background: 'transparent', border: 'none', padding: '17px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, cursor: 'pointer', textAlign: 'left' }}
+              >
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', lineHeight: 1.4 }}>{faq.q}</span>
+                <span style={{ fontSize: 18, color: '#C8E600', flexShrink: 0, transform: openFaq === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.18s', lineHeight: 1 }}>+</span>
+              </button>
+              {openFaq === i && (
+                <div style={{ paddingBottom: 17, fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.75 }}>
+                  {faq.a}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
