@@ -38,6 +38,16 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
 
 type Tab = 'overview' | 'cv' | 'applications';
 
+const ANALYSIS_MSGS = [
+  'Reading your CV...',
+  'Extracting skills and experience...',
+  'Matching to UK job market...',
+  'Calculating your UK salary range...',
+  'Finding your best UK employer matches...',
+  'Optimising for UK employers...',
+  'Almost ready...',
+];
+
 export default function UKDashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
@@ -57,6 +67,9 @@ export default function UKDashboard() {
   const [uploading, setUploading] = useState(false);
   const [cvError, setCvError] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [analysisStep, setAnalysisStep] = useState(0);
+  const [msgVisible, setMsgVisible] = useState(true);
 
   const [rewriteJob, setRewriteJob] = useState('');
   const [rewriting, setRewriting] = useState(false);
@@ -103,30 +116,59 @@ export default function UKDashboard() {
     } catch {}
   }, []);
 
+  // Rotate analysis messages while uploading
+  useEffect(() => {
+    if (!uploading) { setAnalysisStep(0); setMsgVisible(true); return; }
+    let step = 0;
+    const tick = () => {
+      setMsgVisible(false);
+      setTimeout(() => {
+        step = Math.min(step + 1, ANALYSIS_MSGS.length - 1);
+        setAnalysisStep(step);
+        setMsgVisible(true);
+      }, 350);
+    };
+    const interval = setInterval(tick, 1500);
+    return () => clearInterval(interval);
+  }, [uploading]);
+
   const handleFile = (file: File | null) => {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.pdf')) { setCvError('Please upload a PDF file.'); return; }
     if (file.size > 15 * 1024 * 1024) { setCvError('File too large. Maximum 15MB.'); return; }
     setCvError('');
-    uploadCV(file);
+    setPendingFile(file);
   };
 
   const uploadCV = async (file: File) => {
     setUploading(true);
+    setPendingFile(null);
     setCvData(null);
     setRewriteResult(null);
-    try {
-      const form = new FormData();
-      form.append('cv', file);
-      const res = await fetch('/api/cv', { method: 'POST', body: form });
-      const data = await res.json();
-      if (!res.ok || data.error) { setCvError(data.error || 'Could not read CV.'); }
-      else {
-        setCvData(data.cvData || data);
-        localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.cvData || data));
-      }
-    } catch { setCvError('Upload failed. Please try again.'); }
+    setCvError('');
+
+    let apiData: any = null;
+    let apiError = '';
+
+    // Enforce minimum 8-second display so the animation always completes
+    await Promise.all([
+      new Promise<void>(resolve => setTimeout(resolve, 8000)),
+      (async () => {
+        try {
+          const form = new FormData();
+          form.append('cv', file);
+          const res = await fetch('/api/cv', { method: 'POST', body: form });
+          apiData = await res.json();
+          if (!res.ok || apiData.error) apiError = apiData.error || 'Could not read CV.';
+        } catch { apiError = 'Upload failed. Please try again.'; }
+      })(),
+    ]);
+
     setUploading(false);
+    if (apiError) { setCvError(apiError); return; }
+    const parsed = apiData?.cvData || apiData;
+    setCvData(parsed);
+    localStorage.setItem('jobsesame_cv_data', JSON.stringify(parsed));
   };
 
   const rewriteCV = async () => {
@@ -193,11 +235,94 @@ export default function UKDashboard() {
         *,*::before,*::after{box-sizing:border-box}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:0.85}}
+        @keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(200,230,0,0.35)}50%{box-shadow:0 0 0 22px rgba(200,230,0,0)}}
+        @keyframes scan{0%{top:4%}100%{top:88%}}
+        @keyframes progress8s{from{width:0%}to{width:100%}}
+        @keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes msgOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-8px)}}
+        @keyframes overlayIn{from{opacity:0}to{opacity:1}}
         input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2)}
         input:focus,textarea:focus{border-color:rgba(200,230,0,0.35)!important;outline:none}
         select{appearance:none;-webkit-appearance:none}
         ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(200,230,0,0.15);border-radius:3px}
       `}</style>
+
+      {/* ── ANALYSIS OVERLAY ───────────────────────────────────────────────── */}
+      {uploading && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 600,
+          background: 'rgba(5,18,10,0.97)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '24px',
+          animation: 'overlayIn 0.35s ease-out',
+        }}>
+          {/* Pulsing document icon */}
+          <div style={{ position: 'relative', marginBottom: 40 }}>
+            {/* Outer glow ring */}
+            <div style={{
+              position: 'absolute', inset: -18,
+              borderRadius: '50%',
+              border: '2px solid rgba(200,230,0,0.25)',
+              animation: 'glow 2s ease-in-out infinite',
+            }} />
+            {/* Icon container */}
+            <div style={{
+              width: 96, height: 96,
+              background: 'rgba(200,230,0,0.08)',
+              border: '2px solid rgba(200,230,0,0.3)',
+              borderRadius: 24,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              animation: 'pulse 2s ease-in-out infinite',
+              position: 'relative', overflow: 'hidden',
+            }}>
+              {/* Document SVG */}
+              <svg width="46" height="56" viewBox="0 0 46 56" fill="none">
+                <rect x="2" y="2" width="42" height="52" rx="5" fill="rgba(200,230,0,0.1)" stroke="#C8E600" strokeWidth="2"/>
+                <line x1="10" y1="16" x2="36" y2="16" stroke="#C8E600" strokeWidth="2" strokeLinecap="round" opacity="0.6"/>
+                <line x1="10" y1="24" x2="36" y2="24" stroke="#C8E600" strokeWidth="2" strokeLinecap="round" opacity="0.6"/>
+                <line x1="10" y1="32" x2="28" y2="32" stroke="#C8E600" strokeWidth="2" strokeLinecap="round" opacity="0.6"/>
+                <line x1="10" y1="40" x2="22" y2="40" stroke="#C8E600" strokeWidth="2" strokeLinecap="round" opacity="0.4"/>
+              </svg>
+              {/* Scanning line */}
+              <div style={{
+                position: 'absolute', left: 0, right: 0, height: 2,
+                background: 'linear-gradient(90deg, transparent, #C8E600, transparent)',
+                animation: 'scan 1.6s ease-in-out infinite alternate',
+              }} />
+            </div>
+          </div>
+
+          {/* Status message */}
+          <div style={{ height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 32 }}>
+            <p style={{
+              fontSize: 16, fontWeight: 700, color: '#fff',
+              margin: 0, textAlign: 'center',
+              animation: msgVisible ? 'msgIn 0.35s ease-out forwards' : 'msgOut 0.3s ease-in forwards',
+            }}>
+              {ANALYSIS_MSGS[analysisStep]}
+            </p>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ width: '100%', maxWidth: 360, marginBottom: 16 }}>
+            <div style={{
+              height: 4, background: 'rgba(255,255,255,0.07)', borderRadius: 99, overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%',
+                background: 'linear-gradient(90deg, rgba(200,230,0,0.6), #C8E600)',
+                borderRadius: 99,
+                animation: 'progress8s 8s linear forwards',
+              }} />
+            </div>
+          </div>
+
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.22)', margin: 0 }}>
+            Powered by Claude AI · takes about 8 seconds
+          </p>
+        </div>
+      )}
 
       {/* NAV */}
       <nav style={{ background: NAV_BG, borderBottom: BORDER, height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
@@ -364,43 +489,118 @@ export default function UKDashboard() {
                 {cvData ? 'Your CV' : 'Upload CV'}
               </div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 16 }}>
-                {cvData ? 'AI has parsed your CV — you can replace it anytime.' : 'Upload a PDF and AI will parse and optimise it for UK employers.'}
+                {cvData ? 'AI has parsed your CV — you can replace it anytime.' : 'Upload a PDF and AI will analyse and optimise it for UK employers.'}
               </div>
 
-              {!cvData && (
+              {/* Hidden file input — always present */}
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".pdf"
+                style={{ display: 'none' }}
+                onChange={e => { handleFile(e.target.files?.[0] || null); e.target.value = ''; }}
+              />
+
+              {/* ── STATE 1: empty drop zone ── */}
+              {!cvData && !pendingFile && (
                 <div
                   onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                   onDragLeave={() => setDragOver(false)}
                   onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
-                  onClick={() => !uploading && fileRef.current?.click()}
+                  onClick={() => fileRef.current?.click()}
                   style={{
                     border: `2px dashed ${dragOver ? ACCENT : 'rgba(255,255,255,0.1)'}`,
                     borderRadius: 12,
-                    padding: '32px 20px',
+                    padding: '40px 20px',
                     textAlign: 'center',
-                    cursor: uploading ? 'wait' : 'pointer',
+                    cursor: 'pointer',
                     background: dragOver ? 'rgba(200,230,0,0.04)' : 'transparent',
                     transition: 'all 0.2s',
                   }}
                 >
-                  <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => handleFile(e.target.files?.[0] || null)} />
-                  {uploading ? (
-                    <>
-                      <div style={{ width: 28, height: 28, border: '3px solid rgba(200,230,0,0.15)', borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }} />
-                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Analysing with AI...</p>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
-                      <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>Drop your CV or click to upload</p>
-                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', margin: 0 }}>PDF · max 15MB</p>
-                    </>
-                  )}
+                  <div style={{ fontSize: 32, marginBottom: 10 }}>📄</div>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: '0 0 5px' }}>
+                    Drop your CV here or click to browse
+                  </p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', margin: 0 }}>PDF · max 15MB</p>
                 </div>
               )}
 
+              {/* ── STATE 2: file selected, awaiting start ── */}
+              {!cvData && pendingFile && (
+                <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    background: 'rgba(200,230,0,0.06)',
+                    border: '1.5px solid rgba(200,230,0,0.2)',
+                    borderRadius: 12, padding: '14px 16px', marginBottom: 14,
+                  }}>
+                    <div style={{
+                      width: 40, height: 40, background: 'rgba(200,230,0,0.1)', borderRadius: 10,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      <svg width="20" height="24" viewBox="0 0 20 24" fill="none">
+                        <rect x="1" y="1" width="18" height="22" rx="3" fill="none" stroke="#C8E600" strokeWidth="1.8"/>
+                        <line x1="5" y1="7" x2="15" y2="7" stroke="#C8E600" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
+                        <line x1="5" y1="11" x2="15" y2="11" stroke="#C8E600" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
+                        <line x1="5" y1="15" x2="11" y2="15" stroke="#C8E600" strokeWidth="1.5" strokeLinecap="round" opacity="0.5"/>
+                      </svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {pendingFile.name}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+                        {(pendingFile.size / 1024 / 1024).toFixed(2)} MB · PDF
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setPendingFile(null)}
+                      style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.25)', fontSize: 16, cursor: 'pointer', flexShrink: 0, padding: 4 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => uploadCV(pendingFile)}
+                    style={{
+                      width: '100%', background: ACCENT, color: '#052A14',
+                      fontSize: 15, fontWeight: 800, padding: '14px',
+                      borderRadius: 12, border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      transition: 'opacity 0.15s',
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <circle cx="9" cy="9" r="8" fill="none" stroke="#052A14" strokeWidth="1.5"/>
+                      <path d="M6 9l2 2 4-4" stroke="#052A14" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Start AI Analysis
+                  </button>
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    style={{ width: '100%', marginTop: 8, background: 'transparent', border: 'none', fontSize: 12, color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: '6px 0' }}
+                  >
+                    Choose a different file
+                  </button>
+                </div>
+              )}
+
+              {/* ── STATE 3: CV loaded — results ── */}
               {cvData && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeIn 0.4s ease-out' }}>
+                  {/* Results reveal header */}
+                  <div style={{
+                    background: 'rgba(200,230,0,0.06)', border: '1px solid rgba(200,230,0,0.18)',
+                    borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4,
+                  }}>
+                    <span style={{ fontSize: 18 }}>✅</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: ACCENT }}>Analysis complete</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Your CV has been optimised for UK employers</div>
+                    </div>
+                  </div>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                     <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', width: 60, flexShrink: 0, paddingTop: 2 }}>Name</span>
                     <span style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>{cvData.name || '—'}</span>
@@ -409,6 +609,12 @@ export default function UKDashboard() {
                     <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', width: 60, flexShrink: 0, paddingTop: 2 }}>Title</span>
                     <span style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>{cvData.title || '—'}</span>
                   </div>
+                  {cvData.experience_years > 0 && (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', width: 60, flexShrink: 0, paddingTop: 2 }}>Exp</span>
+                      <span style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>{cvData.experience_years} years</span>
+                    </div>
+                  )}
                   {cvData.skills?.length > 0 && (
                     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                       <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', width: 60, flexShrink: 0, paddingTop: 4 }}>Skills</span>
@@ -432,6 +638,7 @@ export default function UKDashboard() {
               {cvError && (
                 <div style={{ marginTop: 12, background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#FF8080' }}>
                   {cvError}
+                  <button onClick={() => { setCvError(''); setPendingFile(null); }} style={{ marginLeft: 10, fontSize: 11, color: '#FF8080', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Dismiss</button>
                 </div>
               )}
             </div>
