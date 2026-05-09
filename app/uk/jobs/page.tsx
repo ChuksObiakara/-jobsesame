@@ -23,6 +23,8 @@ interface Sub {
   active: boolean;
   plan: string | null;
   credits: number;
+  hasSubscription?: boolean;
+  trialDaysLeft?: number | null;
 }
 
 // ── Salary parser ─────────────────────────────────────────────────────────────
@@ -497,7 +499,17 @@ export default function UKJobsPage() {
     if (!isSignedIn) { router.replace('/sign-in'); return; }
     fetch('/api/uk/subscription')
       .then(r => r.json())
-      .then(data => { setSub(data); setSubLoading(false); })
+      .then(data => {
+        setSub(data);
+        setSubLoading(false);
+        // New users (no subscription ever) go to onboarding, expired go to subscribe
+        if (!data.active) {
+          if (!data.hasSubscription) {
+            router.replace('/uk/onboarding');
+          }
+          // else: expired trial/subscription — stay and show upgrade UI
+        }
+      })
       .catch(() => { setSub({ active: false, plan: null, credits: 0 }); setSubLoading(false); });
   }, [isLoaded, isSignedIn, router]);
 
@@ -594,8 +606,10 @@ export default function UKJobsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
           {sub?.active && (
             <div style={{ background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.25)', borderRadius: 99, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#C8E600', flexShrink: 0 }}>
-              {sub.plan === 'credits'
-                ? `Credits: ${sub.credits} remaining`
+              {sub.plan === 'trial'
+                ? `🎁 ${sub.trialDaysLeft ?? 7}d free trial`
+                : sub.plan === 'credits'
+                ? `${sub.credits} credits`
                 : sub.plan === 'pro' ? '∞ Pro' : ''}
             </div>
           )}

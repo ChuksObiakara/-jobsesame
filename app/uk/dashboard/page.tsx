@@ -1,15 +1,22 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import MarketSwitcher from '../../components/MarketSwitcher';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+const BG = '#052A14';
+const NAV_BG = '#041E0F';
+const ACCENT = '#C8E600';
+const CARD = 'rgba(255,255,255,0.03)';
+const BORDER = '1px solid rgba(255,255,255,0.07)';
+
 interface Sub {
   active: boolean;
   plan: string | null;
   credits: number;
   expiresAt?: string | null;
+  trialDaysLeft?: number | null;
+  hasSubscription?: boolean;
 }
 
 interface Application {
@@ -20,94 +27,41 @@ interface Application {
   jobUrl?: string;
   status: string;
   appliedAt: string;
-  market?: string;
 }
 
-interface UKJob {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  salary: string;
-  url: string;
-  source: string;
-  description: string;
-  tags: string[];
-  postedAt: string;
-  applyType: 'greenhouse' | 'direct';
-}
-
-// ── UK salary data ────────────────────────────────────────────────────────────
-const UK_SALARIES: Record<string, { min: number; max: number }> = {
-  'software engineer':  { min: 55000, max: 95000 },
-  'data scientist':     { min: 50000, max: 85000 },
-  'product manager':    { min: 60000, max: 100000 },
-  'designer':           { min: 35000, max: 65000 },
-  'marketing manager':  { min: 40000, max: 70000 },
-  'accountant':         { min: 35000, max: 65000 },
-  'project manager':    { min: 45000, max: 75000 },
-  'sales manager':      { min: 40000, max: 75000 },
-  'hr manager':         { min: 35000, max: 60000 },
-  'developer':          { min: 50000, max: 90000 },
-  'analyst':            { min: 35000, max: 65000 },
-  'default':            { min: 30000, max: 55000 },
-};
-
-function getSalaryForTitle(title: string): { role: string; min: number; max: number } {
-  const t = (title || '').toLowerCase();
-  for (const [key, val] of Object.entries(UK_SALARIES)) {
-    if (key !== 'default' && t.includes(key.split(' ')[0])) {
-      return { role: key.replace(/\b\w/g, c => c.toUpperCase()), ...val };
-    }
-  }
-  return { role: title || 'Your Role', ...UK_SALARIES.default };
-}
-
-// ── Match score ───────────────────────────────────────────────────────────────
-function calcMatch(job: UKJob, cvData: any): number {
-  if (!cvData) return 0;
-  const skills: string[] = cvData.skills || [];
-  const cvTitle: string = cvData.title || '';
-  const text = (job.title + ' ' + job.description + ' ' + job.tags.join(' ')).toLowerCase();
-  let hits = 0;
-  skills.forEach(s => { if (s && text.includes(s.toLowerCase())) hits++; });
-  const skillScore = Math.min(40, hits * 8);
-  const firstWord = cvTitle.split(' ')[0].toLowerCase();
-  const titleMatch = firstWord.length > 2 && job.title.toLowerCase().includes(firstWord);
-  return Math.min(97, 35 + skillScore + (titleMatch ? 20 : 0));
-}
-
-// ── Status colours ────────────────────────────────────────────────────────────
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   Applied:   { bg: 'rgba(200,230,0,0.12)',  color: '#C8E600' },
   Interview: { bg: 'rgba(80,180,255,0.12)', color: '#50B4FF' },
   Offer:     { bg: 'rgba(80,220,120,0.12)', color: '#50DC78' },
   Rejected:  { bg: 'rgba(255,80,80,0.1)',   color: '#FF8080' },
-  Draft:     { bg: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' },
 };
 
-const CV_TIPS = [
-  { icon: '📄', tip: 'Keep CV to 2 pages maximum' },
-  { icon: '🇬🇧', tip: 'Use British spelling throughout (e.g. "colour", "organised")' },
-  { icon: '✍️', tip: 'Include a personal statement at the top (3–5 lines)' },
-  { icon: '🎓', tip: 'List education with UK equivalent grades where relevant' },
-  { icon: '📬', tip: 'Always include a tailored cover letter with every application' },
-];
+type Tab = 'overview' | 'cv' | 'applications';
 
-// ── Page ──────────────────────────────────────────────────────────────────────
 export default function UKDashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const [isMobile, setIsMobile] = useState(false);
+  const [tab, setTab] = useState<Tab>('overview');
 
   const [sub, setSub] = useState<Sub | null>(null);
   const [subLoading, setSubLoading] = useState(true);
+
   const [applications, setApplications] = useState<Application[]>([]);
   const [appsLoading, setAppsLoading] = useState(true);
-  const [jobs, setJobs] = useState<UKJob[]>([]);
-  const [jobsLoading, setJobsLoading] = useState(true);
-  const [cvData, setCvData] = useState<any>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+  const [cvData, setCvData] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [cvError, setCvError] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+
+  const [rewriteJob, setRewriteJob] = useState('');
+  const [rewriting, setRewriting] = useState(false);
+  const [rewriteResult, setRewriteResult] = useState<any>(null);
+  const [rewriteError, setRewriteError] = useState('');
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -116,7 +70,6 @@ export default function UKDashboard() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Auth + subscription guard
   useEffect(() => {
     if (!isLoaded) return;
     if (!isSignedIn) { router.replace('/sign-in'); return; }
@@ -125,12 +78,24 @@ export default function UKDashboard() {
       .then(data => {
         setSub(data);
         setSubLoading(false);
-        if (!data.active) router.replace('/uk/subscribe');
+        if (!data.active) {
+          router.replace(data.hasSubscription ? '/uk/subscribe' : '/uk/onboarding');
+        }
       })
       .catch(() => { setSub({ active: false, plan: null, credits: 0 }); setSubLoading(false); });
   }, [isLoaded, isSignedIn, router]);
 
-  // Load CV from localStorage
+  useEffect(() => {
+    if (!isSignedIn) return;
+    fetch('/api/user/applications')
+      .then(r => r.json())
+      .then(data => {
+        setApplications((data.applications || []).filter((a: any) => a.market === 'GB'));
+        setAppsLoading(false);
+      })
+      .catch(() => setAppsLoading(false));
+  }, [isSignedIn]);
+
   useEffect(() => {
     try {
       const s = localStorage.getItem('jobsesame_cv_data');
@@ -138,26 +103,53 @@ export default function UKDashboard() {
     } catch {}
   }, []);
 
-  // Fetch GB applications
-  useEffect(() => {
-    if (!isSignedIn) return;
-    fetch('/api/user/applications')
-      .then(r => r.json())
-      .then(data => {
-        const gb = (data.applications || []).filter((a: Application) => a.market === 'GB');
-        setApplications(gb);
-        setAppsLoading(false);
-      })
-      .catch(() => setAppsLoading(false));
-  }, [isSignedIn]);
+  const handleFile = (file: File | null) => {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.pdf')) { setCvError('Please upload a PDF file.'); return; }
+    if (file.size > 15 * 1024 * 1024) { setCvError('File too large. Maximum 15MB.'); return; }
+    setCvError('');
+    uploadCV(file);
+  };
 
-  // Fetch recommended jobs
-  useEffect(() => {
-    fetch('/api/jobs/uk')
-      .then(r => r.json())
-      .then(data => { setJobs(data.jobs || []); setJobsLoading(false); })
-      .catch(() => setJobsLoading(false));
-  }, []);
+  const uploadCV = async (file: File) => {
+    setUploading(true);
+    setCvData(null);
+    setRewriteResult(null);
+    try {
+      const form = new FormData();
+      form.append('cv', file);
+      const res = await fetch('/api/cv', { method: 'POST', body: form });
+      const data = await res.json();
+      if (!res.ok || data.error) { setCvError(data.error || 'Could not read CV.'); }
+      else {
+        setCvData(data.cvData || data);
+        localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.cvData || data));
+      }
+    } catch { setCvError('Upload failed. Please try again.'); }
+    setUploading(false);
+  };
+
+  const rewriteCV = async () => {
+    if (!rewriteJob.trim() || !cvData) return;
+    setRewriting(true);
+    setRewriteResult(null);
+    setRewriteError('');
+    try {
+      const res = await fetch('/api/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cvData, jobTitle: rewriteJob, jobDescription: '', jobCompany: '' }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) { setRewriteError(data.error || 'Rewrite failed.'); }
+      else {
+        setRewriteResult(data.rewrittenCV || data);
+        const merged = { ...cvData, ...(data.rewrittenCV || data) };
+        localStorage.setItem('jobsesame_cv_data', JSON.stringify(merged));
+      }
+    } catch { setRewriteError('Something went wrong. Please try again.'); }
+    setRewriting(false);
+  };
 
   const updateStatus = async (appId: string, status: string) => {
     setUpdatingStatus(appId);
@@ -170,19 +162,8 @@ export default function UKDashboard() {
     setUpdatingStatus(null);
   };
 
-  // Top 6 jobs sorted by match score
-  const recommended = [...jobs]
-    .map(j => ({ ...j, score: calcMatch(j, cvData) }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 6);
-
-  const salary = getSalaryForTitle(cvData?.title || '');
-
-  const firstName = user?.firstName || user?.fullName?.split(' ')[0] || 'there';
-  const planLabel = sub?.plan === 'pro' ? 'Pro' : sub?.plan === 'credits' ? 'Credits' : sub?.plan || 'Active';
-
+  const firstName = user?.firstName || 'there';
   const appStats = {
-    total: applications.length,
     applied: applications.filter(a => a.status === 'Applied').length,
     interview: applications.filter(a => a.status === 'Interview').length,
     offer: applications.filter(a => a.status === 'Offer').length,
@@ -190,42 +171,46 @@ export default function UKDashboard() {
 
   if (!isLoaded || subLoading) {
     return (
-      <main style={{ background: '#052A14', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <main style={{ background: BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 36, height: 36, border: '3px solid rgba(200,230,0,0.2)', borderTopColor: '#C8E600', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14 }}>Loading your UK dashboard...</p>
+          <div style={{ width: 32, height: 32, border: '3px solid rgba(200,230,0,0.15)', borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>Loading...</p>
         </div>
       </main>
     );
   }
 
+  const planBadge = sub?.plan === 'trial'
+    ? `🎁 ${sub.trialDaysLeft ?? 7} days free`
+    : sub?.plan === 'pro' ? '∞ Pro'
+    : sub?.plan === 'credits' ? `${sub.credits} credits`
+    : '';
+
   return (
-    <main style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", background: '#052A14', minHeight: '100vh', margin: 0, padding: 0 }}>
+    <main style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", background: BG, minHeight: '100vh', margin: 0, padding: 0 }}>
       <style>{`
-        *, *::before, *::after { box-sizing: border-box; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        .card { transition: border-color 0.18s, transform 0.18s; }
-        .card:hover { border-color: rgba(200,230,0,0.25) !important; }
-        select { appearance: none; -webkit-appearance: none; }
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(200,230,0,0.15); border-radius: 3px; }
+        *,*::before,*::after{box-sizing:border-box}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+        input::placeholder,textarea::placeholder{color:rgba(255,255,255,0.2)}
+        input:focus,textarea:focus{border-color:rgba(200,230,0,0.35)!important;outline:none}
+        select{appearance:none;-webkit-appearance:none}
+        ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(200,230,0,0.15);border-radius:3px}
       `}</style>
 
       {/* NAV */}
-      <nav style={{ background: '#041E0F', borderBottom: '1px solid rgba(255,255,255,0.06)', height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 200 }}>
-        <a href="/uk" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
+      <nav style={{ background: NAV_BG, borderBottom: BORDER, height: 64, padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+        <a href="/uk" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }}>
           <span style={{ fontSize: 17, fontWeight: 800 }}>
-            <span style={{ color: '#FFFFFF' }}>job</span><span style={{ color: '#C8E600' }}>sesame</span>
+            <span style={{ color: '#fff' }}>job</span><span style={{ color: ACCENT }}>sesame</span>
           </span>
-          <span style={{ fontSize: 10, background: 'rgba(200,230,0,0.12)', color: '#C8E600', border: '1px solid rgba(200,230,0,0.25)', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>🇬🇧 UK</span>
+          <span style={{ fontSize: 10, background: 'rgba(200,230,0,0.12)', color: ACCENT, border: '1px solid rgba(200,230,0,0.25)', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>🇬🇧</span>
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
-          {sub?.active && (
-            <div style={{ background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.22)', borderRadius: 99, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: '#C8E600', flexShrink: 0 }}>
-              {sub.plan === 'credits' ? `${sub.credits} credits` : '∞ Pro'}
+          {planBadge && (
+            <div style={{ background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.22)', borderRadius: 99, padding: '5px 12px', fontSize: 12, fontWeight: 700, color: ACCENT, flexShrink: 0 }}>
+              {planBadge}
             </div>
           )}
           {!isMobile && (
@@ -236,233 +221,335 @@ export default function UKDashboard() {
         </div>
       </nav>
 
-      {/* BODY */}
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '20px 16px 48px' : '32px 24px 64px', animation: 'fadeIn 0.4s ease-out' }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '36px 24px 72px', animation: 'fadeIn 0.35s ease-out' }}>
 
-        {/* WELCOME HEADER */}
+        {/* WELCOME */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 800, color: '#FFFFFF', marginBottom: 6 }}>
-            Your UK Job Search Dashboard 🇬🇧
+          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+            Hi, {firstName} 👋
           </h1>
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>
-            Welcome back, <span style={{ color: '#C8E600', fontWeight: 600 }}>{firstName}</span> · {appStats.total} UK application{appStats.total !== 1 ? 's' : ''} tracked
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+            {applications.length > 0
+              ? `${applications.length} UK application${applications.length !== 1 ? 's' : ''} tracked`
+              : 'Your UK job search hub'}
           </p>
         </div>
 
-        {/* TOP ROW: Subscription card + stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 1fr', gap: 14, marginBottom: 28 }}>
-          {/* Subscription status */}
-          <div className="card" style={{ gridColumn: isMobile ? 'auto' : 'span 2', background: 'rgba(200,230,0,0.06)', border: '1.5px solid rgba(200,230,0,0.2)', borderRadius: 16, padding: '20px 22px' }}>
-            <div style={{ fontSize: 10, color: '#C8E600', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 10 }}>UK Subscription</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-              <div style={{ width: 40, height: 40, background: '#C8E600', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-                {sub?.plan === 'pro' ? '⚡' : '🎯'}
-              </div>
-              <div>
-                <div style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF' }}>{planLabel} Plan</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>
-                  {sub?.plan === 'credits'
-                    ? `${sub.credits} application${sub.credits !== 1 ? 's' : ''} remaining`
-                    : sub?.plan === 'pro'
-                    ? 'Unlimited applications'
-                    : 'Active'}
-                </div>
-              </div>
-            </div>
-            {sub?.expiresAt && (
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
-                Renews {new Date(sub.expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </div>
-            )}
-            {sub?.plan === 'credits' && sub.credits <= 5 && (
-              <div style={{ marginTop: 10, fontSize: 12, color: '#FF8080', background: 'rgba(255,80,80,0.08)', borderRadius: 8, padding: '6px 10px' }}>
-                ⚠ Low credits — <a href="/uk/subscribe" style={{ color: '#C8E600', textDecoration: 'none', fontWeight: 700 }}>top up</a>
-              </div>
-            )}
-          </div>
-
-          {/* Stat cards */}
-          {[
-            { label: 'Applied', value: appStats.applied, color: '#C8E600', icon: '📤' },
-            { label: 'Interviews', value: appStats.interview, color: '#50B4FF', icon: '🗓' },
-            { label: 'Offers', value: appStats.offer, color: '#50DC78', icon: '🎉' },
-          ].map(stat => (
-            <div key={stat.label} className="card" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: '20px 22px' }}>
-              <div style={{ fontSize: 22, marginBottom: 8 }}>{stat.icon}</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: stat.color, marginBottom: 2 }}>{stat.value}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{stat.label}</div>
-            </div>
+        {/* TABS */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'rgba(255,255,255,0.03)', border: BORDER, borderRadius: 12, padding: 4 }}>
+          {([
+            { id: 'overview', label: 'Overview' },
+            { id: 'cv',       label: 'My CV' },
+            { id: 'applications', label: `Applications${applications.length ? ` (${applications.length})` : ''}` },
+          ] as { id: Tab; label: string }[]).map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{
+                flex: 1,
+                padding: '9px 12px',
+                borderRadius: 9,
+                fontSize: 13,
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                background: tab === t.id ? ACCENT : 'transparent',
+                color: tab === t.id ? '#052A14' : 'rgba(255,255,255,0.4)',
+                transition: 'all 0.15s',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t.label}
+            </button>
           ))}
         </div>
 
-        {/* APPLICATIONS TRACKER */}
-        <div className="card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: isMobile ? '20px 16px' : '24px', marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 10, color: '#C8E600', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 4 }}>Application Tracker</div>
-              <h2 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', margin: 0 }}>UK Applications</h2>
-            </div>
-            <a href="/uk/jobs" style={{ fontSize: 12, color: '#C8E600', fontWeight: 700, textDecoration: 'none', background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.25)', borderRadius: 99, padding: '6px 14px', whiteSpace: 'nowrap' }}>
-              + Apply to more
-            </a>
-          </div>
+        {/* ── OVERVIEW TAB ───────────────────────────────────────────────────── */}
+        {tab === 'overview' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadeIn 0.25s ease-out' }}>
 
-          {appsLoading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[1, 2, 3].map(i => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 10, height: 58 }} />
-              ))}
-            </div>
-          ) : applications.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '32px 16px', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
-              <div style={{ fontSize: 32, marginBottom: 10 }}>📭</div>
-              No UK applications yet. <a href="/uk/jobs" style={{ color: '#C8E600', textDecoration: 'none', fontWeight: 700 }}>Browse UK jobs →</a>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {applications.slice(0, 8).map(app => {
-                const ss = STATUS_STYLES[app.status] || STATUS_STYLES.Applied;
-                return (
-                  <div key={app.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: '12px 14px' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{app.jobTitle}</div>
-                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                        {app.company}{app.location ? ` · ${app.location}` : ''}
-                        {' · '}{new Date(app.appliedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                      </div>
+            {/* Plan card */}
+            <div style={{ background: 'rgba(200,230,0,0.05)', border: '1.5px solid rgba(200,230,0,0.18)', borderRadius: 16, padding: '20px 22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 42, height: 42, background: ACCENT, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+                    {sub?.plan === 'trial' ? '🎁' : sub?.plan === 'pro' ? '⚡' : '🎯'}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>
+                      {sub?.plan === 'trial' ? '7-Day Free Trial' : sub?.plan === 'pro' ? 'Pro Plan' : 'Credits Plan'}
                     </div>
-                    <select
-                      value={app.status}
-                      disabled={updatingStatus === app.id}
-                      onChange={e => updateStatus(app.id, e.target.value)}
-                      style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, border: `1px solid ${ss.color}33`, borderRadius: 99, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit', outline: 'none', flexShrink: 0 }}
-                    >
-                      {['Applied', 'Interview', 'Offer', 'Rejected'].map(s => (
-                        <option key={s} value={s} style={{ background: '#052A14', color: '#fff' }}>{s}</option>
-                      ))}
-                    </select>
-                    {app.jobUrl && (
-                      <a href={app.jobUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textDecoration: 'none', flexShrink: 0 }}>↗</a>
-                    )}
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                      {sub?.plan === 'trial' && sub.trialDaysLeft != null
+                        ? `${sub.trialDaysLeft} day${sub.trialDaysLeft !== 1 ? 's' : ''} remaining — no card needed`
+                        : sub?.plan === 'credits'
+                        ? `${sub.credits} application${sub.credits !== 1 ? 's' : ''} remaining`
+                        : 'Unlimited applications'}
+                    </div>
                   </div>
-                );
-              })}
-              {applications.length > 8 && (
-                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginTop: 4 }}>+{applications.length - 8} more · <a href="/uk/jobs" style={{ color: '#C8E600', textDecoration: 'none' }}>browse more jobs</a></p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* RECOMMENDED JOBS */}
-        <div className="card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: isMobile ? '20px 16px' : '24px', marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 10, color: '#C8E600', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 4 }}>AI-Matched</div>
-              <h2 style={{ fontSize: 17, fontWeight: 800, color: '#FFFFFF', margin: 0 }}>Recommended UK Jobs</h2>
-            </div>
-            <a href="/uk/jobs" style={{ fontSize: 12, color: '#C8E600', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>View all →</a>
-          </div>
-
-          {jobsLoading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 12 }}>
-              {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 12, height: 100 }} />
-              ))}
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 12 }}>
-              {recommended.map(job => (
-                <div key={job.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF', lineHeight: 1.3 }}>{job.title}</div>
-                    {job.score > 0 && (
-                      <span style={{ fontSize: 10, color: '#C8E600', background: 'rgba(200,230,0,0.12)', borderRadius: 99, padding: '2px 7px', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>{job.score}%</span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{job.company}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>📍 {job.location}</div>
-                  {job.salary && <div style={{ fontSize: 11, color: '#C8E600', fontWeight: 700 }}>{job.salary}</div>}
-                  <a href="/uk/jobs" style={{ marginTop: 4, fontSize: 11, color: '#C8E600', fontWeight: 700, textDecoration: 'none', background: 'rgba(200,230,0,0.08)', border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '5px 12px', textAlign: 'center', display: 'block' }}>
-                    ⚡ Quick Apply
+                </div>
+                {sub?.plan === 'trial' && (
+                  <a href="/uk/subscribe" style={{ fontSize: 12, color: '#052A14', background: ACCENT, fontWeight: 800, padding: '8px 16px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                    Upgrade →
                   </a>
+                )}
+                {sub?.plan === 'credits' && sub.credits <= 5 && (
+                  <a href="/uk/subscribe" style={{ fontSize: 12, color: '#052A14', background: ACCENT, fontWeight: 800, padding: '8px 16px', borderRadius: 99, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                    Top up →
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Stats row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              {[
+                { label: 'Applied', value: appStats.applied, color: ACCENT },
+                { label: 'Interviews', value: appStats.interview, color: '#50B4FF' },
+                { label: 'Offers', value: appStats.offer, color: '#50DC78' },
+              ].map(s => (
+                <div key={s.label} style={{ background: CARD, border: BORDER, borderRadius: 14, padding: '18px 16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: s.color, marginBottom: 4 }}>{s.value}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>{s.label}</div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
 
-        {/* BOTTOM ROW: salary + CV tips + quick links */}
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr', gap: 16 }}>
-
-          {/* UK Salary Intelligence */}
-          <div className="card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '22px 20px' }}>
-            <div style={{ fontSize: 10, color: '#C8E600', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 14 }}>UK Salary Guide</div>
-            {cvData?.title ? (
-              <>
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>Your role match</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#FFFFFF' }}>{salary.role}</div>
+            {/* Quick actions */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
+              <a href="/uk/jobs" style={{ display: 'flex', alignItems: 'center', gap: 12, background: ACCENT, borderRadius: 12, padding: '14px 18px', textDecoration: 'none' }}>
+                <span style={{ fontSize: 20 }}>🔍</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#052A14' }}>Browse UK Jobs</div>
+                  <div style={{ fontSize: 11, color: 'rgba(5,42,20,0.6)' }}>500+ live roles updated daily</div>
                 </div>
-                <div style={{ background: 'rgba(200,230,0,0.06)', border: '1px solid rgba(200,230,0,0.15)', borderRadius: 12, padding: '14px 16px', marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>UK market range 2025</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: '#C8E600' }}>
-                    £{salary.min.toLocaleString()} – £{salary.max.toLocaleString()}
+              </a>
+              <button
+                onClick={() => setTab('cv')}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, background: CARD, border: BORDER, borderRadius: 12, padding: '14px 18px', cursor: 'pointer', width: '100%', textAlign: 'left' }}
+              >
+                <span style={{ fontSize: 20 }}>📄</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{cvData ? 'Update your CV' : 'Upload your CV'}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>AI rewrites it for every UK role</div>
+                </div>
+              </button>
+            </div>
+
+            {/* CV status */}
+            {cvData && (
+              <div style={{ background: 'rgba(200,230,0,0.05)', border: '1px solid rgba(200,230,0,0.15)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 18 }}>✅</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{cvData.name || 'CV uploaded'}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+                    {cvData.title || ''}{cvData.skills?.length ? ` · ${cvData.skills.length} skills` : ''}
                   </div>
                 </div>
-              </>
-            ) : (
-              <div style={{ marginBottom: 14, fontSize: 13, color: 'rgba(255,255,255,0.3)', lineHeight: 1.6 }}>
-                Upload your CV to see your personalised UK salary range.
+                <button onClick={() => setTab('cv')} style={{ fontSize: 12, color: ACCENT, background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '5px 12px', cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>
+                  Manage
+                </button>
               </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {Object.entries(UK_SALARIES).filter(([k]) => k !== 'default').slice(0, 4).map(([role, { min, max }]) => (
-                <div key={role} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                  <span style={{ color: 'rgba(255,255,255,0.45)' }}>{role.replace(/\b\w/g, c => c.toUpperCase())}</span>
-                  <span style={{ color: '#C8E600', fontWeight: 700 }}>£{(min / 1000).toFixed(0)}k–£{(max / 1000).toFixed(0)}k</span>
-                </div>
-              ))}
-            </div>
           </div>
+        )}
 
-          {/* UK CV Tips */}
-          <div className="card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '22px 20px' }}>
-            <div style={{ fontSize: 10, color: '#C8E600', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 14 }}>UK CV Tips</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {CV_TIPS.map(({ icon, tip }) => (
-                <div key={tip} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 16, flexShrink: 0, lineHeight: 1.4 }}>{icon}</span>
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.55 }}>{tip}</span>
+        {/* ── MY CV TAB ──────────────────────────────────────────────────────── */}
+        {tab === 'cv' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, animation: 'fadeIn 0.25s ease-out' }}>
+
+            {/* Upload area */}
+            <div style={{ background: CARD, border: BORDER, borderRadius: 16, padding: '22px' }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+                {cvData ? 'Your CV' : 'Upload CV'}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 16 }}>
+                {cvData ? 'AI has parsed your CV — you can replace it anytime.' : 'Upload a PDF and AI will parse and optimise it for UK employers.'}
+              </div>
+
+              {!cvData && (
+                <div
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
+                  onClick={() => !uploading && fileRef.current?.click()}
+                  style={{
+                    border: `2px dashed ${dragOver ? ACCENT : 'rgba(255,255,255,0.1)'}`,
+                    borderRadius: 12,
+                    padding: '32px 20px',
+                    textAlign: 'center',
+                    cursor: uploading ? 'wait' : 'pointer',
+                    background: dragOver ? 'rgba(200,230,0,0.04)' : 'transparent',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => handleFile(e.target.files?.[0] || null)} />
+                  {uploading ? (
+                    <>
+                      <div style={{ width: 28, height: 28, border: '3px solid rgba(200,230,0,0.15)', borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 10px' }} />
+                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', margin: 0 }}>Analysing with AI...</p>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 28, marginBottom: 8 }}>📄</div>
+                      <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>Drop your CV or click to upload</p>
+                      <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', margin: 0 }}>PDF · max 15MB</p>
+                    </>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
+              )}
 
-          {/* Quick Links */}
-          <div className="card" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 18, padding: '22px 20px' }}>
-            <div style={{ fontSize: 10, color: '#C8E600', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 14 }}>Quick Links</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                { href: '/uk/jobs', icon: '🔍', label: 'Browse UK Jobs', desc: 'Search live UK listings' },
-                { href: '/dashboard', icon: '✏️', label: 'Rewrite CV for UK', desc: 'AI tailors your CV to UK roles' },
-                { href: '/dashboard', icon: '📝', label: 'Generate Cover Letter', desc: 'AI writes it in 30 seconds' },
-                { href: '/uk', icon: '🇬🇧', label: 'UK Home', desc: 'Back to UK landing page' },
-              ].map(({ href, icon, label, desc }) => (
-                <a key={label} href={href} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '11px 14px', textDecoration: 'none', transition: 'border-color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(200,230,0,0.25)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)')}>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>{icon}</span>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#FFFFFF' }}>{label}</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{desc}</div>
+              {cvData && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', width: 60, flexShrink: 0, paddingTop: 2 }}>Name</span>
+                    <span style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>{cvData.name || '—'}</span>
                   </div>
-                </a>
-              ))}
-            </div>
-          </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', width: 60, flexShrink: 0, paddingTop: 2 }}>Title</span>
+                    <span style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>{cvData.title || '—'}</span>
+                  </div>
+                  {cvData.skills?.length > 0 && (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', width: 60, flexShrink: 0, paddingTop: 4 }}>Skills</span>
+                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                        {cvData.skills.slice(0, 8).map((s: string) => (
+                          <span key={s} style={{ fontSize: 11, background: 'rgba(200,230,0,0.1)', color: ACCENT, border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '2px 8px', fontWeight: 700 }}>{s}</span>
+                        ))}
+                        {cvData.skills.length > 8 && <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>+{cvData.skills.length - 8}</span>}
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => { setCvData(null); setRewriteResult(null); fileRef.current?.click(); }}
+                    style={{ alignSelf: 'flex-start', marginTop: 4, fontSize: 12, color: 'rgba(255,255,255,0.35)', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 99, padding: '5px 12px', cursor: 'pointer' }}
+                  >
+                    Replace CV
+                  </button>
+                  <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => handleFile(e.target.files?.[0] || null)} />
+                </div>
+              )}
 
-        </div>
+              {cvError && (
+                <div style={{ marginTop: 12, background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#FF8080' }}>
+                  {cvError}
+                </div>
+              )}
+            </div>
+
+            {/* Rewrite for UK role */}
+            {cvData && (
+              <div style={{ background: CARD, border: BORDER, borderRadius: 16, padding: '22px' }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Tailor for a UK role</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 14 }}>
+                  AI rewrites your CV to pass UK ATS systems for a specific job title.
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexDirection: isMobile ? 'column' : 'row' }}>
+                  <input
+                    value={rewriteJob}
+                    onChange={e => setRewriteJob(e.target.value)}
+                    placeholder="e.g. Senior React Developer, NHS Nurse, Finance Analyst"
+                    style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 14px', fontSize: 14, color: '#fff', fontFamily: 'inherit' }}
+                  />
+                  <button
+                    onClick={rewriteCV}
+                    disabled={!rewriteJob.trim() || rewriting}
+                    style={{ background: rewriteJob.trim() && !rewriting ? ACCENT : 'rgba(200,230,0,0.2)', color: '#052A14', fontSize: 13, fontWeight: 800, padding: '11px 20px', borderRadius: 10, border: 'none', cursor: rewriteJob.trim() && !rewriting ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    {rewriting ? (
+                      <><span style={{ width: 12, height: 12, border: '2px solid rgba(5,42,20,0.2)', borderTopColor: '#052A14', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} /> Rewriting...</>
+                    ) : '✦ Rewrite'}
+                  </button>
+                </div>
+
+                {rewriteError && (
+                  <div style={{ marginTop: 10, fontSize: 13, color: '#FF8080' }}>{rewriteError}</div>
+                )}
+
+                {rewriteResult && (
+                  <div style={{ marginTop: 14, background: 'rgba(200,230,0,0.05)', border: '1px solid rgba(200,230,0,0.15)', borderRadius: 12, padding: '14px 16px', animation: 'fadeIn 0.3s ease-out' }}>
+                    <div style={{ fontSize: 12, color: ACCENT, fontWeight: 700, marginBottom: 8 }}>✅ CV rewritten for {rewriteJob}</div>
+                    {rewriteResult.summary && (
+                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, margin: '0 0 10px' }}>{rewriteResult.summary}</p>
+                    )}
+                    {rewriteResult.skills?.length > 0 && (
+                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                        {rewriteResult.skills.slice(0, 8).map((s: string) => (
+                          <span key={s} style={{ fontSize: 11, background: 'rgba(200,230,0,0.1)', color: ACCENT, border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '2px 8px', fontWeight: 700 }}>{s}</span>
+                        ))}
+                      </div>
+                    )}
+                    {rewriteResult.ats_score && (
+                      <div style={{ marginTop: 10, fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+                        ATS score: <span style={{ color: ACCENT, fontWeight: 700 }}>{rewriteResult.ats_score}%</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── APPLICATIONS TAB ────────────────────────────────────────────────── */}
+        {tab === 'applications' && (
+          <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+                {applications.length} UK application{applications.length !== 1 ? 's' : ''}
+              </div>
+              <a href="/uk/jobs" style={{ fontSize: 12, color: ACCENT, fontWeight: 700, textDecoration: 'none', background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '6px 14px' }}>
+                + Apply to more
+              </a>
+            </div>
+
+            {appsLoading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[1, 2, 3].map(i => (
+                  <div key={i} style={{ background: CARD, border: BORDER, borderRadius: 12, height: 62 }} />
+                ))}
+              </div>
+            ) : applications.length === 0 ? (
+              <div style={{ background: CARD, border: BORDER, borderRadius: 16, padding: '48px 24px', textAlign: 'center' }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>📭</div>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.35)', marginBottom: 16 }}>No UK applications yet.</p>
+                <a href="/uk/jobs" style={{ display: 'inline-block', background: ACCENT, color: '#052A14', fontSize: 14, fontWeight: 800, padding: '12px 28px', borderRadius: 99, textDecoration: 'none' }}>
+                  Browse UK jobs →
+                </a>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {applications.map(app => {
+                  const ss = STATUS_STYLES[app.status] || STATUS_STYLES.Applied;
+                  return (
+                    <div key={app.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: CARD, border: BORDER, borderRadius: 12, padding: '12px 14px' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{app.jobTitle}</div>
+                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+                          {app.company}{app.location ? ` · ${app.location}` : ''} · {new Date(app.appliedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        </div>
+                      </div>
+                      <select
+                        value={app.status}
+                        disabled={updatingStatus === app.id}
+                        onChange={e => updateStatus(app.id, e.target.value)}
+                        style={{ fontSize: 11, fontWeight: 700, color: ss.color, background: ss.bg, border: `1px solid ${ss.color}44`, borderRadius: 99, padding: '5px 10px', cursor: 'pointer', fontFamily: 'inherit', outline: 'none', flexShrink: 0 }}
+                      >
+                        {['Applied', 'Interview', 'Offer', 'Rejected'].map(s => (
+                          <option key={s} value={s} style={{ background: '#052A14', color: '#fff' }}>{s}</option>
+                        ))}
+                      </select>
+                      {app.jobUrl && (
+                        <a href={app.jobUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textDecoration: 'none', flexShrink: 0 }}>↗</a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </main>
   );

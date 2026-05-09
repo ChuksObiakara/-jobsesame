@@ -2,11 +2,10 @@ export const dynamic = 'force-dynamic';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-// ── GET: check subscription status for the logged-in user ────────────────────
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {
-    return NextResponse.json({ subscribed: false, plan: null, credits: 0, expiresAt: null }, { status: 401 });
+    return NextResponse.json({ active: false, plan: null, credits: 0, expiresAt: null, hasSubscription: false, trialDaysLeft: null }, { status: 401 });
   }
 
   const { prisma } = await import('@/app/lib/prisma');
@@ -15,92 +14,82 @@ export async function GET() {
     include: { ukSubscription: true },
   });
 
-  if (!user) return NextResponse.json({ subscribed: false, plan: null, credits: 0, expiresAt: null });
+  if (!user) {
+    return NextResponse.json({ active: false, plan: null, credits: 0, expiresAt: null, hasSubscription: false, trialDaysLeft: null });
+  }
 
   const sub = user.ukSubscription;
-  if (!sub || !sub.active) {
-    return NextResponse.json({ subscribed: false, plan: null, credits: 0, expiresAt: null });
+
+  // No subscription at all — first-time UK user
+  if (!sub) {
+    return NextResponse.json({ active: false, plan: null, credits: 0, expiresAt: null, hasSubscription: false, trialDaysLeft: null });
+  }
+
+  // Auto-expire trial if past expiresAt
+  if (sub.active && sub.expiresAt && new Date() > sub.expiresAt) {
+    await prisma.uKSubscription.update({
+      where: { id: sub.id },
+      data: { active: false },
+    });
+    return NextResponse.json({ active: false, plan: sub.plan, credits: 0, expiresAt: sub.expiresAt, hasSubscription: true, trialDaysLeft: 0 });
+  }
+
+  // Calculate days left for trial
+  let trialDaysLeft: number | null = null;
+  if (sub.plan === 'trial' && sub.active && sub.expiresAt) {
+    const msLeft = new Date(sub.expiresAt).getTime() - Date.now();
+    trialDaysLeft = Math.max(0, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
   }
 
   return NextResponse.json({
-    subscribed: true,
-    // keep legacy `active` field so existing dashboard/jobs pages don't break
-    active: true,
+    active: sub.active,
+    subscribed: sub.active,
     plan: sub.plan,
     credits: sub.credits,
     expiresAt: sub.expiresAt,
+    hasSubscription: true,
+    trialDaysLeft,
   });
 }
 
-// ── POST: manually activate a UK subscription (admin/testing only) ────────────
+// ── POST: manually activate (admin/testing) ───────────────────────────────────
 export async function POST(req: NextRequest) {
-  const adminPassword = process.env.ADMIN_PASSWORD || process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'Jobsesame2024Admin';
-
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Jobsesame2024Admin';
   const body = await req.json();
   const { password, userId: targetUserId, plan, credits } = body;
 
   if (!password || password !== adminPassword) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
-
   if (!targetUserId || !plan) {
     return NextResponse.json({ error: 'userId and plan are required' }, { status: 400 });
   }
 
-  const validPlans = ['free', 'credits', 'pro'];
+  const validPlans = ['free', 'credits', 'pro', 'trial'];
   if (!validPlans.includes(plan)) {
     return NextResponse.json({ error: `plan must be one of: ${validPlans.join(', ')}` }, { status: 400 });
   }
 
   const { prisma } = await import('@/app/lib/prisma');
-
-  // Accept either a Clerk userId (starts with "user_") or a Prisma user id
   const user = await prisma.user.findFirst({
-    where: targetUserId.startsWith('user_')
-      ? { clerkId: targetUserId }
-      : { id: targetUserId },
+    where: targetUserId.startsWith('user_') ? { clerkId: targetUserId } : { id: targetUserId },
   });
-
-  if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
-  }
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
   const creditCount = plan === 'credits' ? (typeof credits === 'number' ? credits : 20)
     : plan === 'pro' ? 999999
+    : plan === 'trial' ? 999
     : 0;
 
-  const expiresAt = plan === 'pro'
-    ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)   // 30 days
+  const expiresAt = plan === 'pro' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    : plan === 'trial' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
     : null;
 
   const sub = await prisma.uKSubscription.upsert({
     where: { userId: user.id },
-    create: {
-      userId: user.id,
-      plan,
-      credits: creditCount,
-      active: true,
-      expiresAt,
-    },
-    update: {
-      plan,
-      credits: creditCount,
-      active: true,
-      expiresAt,
-    },
+    create: { userId: user.id, plan, credits: creditCount, active: true, expiresAt },
+    update: { plan, credits: creditCount, active: true, expiresAt },
   });
 
-  return NextResponse.json({
-    success: true,
-    subscription: {
-      id: sub.id,
-      userId: user.id,
-      clerkId: user.clerkId,
-      email: user.email,
-      plan: sub.plan,
-      credits: sub.credits,
-      active: sub.active,
-      expiresAt: sub.expiresAt,
-    },
-  });
+  return NextResponse.json({ success: true, subscription: { ...sub, clerkId: user.clerkId, email: user.email } });
 }
