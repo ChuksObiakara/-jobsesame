@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
 import { useSearchParams } from 'next/navigation';
 const PLANS = [
@@ -76,8 +76,8 @@ const FAQS = [
   },
 ];
 
-export default function SubscribePage() {
-  const { isSignedIn } = useAuth();
+function SubscribePageInner() {
+  const { isLoaded, isSignedIn } = useAuth();
   const searchParams = useSearchParams();
   const highlightPlan = searchParams.get('plan'); // 'credits' | 'pro' | null
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -98,6 +98,8 @@ export default function SubscribePage() {
       }
     } catch {}
   }, []);
+
+  if (!isLoaded) return null;
 
   return (
     <main style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", background: '#061A0C', minHeight: '100vh', margin: 0, padding: 0, overflowX: 'hidden' }}>
@@ -259,3 +261,13 @@ export default function SubscribePage() {
     </main>
   );
 }
+
+export default function SubscribePage() {
+  return (
+    <Suspense>
+      <SubscribePageInner />
+    </Suspense>
+  );
+}
+
+export const dynamic = 'force-dynamic';

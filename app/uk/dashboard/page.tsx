@@ -148,6 +148,8 @@ const ANALYSIS_MSGS = [
   'Almost ready...',
 ];
 
+export const dynamic = 'force-dynamic';
+
 export default function UKDashboard() {
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();

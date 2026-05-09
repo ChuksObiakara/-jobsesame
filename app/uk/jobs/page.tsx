@@ -462,6 +462,8 @@ function ApplyModal({ job, user, cvData, onClose, onSuccess }: {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
+export const dynamic = 'force-dynamic';
+
 const PAGE_SIZE = 20;
 
 export default function UKJobsPage() {

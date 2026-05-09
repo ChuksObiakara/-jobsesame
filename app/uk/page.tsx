@@ -71,6 +71,8 @@ const FAQS = [
   { q: 'Will employers know the CV was AI-written?', a: 'No. The AI rewrites your real experience in your voice — it doesn\'t fabricate anything. It makes sure the right keywords are present and your achievements are framed for impact. Thousands of professionals use AI tools to polish their CVs.' },
 ];
 
+export const dynamic = 'force-dynamic';
+
 export default function UKPage() {
   const { isSignedIn } = useAuth();
   const [isMobile, setIsMobile] = useState(false);

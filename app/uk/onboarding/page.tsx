@@ -36,6 +36,8 @@ function PillBtn({ label, active, onClick }: { label: string; active: boolean; o
   );
 }
 
+export const dynamic = 'force-dynamic';
+
 export default function UKOnboarding() {
   const { user, isLoaded, isSignedIn } = useUser();
   const router = useRouter();
