@@ -185,7 +185,7 @@ export default function RecruitersPage() {
 
         {/* TRUST SIGNALS */}
         <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', marginTop: 40 }}>
-          {['495,000+ active candidates', 'AI-powered matching', 'Dedicated account manager', 'No placement fees'].map(t => (
+          {['AI-powered matching', 'Pre-screened candidates', 'Dedicated account manager', 'No placement fees'].map(t => (
             <div key={t} style={{ fontSize: 12, color: '#3A7A4A', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ color: '#C8E600' }}>✓</span> {t}
             </div>

@@ -669,7 +669,7 @@ export default function JobsPage() {
             Find your next job
           </h1>
           <p style={{fontSize:13,color:"#5A9A6A",marginBottom:20}}>
-            {total > 0 ? `${total.toLocaleString()} live openings` : '495,000+ live openings'} · AI-powered matching · Quick Apply in 10 seconds
+            {total > 0 ? `${total.toLocaleString()} live openings` : 'Thousands of live openings'} · AI-powered matching · Quick Apply in 10 seconds
           </p>
         </div>
       </div>
@@ -677,10 +677,10 @@ export default function JobsPage() {
       {/* SEARCH + TABS */}
       <div style={{background:"#052A14",padding:isMobile?"0 12px 16px":"0 24px 24px",borderBottom:"4px solid #C8E600",overflowX:"hidden"}}>
         <div style={{maxWidth:900,margin:"0 auto"}}>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",padding:"4px 0",marginBottom:18}}>
+          <div style={{display:"flex",gap:6,flexWrap:"wrap",padding:"4px 0",marginBottom:18,overflowX:"auto",WebkitOverflowScrolling:"touch"}}>
             {(['all','remote','relocation','teaching'] as const).map(tab=>(
               <button key={tab} style={tabStyle(tab)} onClick={()=>handleTabChange(tab)}>
-                {tab === 'all' ? '🌍 All Jobs' : tab === 'remote' ? '💻 Remote Jobs' : tab === 'teaching' ? '🎓 Teaching Jobs' : '✈️ Relocation Jobs'}
+                {tab === 'all' ? '🌍 All' : tab === 'remote' ? '💻 Remote' : tab === 'teaching' ? '🎓 Teaching' : '✈️ Relocation'}
               </button>
             ))}
           </div>

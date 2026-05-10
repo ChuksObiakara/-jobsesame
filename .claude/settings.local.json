@@ -45,7 +45,10 @@
       "Bash(Select-Object FullName)",
       "Bash(npx next *)",
       "Bash(Get-Content *)",
-      "Bash(grep -v \"//.*password\\\\|//.*secret\\\\|//.*key\")"
+      "Bash(grep -v \"//.*password\\\\|//.*secret\\\\|//.*key\")",
+      "Bash(grep -v \"//.*localhost\")",
+      "Bash(xargs grep -l \"message\\\\|Error\")",
+      "Bash(xargs grep -l \"isAutoApply\\\\|Quick Apply\\\\|auto.apply\\\\|autoApply\")"
     ]
   }
 }

@@ -1096,6 +1096,404 @@ Jobsesame's AI cover letter generator creates fully British-formatted cover lett
   },
 ];
 
+  {
+    slug: 'how-to-find-a-job-in-south-africa-2025',
+    title: 'How to Find a Job in South Africa in 2025 — The Complete Guide',
+    excerpt: 'Job hunting in South Africa is competitive. Here is exactly how to stand out, which platforms to use, and how to get more responses.',
+    date: '2 May 2025',
+    category: 'Job Search',
+    readTime: '7 min read',
+    content: `# How to Find a Job in South Africa in 2025 — The Complete Guide
+
+South Africa's job market in 2025 is highly competitive. Unemployment sits above 30 percent and applications for each role can number in the hundreds. That means your strategy needs to be sharper than simply applying online and waiting.
+
+This guide covers exactly how to find a job in South Africa in 2025 — what works, what does not, and how to get more responses.
+
+## Understand what employers actually want
+
+South African employers have shifted significantly toward skills-based hiring. A degree still matters for certain professional roles, but demonstrated skills, measurable experience, and cultural fit are now weighed equally. Your CV needs to show what you did, not just where you worked.
+
+## Which platforms are worth your time
+
+**LinkedIn**: Still the most used platform for professional roles. Optimise your profile completely and connect with recruiters directly. Most SA employers check LinkedIn after receiving your CV.
+
+**Pnet and CareerJunction**: The two biggest local job boards. Check daily and apply within 24 hours of postings going live — early applicants get far more responses.
+
+**Indeed South Africa**: Good for volume and covers a wide range of industries including retail, hospitality, and administration.
+
+**Jobsesame**: AI-matched jobs from multiple sources. Upload your CV once and get matched to roles that fit your profile rather than manually searching each platform.
+
+**Company career pages**: Often not advertised on job boards. Identify 20 companies you want to work for and check their websites weekly.
+
+## CV format that actually gets read in South Africa
+
+South African CVs are typically two pages maximum. Key requirements:
+- Clear personal details at the top including ID number or nationality
+- A strong professional summary (three sentences)
+- Skills section with at least eight role-relevant keywords
+- Experience in reverse chronological order with bullet points showing measurable achievements
+- Education, training, and any BEE status where relevant
+
+Avoid: photos, marital status, salary expectations in the CV, and anything that pads the length without adding value.
+
+## How ATS filtering works in South Africa
+
+Major South African companies, banks, and professional services firms use Applicant Tracking Systems to filter CVs before a recruiter ever reads them. The system scans for keywords from the job description. If your CV does not contain those exact words, it gets filtered out automatically.
+
+The fix is to tailor your CV for every role — adding the keywords from the job description into your summary, skills, and bullet points. AI tools like Jobsesame do this automatically in 30 seconds.
+
+## Networking in the South African context
+
+Around 70 percent of positions in South Africa are filled through networking before ever being advertised. Attend industry events, reconnect with former colleagues, and use LinkedIn to reach out to people in target companies.
+
+A direct message to a hiring manager or team lead — professional, specific, and brief — has a significantly higher success rate than a job board application.
+
+## What to do when you hear nothing back
+
+If applications are going unanswered, the issue is almost always the CV. Get your CV scored on Jobsesame for free. The ATS analysis shows exactly why recruiters are not calling and gives you a specific list of changes to make.
+
+The average Jobsesame user improves their ATS score from 38 percent to 91 percent. The difference in response rates is significant.`,
+    status: 'published',
+  },
+  {
+    slug: 'cover-letter-examples-south-africa',
+    title: 'Cover Letter Examples for South African Jobs — Templates That Get Responses',
+    excerpt: 'Most South African cover letters are too generic and get ignored. Here are templates that hiring managers actually read.',
+    date: '28 April 2025',
+    category: 'CV Tips',
+    readTime: '6 min read',
+    content: `# Cover Letter Examples for South African Jobs — Templates That Get Responses
+
+A cover letter in South Africa is often the deciding factor between an interview and a rejection. Most applicants send generic letters that say nothing useful. The ones that get responses are specific, confident, and directly address the role.
+
+Here are real-format examples for different industries, plus the principles behind each one.
+
+## The structure that works
+
+Every effective South African cover letter has three paragraphs:
+
+**Paragraph 1**: Why this role at this company, and why you are the right fit — in specific terms.
+
+**Paragraph 2**: Your most relevant experience and achievement — with a number or measurable result.
+
+**Paragraph 3**: A confident call to action. Invite them to call you. Do not beg for the opportunity.
+
+## Example 1: Finance / Accounting role
+
+"Having spent four years driving cost reductions at Standard Bank, I know exactly what it takes to deliver financial accuracy under pressure. The Senior Financial Analyst position at FNB aligns directly with my track record of cutting reporting time by 35 percent and eliminating audit findings across three consecutive years.
+
+During my tenure at Standard Bank I reduced month-end close from eight days to three, standardised reporting templates adopted across 12 branches, and led a team of five analysts through a SAP migration with zero disruption to reporting timelines.
+
+I would welcome the opportunity to bring this same level of focus to your team. I am available for an interview at any time that suits you and can be reached directly at [phone]."
+
+## Example 2: Technology / Software Development
+
+"The Senior Full Stack Developer role at Takealot is exactly the kind of challenge I have been building toward. After three years developing high-throughput e-commerce APIs at Woolworths, I have the specific experience your team needs.
+
+I built the mobile checkout flow that increased conversion by 22 percent, scaled a payment gateway to handle 40,000 concurrent transactions during Black Friday, and mentored a team of four junior developers from onboarding to full production ownership.
+
+I would love to discuss how my background maps to your current challenges. I am based in Cape Town and available for a technical interview this week."
+
+## Example 3: Marketing
+
+"Digital marketing in South Africa is maturing fast and the Head of Digital role at Capitec is exactly where I want to be. My background managing multi-channel campaigns with combined budgets over R12 million directly matches what you are looking for.
+
+At Discovery I grew organic search traffic by 140 percent in 18 months, cut cost-per-lead by 38 percent through channel optimisation, and launched a WhatsApp marketing campaign that achieved a 61 percent open rate.
+
+I would welcome 30 minutes to walk you through the strategy I would bring to Capitec. I am available from Monday and can travel to any of your offices."
+
+## Generate your cover letter in seconds
+
+Jobsesame's AI cover letter tool generates a fully personalised, industry-specific cover letter based on your CV and the job description. It takes 30 seconds and follows the exact three-paragraph structure that gets results. Try it free at jobsesame.co.za.`,
+    status: 'published',
+  },
+  {
+    slug: 'linkedin-profile-tips-south-africa',
+    title: 'LinkedIn Profile Tips for South Africans — Get Found by Recruiters in 2025',
+    excerpt: 'Recruiters search LinkedIn daily for candidates. These profile optimisation tips will put you in front of them.',
+    date: '20 April 2025',
+    category: 'Job Search',
+    readTime: '5 min read',
+    content: `# LinkedIn Profile Tips for South Africans — Get Found by Recruiters in 2025
+
+LinkedIn has over 14 million South African users. Recruiters and hiring managers search it daily. Most profiles are incomplete and invisible to search. These changes will get you found.
+
+## Your headline is your most important real estate
+
+The default headline LinkedIn sets is your current job title. Change it immediately. Your headline should describe what you do, who you help, and your value — not just your title.
+
+Bad: "Software Developer at Telkom"
+
+Good: "Full Stack Developer | React & Node | Building scalable e-commerce platforms | Open to senior roles"
+
+Include the keywords recruiters search for. If you are in finance: "Chartered Accountant | IFRS | Financial Reporting | FP&A | Cape Town".
+
+## The About section is your pitch
+
+Write in first person. Three paragraphs maximum. Start with your strongest professional statement, describe your track record with specific achievements, and end with what you are looking for.
+
+South African recruiters spend fewer than 10 seconds deciding whether to contact a candidate. Your first two sentences need to tell them exactly why you are worth their time.
+
+## Skills — add all 50
+
+LinkedIn allows up to 50 skills. Most people add fewer than 10. Recruiters filter searches by skills. If you do not have a skill listed, you do not appear in that search.
+
+Add every technical skill, soft skill, and tool you use regularly. Prioritise the skills that appear most frequently in your target job descriptions.
+
+## Endorsements and recommendations
+
+Ask five people to endorse your top three skills this week. Endorsed skills rank higher in recruiter searches. A recommendation from a former manager or colleague is worth 10 times more than any other profile element — reach out to two people and offer to write one for them first.
+
+## Your profile photo and banner
+
+Profiles with photos receive 21 times more views. Use a professional headshot — not a party photo, not a group photo, not a logo. Good lighting, clear background, and you looking directly at the camera.
+
+Add a banner image that reinforces your professional identity. A simple design with your name, role, and key skill is far better than the default blue gradient LinkedIn provides.
+
+## Activity matters
+
+Post or comment at least twice a week. Share an industry article with your view on it. Comment on posts by people in your target companies. Recruiters check activity to assess whether a candidate is engaged and current.
+
+## Turn on Open to Work
+
+Make your profile searchable by recruiters. Go to your profile, click the "Open to" button, select "Finding a new job," choose your preferences, and set visibility to "Recruiters only." This makes you discoverable to recruiters searching for your skills without broadcasting to your current employer.`,
+    status: 'published',
+  },
+  {
+    slug: 'how-to-get-a-job-in-dubai-from-south-africa',
+    title: 'How to Get a Job in Dubai from South Africa — A Step-by-Step Guide',
+    excerpt: 'Dubai is hiring South Africans across finance, tech, hospitality, and construction. Here is exactly how to land a role and relocate.',
+    date: '15 April 2025',
+    category: 'Relocation',
+    readTime: '8 min read',
+    content: `# How to Get a Job in Dubai from South Africa — A Step-by-Step Guide
+
+Dubai is one of the most popular relocation destinations for South African professionals. Tax-free salaries, a growing economy, and a large South African expat community make it genuinely accessible. But the process requires a specific approach.
+
+## Why Dubai hires South Africans
+
+South African professionals are well-regarded in Dubai for several reasons. Strong English, internationally recognised qualifications, good work ethic, and experience working in developing market conditions all translate well to the UAE market.
+
+Industries actively hiring South Africans include: financial services and banking, technology and software development, hospitality and F&B management, healthcare and nursing, construction and project management, and logistics.
+
+## Salaries in Dubai — what to expect
+
+Dubai salaries are tax-free, which makes them appear lower than they are. Most professionals earn the equivalent of 40 to 70 percent more than their South African salary in net terms.
+
+Typical ranges in AED per month:
+- Software developer: AED 15,000 – 30,000
+- Financial analyst: AED 12,000 – 25,000
+- Nurse: AED 8,000 – 16,000
+- Project manager: AED 18,000 – 35,000
+- Marketing manager: AED 12,000 – 22,000
+
+Most packages include health insurance. Housing allowances of 20 to 30 percent of salary are common. Some employers cover flights home annually.
+
+## CV format for Dubai employers
+
+Dubai employers prefer a one to two page CV. Include a professional photo — it is standard in the UAE and expected. Include nationality and visa status clearly. A strong objective or summary statement tailored to the role is essential.
+
+Key difference from South African CVs: Dubai employers expect very specific quantified achievements. Vague descriptions of responsibilities are ignored. Every bullet point should have a metric.
+
+## How to apply from South Africa
+
+**LinkedIn**: Connect with Dubai-based recruiters directly. Message them with your CV attached, your availability, and your visa status. Most Dubai recruitment happens through LinkedIn.
+
+**Bayt.com**: The largest job board for the MENA region. Post your CV and apply to roles directly.
+
+**GulfTalent**: Specifically focused on Gulf countries. Strong for finance, engineering, and management roles.
+
+**Jobsesame Relocation Jobs**: Browse international relocation opportunities curated for African professionals.
+
+**Recruitment agencies**: Gulf Connexions, Michael Page Middle East, and Robert Half Dubai are the most active for professional roles.
+
+## The visa process
+
+South Africans need a work visa for Dubai. The process works as follows: your employer applies for a work permit, which takes one to three weeks. You then apply for a residency visa. Your employer typically handles this process once you have an offer.
+
+If searching from South Africa, be clear in your applications that you are willing to relocate immediately and understand the visa process. Employers prefer candidates who do not require hand-holding on visa logistics.
+
+## Practical steps to get started
+
+1. Tailor your CV for the specific Dubai role and industry — use Jobsesame to rewrite it in 30 seconds.
+2. Update your LinkedIn and set your location to "Open to relocating to Dubai."
+3. Connect with five South African expats in Dubai via LinkedIn and ask what the process was like.
+4. Apply directly on LinkedIn and Bayt to roles you qualify for.
+5. Expect a WhatsApp or video call first — have a professional setup ready.
+
+The average time from application to offer for South Africans relocating to Dubai is six to ten weeks for senior roles, and three to six weeks for junior and mid-level positions.`,
+    status: 'published',
+  },
+  {
+    slug: 'interview-questions-south-africa',
+    title: '20 Most Common South African Job Interview Questions — And How to Answer Them',
+    excerpt: 'South African hiring managers ask predictable questions. Here are the 20 most common ones with strategies for strong answers.',
+    date: '10 April 2025',
+    category: 'Interviews',
+    readTime: '8 min read',
+    content: `# 20 Most Common South African Job Interview Questions — And How to Answer Them
+
+South African job interviews follow recognisable patterns. Knowing the questions in advance — and having a structured answer ready — is the difference between sounding prepared and sounding generic.
+
+## The STAR method
+
+Before the questions, understand the format: Situation, Task, Action, Result. Most behavioural questions require this structure. Situation — set the scene briefly. Task — what were you responsible for? Action — what did you specifically do? Result — what happened, with a number if possible.
+
+## 20 questions and how to answer them
+
+**1. Tell me about yourself.**
+
+Do not narrate your CV. Give a 60-second professional summary: who you are, what you do best, and what you are looking for. End with why you are interested in this role.
+
+**2. Why do you want to work here?**
+
+Research the company beforehand. Mention something specific — a recent initiative, their market position, or their values. Generic answers about growth and culture fail here.
+
+**3. What is your greatest weakness?**
+
+Choose a real weakness you have actively worked to improve. Describe what you did to address it and the result. Avoid clichés like "I work too hard."
+
+**4. Where do you see yourself in five years?**
+
+Align with the company's growth trajectory. Show ambition without threatening the interviewer's position. Growth within the company is the right framing.
+
+**5. Tell me about a time you handled conflict at work.**
+
+Use STAR. Focus on the resolution, not the conflict. Emphasise collaboration and professional conduct.
+
+**6. What is your current salary and what are your expectations?**
+
+In South Africa, interviewers ask this directly and early. Know your market value beforehand. Give a range based on research. Say "Based on my experience and the market for this role, I am looking at R[X] to R[Y], open to discussion based on the full package."
+
+**7. Why are you leaving your current role?**
+
+Never criticise your current employer. Use growth, opportunity, or alignment with your career goals as the reason.
+
+**8. Describe a difficult project you managed.**
+
+STAR with an emphasis on your leadership, decision-making, and the positive outcome.
+
+**9. How do you handle pressure and tight deadlines?**
+
+Give a specific example. Show that you have a system — prioritisation, communication, delegation — not that you just push through.
+
+**10. Tell me about your greatest professional achievement.**
+
+This is your moment. Have one strong story ready with specific numbers. Revenue generated, cost saved, time reduced, team size led.
+
+**11. What do you know about our company?**
+
+Demonstrate that you did your homework. Mention their products or services, recent news, and their position in the market.
+
+**12. Why should we hire you?**
+
+Summarise your three strongest qualifications for this specific role. Be direct. Do not be modest.
+
+**13. How do you deal with a colleague who is not pulling their weight?**
+
+Describe a professional, direct approach — a private conversation, an offer to help, escalation only if necessary.
+
+**14. Tell me about a time you failed.**
+
+Own it. Describe what happened, what you learned, and what you did differently afterwards. Accountability is what interviewers are measuring.
+
+**15. What motivates you?**
+
+Be specific and honest. Challenge, impact, learning, recognition — pick what is true for you and connect it to the role.
+
+**16. How do you prioritise when you have multiple urgent tasks?**
+
+Describe your system — urgency vs importance, communication with stakeholders, and delivery track record.
+
+**17. Are you a team player or do you prefer working independently?**
+
+The right answer is both, with examples. Show you can collaborate and can also be trusted to work alone.
+
+**18. What are your salary expectations?** *(asked again, later in process)*
+
+By now you should know the budget range. If they have not told you, ask: "Can you share the budgeted range for the role so I can confirm alignment?" Then position within it based on your experience.
+
+**19. Do you have any questions for us?**
+
+Always have three questions ready. Ask about the team, the biggest challenge in the role, or how success is measured in the first 90 days. Never ask about leave or remote work in a first interview.
+
+**20. When can you start?**
+
+If you have a notice period, say so clearly. If you can be flexible, say so. If you want to start immediately, say so.`,
+    status: 'published',
+  },
+  {
+    slug: 'how-to-get-a-job-in-canada-from-south-africa',
+    title: 'How to Get a Job in Canada from South Africa — 2025 Guide',
+    excerpt: 'Canada is one of the most accessible immigration destinations for South African professionals. Here is how to land a job offer and use it to move.',
+    date: '5 April 2025',
+    category: 'Relocation',
+    readTime: '7 min read',
+    content: `# How to Get a Job in Canada from South Africa — 2025 Guide
+
+Canada is consistently ranked among the top destinations for South African emigrants. It has active immigration programs, strong demand for skilled workers, and a large and welcoming expat community. A job offer makes the immigration process significantly easier.
+
+## Why Canada specifically
+
+Canada needs skilled workers. The government has set immigration targets of 485,000 new permanent residents per year through 2026. Technology, healthcare, engineering, finance, and trades are all in high demand. South Africans with professional qualifications are well-positioned.
+
+Key advantages for South Africans: English is the primary language in most provinces, your educational qualifications are internationally recognised, and South African work experience is valued by Canadian employers.
+
+## What Canadian employers expect
+
+Canadian CVs are called resumes and follow a different format from South African CVs. Key differences:
+
+- No photo, no ID number, no date of birth — these are considered discriminatory information in Canada
+- Maximum two pages for experienced professionals
+- Focus on quantified achievements, not job descriptions
+- A skills summary at the top
+- Reverse chronological experience with strong bullet points
+
+Your South African CV needs to be reformatted before applying to Canadian roles.
+
+## The Express Entry system
+
+Express Entry is Canada's main pathway for skilled workers. You create a profile, receive a score based on age, education, language ability, and work experience, and if your score is high enough you receive an Invitation to Apply for permanent residence.
+
+A job offer from a Canadian employer adds significant points to your score and can fast-track the process. Getting a Canadian job offer before applying to immigrate is one of the most effective strategies.
+
+## How to get a Canadian job offer from South Africa
+
+**LinkedIn**: The primary platform for professional networking in Canada. Connect with Canadian recruiters and hiring managers in your field. Many Canadian companies hire internationally and specify this in job descriptions.
+
+**Indeed Canada**: Strong for a wide range of industries. Filter by "Remote" to find roles accessible without being in Canada first.
+
+**Glassdoor**: Good for researching companies and salaries before applying.
+
+**Workopolis and Eluta**: Canadian-specific job boards.
+
+**Government of Canada Job Bank**: The official government job board at jobbank.gc.ca. Particularly strong for regulated professions.
+
+## Provinces with active immigration streams
+
+Some provinces have their own immigration programs that are more accessible than federal programs:
+
+**Ontario**: Strong demand for tech, finance, and healthcare professionals.
+
+**British Columbia**: Technology and engineering roles, especially in Vancouver.
+
+**Alberta**: Strong demand in oil and gas, engineering, and trades.
+
+**Saskatchewan and Manitoba**: Active immigration programs specifically targeting professionals.
+
+## Practical steps
+
+1. Rewrite your CV in Canadian resume format — Jobsesame can help you tailor it to specific Canadian roles.
+2. Create Express Entry and provincial nomination profiles.
+3. Apply to Canadian roles on LinkedIn and Indeed, explicitly stating your intention to relocate.
+4. Research credential recognition for your specific profession — some professions require Canadian certification.
+5. Connect with South African expat communities in Canada via Facebook groups and Reddit for inside advice.
+
+The average time from first application to job offer for South Africans targeting Canada is three to six months. Starting before you plan to move is essential.`,
+    status: 'published',
+  },
+];
+
 export function getPost(slug: string): Post | undefined {
   return POSTS.find(p => p.slug === slug);
 }

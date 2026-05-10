@@ -251,7 +251,7 @@ export default function Home() {
 
             {/* Stats inline */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 28px', paddingTop: 24, borderTop: DIVIDE }}>
-              {[['30s', 'CV rewrite'], ['90%+', 'ATS pass rate'], ['3 free', 'applications'], ['495k+', 'live jobs']].map(([n, l]) => (
+              {[['30s', 'CV rewrite'], ['90%+', 'ATS pass rate'], ['3 free', 'applications'], ['11×', 'more interviews']].map(([n, l]) => (
                 <div key={l} style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                   <span style={{ fontSize: isMobile ? 19 : 23, fontWeight: 800, color: '#C8E600', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{n}</span>
                   <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{l}</span>
@@ -314,12 +314,12 @@ export default function Home() {
       </section>
 
       {/* ── NUMBERS BAR ─────────────────────────────────────── */}
-      <div style={{ borderTop: DIVIDE, borderBottom: DIVIDE, padding: '28px 40px' }}>
+      <div style={{ borderTop: DIVIDE, borderBottom: DIVIDE, padding: isMobile ? '24px 20px' : '28px 40px' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap: isMobile ? '20px 16px' : 0 }}>
           {[
-            { n: '495k+', l: 'Live jobs worldwide' },
-            { n: '50+',   l: 'Countries covered' },
+            { n: '30s',    l: 'AI rewrites your CV' },
             { n: '90%+',  l: 'ATS pass rate' },
+            { n: '11×',   l: 'More callbacks vs generic CV' },
             { n: '11 days', l: 'Avg. time to first interview' },
           ].map(({ n, l }, i) => (
             <div key={l} style={{ textAlign: 'center', padding: isMobile ? 0 : '0 32px', borderRight: !isMobile && i < 3 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
@@ -327,6 +327,37 @@ export default function Home() {
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 6 }}>{l}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ── SOCIAL PROOF STRIP ───────────────────────────────── */}
+      <div style={{ padding: isMobile ? '32px 20px' : '44px 40px', background: 'rgba(200,230,0,0.03)', borderBottom: DIVIDE }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.5)', letterSpacing: '2px', textTransform: 'uppercase', textAlign: 'center', marginBottom: 28 }}>What our users say</p>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: isMobile ? 16 : 24 }}>
+            {[
+              { quote: 'Sent 40 CVs manually, zero replies. After Jobsesame I had 4 interviews in 10 days.', name: 'Thabo N.', role: 'Software developer · Johannesburg', stat: '4 interviews in 10 days' },
+              { quote: 'My ATS score went from 38% to 91%. Got a callback within 48 hours of applying.', name: 'Amara D.', role: 'Financial analyst · Cape Town', stat: 'ATS 38% → 91%' },
+              { quote: 'Was relocating abroad. Jobsesame rewrote my CV for the international market. I got the job.', name: 'James K.', role: 'Project manager · London', stat: 'Hired internationally' },
+            ].map(t => (
+              <div key={t.name} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: isMobile ? '20px 18px' : '24px' }}>
+                <div style={{ display: 'flex', gap: 2, marginBottom: 12 }}>
+                  {[1,2,3,4,5].map(n => <span key={n} style={{ color: '#C8E600', fontSize: 11 }}>★</span>)}
+                  <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: '#C8E600', background: 'rgba(200,230,0,0.08)', border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '1px 8px' }}>{t.stat}</span>
+                </div>
+                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: 14 }}>&ldquo;{t.quote}&rdquo;</p>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{t.name}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{t.role}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: 28 }}>
+            <a href="/sign-up" style={{ display: 'inline-block', background: '#C8E600', color: BG, fontSize: 14, fontWeight: 800, padding: '13px 32px', borderRadius: 8, textDecoration: 'none', animation: 'ctaGlow 2.5s ease-in-out infinite' }}>
+              Start free — get 3 rewrites →
+            </a>
+          </div>
         </div>
       </div>
 
@@ -501,7 +532,7 @@ export default function Home() {
             {[
               { n: '01', title: 'AI CV tailoring per job',       body: 'Your CV rewritten for every application in 30 seconds — keywords, tone, and structure matched to the exact role.' },
               { n: '02', title: 'ATS score optimisation',        body: 'Pass automated screening every time. Our AI knows exactly what filters look for and makes sure you clear them.' },
-              { n: '03', title: '495,000+ live jobs',            body: 'Every job in one place from 50+ sources. Remote, relocation, teaching, tech, finance, healthcare and more.' },
+              { n: '03', title: 'Jobs from multiple sources',     body: 'Remote, relocation, teaching, tech, finance, healthcare and more — all aggregated into one smart search.' },
               { n: '04', title: 'Quick Apply',                   body: 'Apply to any job in under 10 seconds. AI writes the CV, the cover letter, and submits — you just click once.' },
               { n: '05', title: 'Match scoring',                 body: 'See exactly how your CV fits each role before applying. Fix the gaps before the employer sees your name.' },
               { n: '06', title: 'Application tracker',           body: 'Track every application in one dashboard. Know what stage you are at, what to follow up, and what is next.' },
@@ -633,7 +664,7 @@ export default function Home() {
 
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 14, alignItems: 'start' }}>
             {[
-              { name: 'Free', price: 'R0', usdPrice: '$0', per: ' forever', features: ['3 Quick Apply credits', 'AI CV analysis', 'ATS score check', 'Browse 495,000+ jobs', 'No card needed'], popular: false, btn: 'Get started free' },
+              { name: 'Free', price: 'R0', usdPrice: '$0', per: ' forever', features: ['3 Quick Apply credits', 'AI CV analysis', 'ATS score check', 'Browse all live jobs', 'No card needed'], popular: false, btn: 'Get started free' },
               { name: 'Credits', price: 'R99', usdPrice: '$5', per: ' per pack', features: ['10 Quick Apply credits', 'Credits never expire', 'AI CV rewrite per job', 'Cover letter generation', 'All job categories'], popular: false, btn: 'Buy credits' },
               { name: 'Pro', price: 'R249', usdPrice: '$14', per: ' /month', features: ['Unlimited Quick Apply', 'Unlimited CV rewrites', 'Priority support', 'Cover letters included', 'Application tracking'], popular: true, btn: 'Go Pro' },
             ].map(p => (

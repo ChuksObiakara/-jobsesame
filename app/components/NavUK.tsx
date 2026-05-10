@@ -112,7 +112,7 @@ export default function NavUK({ home, planBadge }: Props) {
           )}
           <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
           {isSignedIn
-            ? <a href="/uk/dashboard" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: '#C8E600', fontWeight: 700, textDecoration: 'none' }}>UK Dashboard →</a>
+            ? <a href="/uk/dashboard" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: '#C8E600', fontWeight: 700, textDecoration: 'none' }}>Dashboard →</a>
             : <a href="/sign-up" onClick={() => setMenuOpen(false)} style={{ background: '#C8E600', color: '#061A0C', fontSize: 15, fontWeight: 800, padding: '14px 24px', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>Get started free</a>
           }
         </div>

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import QuickApply from '../components/QuickApply';
+import QuickApply, { isAutoApply } from '../components/QuickApply';
 
 interface Job {
   id: string | number;
@@ -119,7 +119,7 @@ export default function SavedJobsPage() {
                 <div style={{display:"flex",flexDirection:"column",gap:8,flexShrink:0}}>
                   <button onClick={() => setSelectedJob(job)}
                     style={{background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"8px 14px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
-                    ⚡ Quick Apply
+                    {isAutoApply(job.url, job.type) ? '⚡ Quick Apply' : 'Apply'}
                   </button>
                   <button onClick={() => window.open(job.url, '_blank')}
                     style={{background:"transparent",color:"#5A9A6A",fontSize:11,fontWeight:600,padding:"6px 14px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer",whiteSpace:"nowrap"}}>
