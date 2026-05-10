@@ -407,7 +407,7 @@ export async function GET(req: NextRequest) {
       reedBatch1, reedBatch2,
       arbeitnowPage1, arbeitnowPage2,
       remotiveJobs,
-      jooble1, jooble2,
+      jooble1, jooble2, jooble3,
       muse1, muse2,
       careerjet1, careerjet2,
     ] = await Promise.all([
@@ -416,7 +416,7 @@ export async function GET(req: NextRequest) {
       fetchReed(0), fetchReed(100),
       fetchArbeitnow(1), fetchArbeitnow(2),
       fetchRemotive(),
-      fetchJooble(1), fetchJooble(2),
+      fetchJooble(1), fetchJooble(2), fetchJooble(3),
       fetchTheMuse(0), fetchTheMuse(1),
       fetchCareerjet(1, ip), fetchCareerjet(2, ip),
     ]);
@@ -424,7 +424,7 @@ export async function GET(req: NextRequest) {
     const adzunaTotal = adzunaPage1.length + adzunaPage2.length + adzunaPage3.length + adzunaPage4.length + adzunaPage5.length;
     const reedTotal = reedBatch1.length + reedBatch2.length;
     const arbeitnowTotal = arbeitnowPage1.length + arbeitnowPage2.length;
-    const joobleTotal = jooble1.length + jooble2.length;
+    const joobleTotal = jooble1.length + jooble2.length + jooble3.length;
     const museTotal = muse1.length + muse2.length;
     const careerjetTotal = careerjet1.length + careerjet2.length;
 
@@ -434,7 +434,7 @@ export async function GET(req: NextRequest) {
       ...reedBatch1, ...reedBatch2,
       ...arbeitnowPage1, ...arbeitnowPage2,
       ...remotiveJobs,
-      ...jooble1, ...jooble2,
+      ...jooble1, ...jooble2, ...jooble3,
       ...muse1, ...muse2,
       ...careerjet1, ...careerjet2,
     ];
