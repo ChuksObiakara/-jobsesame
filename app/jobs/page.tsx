@@ -226,6 +226,11 @@ export default function JobsPage() {
   const [sortMode, setSortMode] = useState<'match' | 'date'>('match');
   const [lastSearchQuery, setLastSearchQuery] = useState('');
   const [aiActive, setAiActive] = useState(false);
+  const [isPro, setIsPro] = useState(false);
+  const [cvOptimizeJob, setCvOptimizeJob] = useState<Job | null>(null);
+  const [cvOptimizing, setCvOptimizing] = useState(false);
+  const [cvOptimizedResult, setCvOptimizedResult] = useState<any>(null);
+  const [cvOptimizeError, setCvOptimizeError] = useState('');
 
   const toggleSaveJob = (job: Job) => {
     const saved = localStorage.getItem('jobsesame_saved_jobs');
@@ -274,6 +279,111 @@ export default function JobsPage() {
       if (stored) setCvData(JSON.parse(stored));
     } catch (err) { console.error('[jobs] cv parse failed:', err); }
   }, []);
+
+  useEffect(() => {
+    fetch('/api/credits').then(r => r.json()).then(d => {
+      if (typeof d.isPro === 'boolean') setIsPro(d.isPro);
+    }).catch(() => {});
+  }, []);
+
+  const optimizeCVForJob = async (job: Job) => {
+    if (!cvData) return;
+    setCvOptimizing(true);
+    setCvOptimizedResult(null);
+    setCvOptimizeError('');
+    try {
+      const res = await fetch('/api/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cvData, jobTitle: job.title, jobCompany: job.company, jobDescription: job.description }),
+      });
+      const data = await res.json();
+      if (data.success) setCvOptimizedResult(data.rewrittenCV);
+      else setCvOptimizeError(data.error || 'Failed to optimize CV');
+    } catch {
+      setCvOptimizeError('Something went wrong. Please try again.');
+    }
+    setCvOptimizing(false);
+  };
+
+  const downloadOptimizedCV = async () => {
+    if (!cvOptimizedResult || !cvOptimizeJob) return;
+    const { jsPDF } = await import('jspdf');
+    const cv = cvOptimizedResult;
+    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+    const pageW = 210;
+    const margin = 18;
+    const contentW = pageW - margin * 2;
+    let y = 0;
+    doc.setFillColor(5, 42, 20);
+    doc.rect(0, 0, pageW, 44, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.text(cv.name || '', margin, 17);
+    doc.setFontSize(12);
+    doc.setTextColor(200, 230, 0);
+    doc.text(cv.title || '', margin, 27);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(160, 210, 170);
+    doc.text([cv.location, cv.email, cv.phone].filter(Boolean).join('   ·   '), margin, 37);
+    y = 54;
+    const sectionHeader = (title: string) => {
+      if (y > 268) { doc.addPage(); y = 18; }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(5, 42, 20);
+      doc.text(title.toUpperCase(), margin, y);
+      doc.setDrawColor(5, 42, 20); doc.line(margin, y + 1.5, pageW - margin, y + 1.5);
+      y += 7;
+    };
+    if (cv.summary) {
+      sectionHeader('Professional Summary');
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
+      const lines = doc.splitTextToSize(cv.summary, contentW);
+      doc.text(lines, margin, y);
+      y += (lines as string[]).length * 5.2 + 8;
+    }
+    if (cv.skills?.length) {
+      sectionHeader('Skills');
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
+      const skillLines = doc.splitTextToSize((cv.skills as string[]).join('   ·   '), contentW);
+      doc.text(skillLines, margin, y);
+      y += (skillLines as string[]).length * 5.2 + 8;
+    }
+    if (cv.experience?.length) {
+      sectionHeader('Experience');
+      cv.experience.forEach((exp: any) => {
+        if (y > 268) { doc.addPage(); y = 18; }
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(5, 42, 20);
+        doc.text(exp.title || '', margin, y); y += 5.5;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(80, 80, 80);
+        doc.text(`${exp.company || ''}   ·   ${exp.duration || ''}`, margin, y); y += 5;
+        (exp.bullets || []).forEach((b: string) => {
+          if (y > 275) { doc.addPage(); y = 18; }
+          const bLines = doc.splitTextToSize(`•  ${b}`, contentW - 4);
+          doc.setFontSize(9); doc.setTextColor(50, 50, 50);
+          doc.text(bLines, margin + 2, y);
+          y += (bLines as string[]).length * 4.6;
+        });
+        y += 6;
+      });
+    }
+    if (cv.education) {
+      if (y > 262) { doc.addPage(); y = 18; }
+      sectionHeader('Education');
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
+      doc.text(cv.education, margin, y); y += 11;
+    }
+    if (cv.languages?.length) {
+      if (y > 268) { doc.addPage(); y = 18; }
+      sectionHeader('Languages');
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
+      doc.text((cv.languages as string[]).join('   ·   '), margin, y);
+    }
+    const safeName = (cv.name || 'CV').replace(/\s+/g, '_');
+    const safeJob = (cvOptimizeJob.title || 'job').replace(/\s+/g, '_');
+    doc.save(`${safeName}_${safeJob}_optimised.pdf`);
+  };
 
   const fetchJobs = async (tab = 'all', searchQuery = '', loc = '', pageNum = 1, append = false) => {
     if (append) setLoadingMore(true); else setLoading(true);
@@ -444,6 +554,110 @@ export default function JobsPage() {
           onClose={() => setSelectedJob(null)}
           currency={currency}
         />
+      )}
+
+      {/* CV OPTIMIZER MODAL */}
+      {cvOptimizeJob && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:"'Plus Jakarta Sans',sans-serif"}}>
+          <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:18,padding:28,width:"100%",maxWidth:560,maxHeight:"90vh",overflowY:"auto"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+              <div>
+                <h3 style={{fontSize:17,fontWeight:800,color:"#FFFFFF",margin:"0 0 4px"}}>Optimise CV for this job</h3>
+                <div style={{fontSize:12,color:"#5A9A6A"}}>{cvOptimizeJob.title} · {cvOptimizeJob.company}</div>
+              </div>
+              <button onClick={()=>{setCvOptimizeJob(null);setCvOptimizedResult(null);setCvOptimizeError('');}} style={{background:"transparent",border:"none",color:"#5A9A6A",fontSize:22,cursor:"pointer",lineHeight:1}}>✕</button>
+            </div>
+
+            {!cvOptimizedResult && !cvOptimizing && (
+              <div>
+                <div style={{background:"#0D3A1A",border:"1px solid #1A5A2A",borderRadius:12,padding:16,marginBottom:18}}>
+                  <div style={{fontSize:12,color:"#5A9A6A",marginBottom:8,fontWeight:600}}>Your CV will be rewritten for:</div>
+                  <div style={{fontSize:14,fontWeight:700,color:"#FFFFFF",marginBottom:4}}>{cvOptimizeJob.title}</div>
+                  <div style={{fontSize:12,color:"#C8E600"}}>{cvOptimizeJob.company}</div>
+                  {cvOptimizeJob.description && (
+                    <p style={{fontSize:12,color:"#5A9A6A",marginTop:8,lineHeight:1.6,margin:"8px 0 0"}}>{cvOptimizeJob.description.substring(0,200)}...</p>
+                  )}
+                </div>
+                {cvOptimizeError && (
+                  <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#F09595",marginBottom:14}}>
+                    {cvOptimizeError}
+                  </div>
+                )}
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={()=>optimizeCVForJob(cvOptimizeJob)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px",borderRadius:99,border:"none",cursor:"pointer"}}>
+                    ✦ Rewrite my CV for this job
+                  </button>
+                  <button onClick={()=>{setCvOptimizeJob(null);setCvOptimizeError('');}} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"12px 18px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {cvOptimizing && (
+              <div style={{textAlign:"center",padding:"32px 0"}}>
+                <div style={{width:40,height:40,border:"3px solid rgba(200,230,0,0.2)",borderTopColor:"#C8E600",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 16px"}}/>
+                <div style={{fontSize:14,color:"#A8D8B0",fontStyle:"italic"}}>AI is rewriting your CV... ~15 seconds</div>
+              </div>
+            )}
+
+            {cvOptimizedResult && (
+              <div>
+                <div style={{background:"#0D4A20",borderRadius:12,padding:14,marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
+                  <span style={{fontSize:20}}>✅</span>
+                  <div>
+                    <div style={{fontSize:14,fontWeight:800,color:"#C8E600"}}>CV optimised successfully!</div>
+                    <div style={{fontSize:12,color:"#5A9A6A"}}>Match score: {cvOptimizedResult.match_score}% · ATS score: {cvOptimizedResult.ats_score}%</div>
+                  </div>
+                </div>
+
+                <div style={{background:"#0D3A1A",border:"1px solid #1A5A2A",borderRadius:12,padding:16,marginBottom:16}}>
+                  <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Optimised Summary</div>
+                  <p style={{fontSize:13,color:"#A8D8B0",lineHeight:1.7,fontStyle:"italic",margin:0}}>&ldquo;{cvOptimizedResult.summary}&rdquo;</p>
+                </div>
+
+                {cvOptimizedResult.skills?.length > 0 && (
+                  <div style={{marginBottom:16}}>
+                    <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Matched skills</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                      {cvOptimizedResult.skills.map((s: string) => (
+                        <span key={s} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {cvOptimizedResult.keywords_added?.length > 0 && (
+                  <div style={{marginBottom:16}}>
+                    <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Keywords added for ATS</div>
+                    <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                      {cvOptimizedResult.keywords_added.map((kw: string) => (
+                        <span key={kw} style={{background:"rgba(200,230,0,0.1)",color:"#C8E600",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600,border:"1px solid rgba(200,230,0,0.3)"}}>{kw}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:4}}>
+                  {isPro ? (
+                    <button onClick={downloadOptimizedCV} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 0",borderRadius:99,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="#052A14" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      Download PDF
+                    </button>
+                  ) : (
+                    <a href="/dashboard" style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 0",borderRadius:99,textDecoration:"none",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                      🔒 Subscribe to download
+                    </a>
+                  )}
+                  <button onClick={()=>window.open(cvOptimizeJob.url,'_blank')} style={{flex:1,background:"transparent",color:"#FFFFFF",fontSize:13,fontWeight:700,padding:"11px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer"}}>
+                    Apply now →
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        </div>
       )}
 
       <NavSA />
@@ -671,6 +885,11 @@ export default function JobsPage() {
                     <button onClick={()=>setSelectedJob(job)} style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
                       {isAutoApply(job.url, job.type) ? '⚡ Quick Apply' : 'Apply'}
                     </button>
+                    {cvData && (
+                      <button onClick={()=>{setCvOptimizeJob(job);setCvOptimizedResult(null);setCvOptimizeError('');}} style={{width:"100%",background:"rgba(200,230,0,0.08)",color:"#C8E600",fontSize:12,fontWeight:700,padding:"9px 0",borderRadius:99,border:"1px solid rgba(200,230,0,0.3)",cursor:"pointer"}}>
+                        ✦ Optimise CV for this job
+                      </button>
+                    )}
                     <div style={{display:"flex",gap:7}}>
                       <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:"#052A14",fontSize:12,fontWeight:700,padding:"9px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer"}}>
                         View Job

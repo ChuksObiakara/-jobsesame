@@ -100,12 +100,7 @@ export default function Dashboard() {
   const [atsShockScore, setAtsShockScore] = useState(0);
   const [atsShockWeaknesses, setAtsShockWeaknesses] = useState<string[]>([]);
 
-  // ── Cover letter modal ─────────────────────────────────────────
-  const [coverLetterModal, setCoverLetterModal] = useState(false);
-  const [coverLetterJob, setCoverLetterJob] = useState('');
-  const [coverLetterCompany, setCoverLetterCompany] = useState('');
-  const [coverLetterOutput, setCoverLetterOutput] = useState('');
-  const [coverLetterLoading, setCoverLetterLoading] = useState(false);
+  // ── Cover letter — handled by CoverLetter component via showAiModal='cover'
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -547,24 +542,6 @@ export default function Dashboard() {
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
-  const generateCoverLetter = async () => {
-    if (!coverLetterJob) return;
-    setCoverLetterLoading(true);
-    setCoverLetterOutput('');
-    try {
-      const res = await fetch('/api/rewrite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cvData, jobTitle: coverLetterJob, company: coverLetterCompany, coverLetter: true }),
-      });
-      const data = await res.json();
-      if (data.success) setCoverLetterOutput(data.coverLetterText || '');
-      else setCoverLetterOutput(data.error || 'Failed to generate cover letter. Please try again.');
-    } catch {
-      setCoverLetterOutput('Something went wrong. Please try again.');
-    }
-    setCoverLetterLoading(false);
-  };
 
   const handlePayment = async (plan: 'credits' | 'pro') => {
     const email = user?.emailAddresses[0]?.emailAddress;
@@ -786,73 +763,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* COVER LETTER MODAL */}
-      {coverLetterModal && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:250,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:18,padding:28,width:"100%",maxWidth:540,maxHeight:"90vh",overflowY:"auto"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-              <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF",margin:0}}>✉️ Generate cover letter</h3>
-              <button onClick={()=>{setCoverLetterModal(false);setCoverLetterOutput('');}} style={{background:"transparent",border:"none",color:"#5A9A6A",fontSize:20,cursor:"pointer",lineHeight:1}}>✕</button>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:18}}>
-              <div>
-                <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job title *</label>
-                <input
-                  value={coverLetterJob}
-                  onChange={e=>setCoverLetterJob(e.target.value)}
-                  placeholder="e.g. Senior Product Manager"
-                  style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                />
-              </div>
-              <div>
-                <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Company</label>
-                <input
-                  value={coverLetterCompany}
-                  onChange={e=>setCoverLetterCompany(e.target.value)}
-                  placeholder="e.g. Standard Bank"
-                  style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}
-                />
-              </div>
-            </div>
-            <div style={{display:"flex",gap:10,marginBottom:18}}>
-              <button
-                onClick={generateCoverLetter}
-                disabled={coverLetterLoading || !coverLetterJob}
-                style={{flex:1,background:coverLetterLoading||!coverLetterJob?"#1A4A2A":"#C8E600",color:coverLetterLoading||!coverLetterJob?"#3A7A4A":"#052A14",fontSize:14,fontWeight:800,padding:"12px",borderRadius:99,border:"none",cursor:coverLetterLoading||!coverLetterJob?"default":"pointer"}}
-              >
-                {coverLetterLoading ? 'Generating...' : 'Generate cover letter'}
-              </button>
-              <button onClick={()=>{setCoverLetterModal(false);setCoverLetterOutput('');}} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"12px 18px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
-                Cancel
-              </button>
-            </div>
-            {coverLetterLoading && (
-              <div style={{fontSize:13,color:"#5A9A6A",fontStyle:"italic",marginBottom:12}}>AI is writing your cover letter... ~10 seconds</div>
-            )}
-            {coverLetterOutput && (
-              <div>
-                <div style={{background:"#0D3A1A",border:"1px solid #1A5A2A",borderRadius:12,padding:18,marginBottom:14}}>
-                  <pre style={{fontSize:13,color:"#D0EED8",lineHeight:1.75,whiteSpace:"pre-wrap",margin:0,fontFamily:"inherit"}}>{coverLetterOutput}</pre>
-                </div>
-                <button
-                  onClick={()=>{
-                    const blob = new Blob([coverLetterOutput],{type:'text/plain'});
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `cover_letter_${(coverLetterJob||'job').replace(/\s+/g,'_')}.txt`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  style={{width:"100%",background:"transparent",color:"#C8E600",fontSize:13,fontWeight:700,padding:"11px 0",borderRadius:99,border:"1.5px solid #C8E600",cursor:"pointer"}}
-                >
-                  ⬇ Download as .txt
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* NAV */}
       <nav style={{background:"#052A14",padding:"0 20px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #0D4A20",position:"sticky",top:0,zIndex:100}}>
@@ -1015,7 +925,7 @@ export default function Dashboard() {
               <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
                 {[
                   {icon:"🧬",title:"Tailor CV for a job",desc:"AI rewrites your CV for any role in 30 seconds",action:()=>setShowAiModal('tailor'),color:"#C8E600"},
-                  {icon:"✉️",title:"Generate cover letter",desc:"Personalised cover letter in seconds",action:()=>{setCoverLetterJob('');setCoverLetterCompany('');setCoverLetterOutput('');setCoverLetterModal(true);},color:"#90C898"},
+                  {icon:"✉️",title:"Generate cover letter",desc:"Personalised cover letter in seconds",action:()=>setShowAiModal('cover'),color:"#90C898"},
                   {icon:"⚡",title:"Optimise my CV",desc:"Full AI optimisation on the CV Optimiser tool",action:()=>window.location.href='/optimise',color:"#A8D8B0"},
                 ].map(a=>(
                   <button key={a.title} onClick={a.action} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:18,textAlign:"left",cursor:"pointer",transition:"border-color 0.15s"}}
@@ -1250,13 +1160,21 @@ export default function Dashboard() {
                   ))}
                 </div>
                 <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
-                  <button onClick={downloadCV} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="#052A14" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    Download PDF
-                  </button>
-                  <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"11px 24px",borderRadius:99,border:"1px solid #1A5A2A",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
-                    {paying?'Loading...':'Upgrade to Pro'}
-                  </button>
+                  {isPro ? (
+                    <button onClick={downloadCV} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="#052A14" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      Download PDF
+                    </button>
+                  ) : (
+                    <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",display:"flex",alignItems:"center",gap:8,opacity:paying?0.7:1}}>
+                      🔒 Subscribe to download PDF
+                    </button>
+                  )}
+                  {!isPro && (
+                    <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"11px 24px",borderRadius:99,border:"1px solid #1A5A2A",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                      {paying?'Loading...':'Upgrade to Pro'}
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (

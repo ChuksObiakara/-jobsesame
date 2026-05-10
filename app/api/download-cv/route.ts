@@ -8,6 +8,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const { prisma } = await import('@/app/lib/prisma');
+  const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+  if (!dbUser?.isPro) {
+    return NextResponse.json({ error: 'Subscription required to download CV', paywall: true }, { status: 402 });
+  }
+
   try {
     const body = await request.json();
     const { cvData, jobTitle, jobCompany } = body;
