@@ -20,6 +20,7 @@ model User {
   referralCode String?       @unique
   referredBy   String?
   market       String        @default("ZA")
+  emailOptOut  Boolean       @default(false)
   cv           CV?
   applications Application[]
   savedJobs    SavedJob[]

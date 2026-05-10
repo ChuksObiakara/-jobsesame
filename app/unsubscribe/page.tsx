@@ -4,15 +4,29 @@ import { useState } from 'react';
 export default function UnsubscribePage() {
   const [email, setEmail] = useState('');
   const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState(false);
+  const [error, setError] = useState('');
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email) return;
-    const existing = JSON.parse(localStorage.getItem('jobsesame_unsubscribed') || '[]');
-    if (!existing.includes(email)) {
-      localStorage.setItem('jobsesame_unsubscribed', JSON.stringify([...existing, email]));
+    setLoading(true);
+    setError('');
+    setAuthError(false);
+    try {
+      const res = await fetch('/api/user/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (res.status === 401) { setAuthError(true); setLoading(false); return; }
+      if (!res.ok) { const d = await res.json(); setError(d.error || 'Something went wrong'); setLoading(false); return; }
+      setDone(true);
+    } catch {
+      setError('Something went wrong. Please try again.');
     }
-    setDone(true);
+    setLoading(false);
   }
 
   return (
@@ -66,17 +80,28 @@ export default function UnsubscribePage() {
                     outline: "none", boxSizing: "border-box", marginBottom: 20,
                   }}
                 />
+                {authError && (
+                  <div style={{ background: "#1A0808", border: "1px solid #5A1A1A", borderRadius: 10, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#F09595", lineHeight: 1.6 }}>
+                    You need to be signed in to unsubscribe.{" "}
+                    <a href="/sign-in" style={{ color: "#C8E600", fontWeight: 700 }}>Sign in →</a>
+                  </div>
+                )}
+                {error && (
+                  <div style={{ background: "#1A0808", border: "1px solid #5A1A1A", borderRadius: 10, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#F09595" }}>
+                    {error}
+                  </div>
+                )}
                 <button
                   type="submit"
-                  disabled={!email}
+                  disabled={!email || loading}
                   style={{
                     width: "100%", background: "#C8E600", color: "#052A14",
                     fontWeight: 800, fontSize: 15, border: "none", borderRadius: 99,
-                    padding: "15px 24px", cursor: email ? "pointer" : "not-allowed",
-                    opacity: email ? 1 : 0.5,
+                    padding: "15px 24px", cursor: email && !loading ? "pointer" : "not-allowed",
+                    opacity: email && !loading ? 1 : 0.5,
                   }}
                 >
-                  Unsubscribe
+                  {loading ? 'Unsubscribing...' : 'Unsubscribe'}
                 </button>
               </div>
             </form>

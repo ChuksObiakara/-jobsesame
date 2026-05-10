@@ -14,6 +14,10 @@ export async function POST(req: NextRequest) {
     const { email, name, currency } = await req.json();
     if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 });
 
+    const { prisma } = await import('@/app/lib/prisma');
+    const dbUser = await prisma.user.findUnique({ where: { email }, select: { emailOptOut: true } });
+    if (dbUser?.emailOptOut) return NextResponse.json({ skipped: true });
+
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
     const firstName = (name || email.split('@')[0]).split(' ')[0];
