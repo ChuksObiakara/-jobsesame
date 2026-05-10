@@ -15,13 +15,15 @@ export async function POST(req: NextRequest) {
     if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 });
 
     const { prisma } = await import('@/app/lib/prisma');
-    const dbUser = await prisma.user.findUnique({ where: { email }, select: { emailOptOut: true } });
+    const dbUser = await prisma.user.findUnique({ where: { email }, select: { emailOptOut: true, clerkId: true } });
     if (dbUser?.emailOptOut) return NextResponse.json({ skipped: true });
 
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
     const firstName = (name || email.split('@')[0]).split(' ')[0];
     const appUrl = 'https://jobsesame.co.za';
+    const unsubToken = Buffer.from(JSON.stringify({ userId: dbUser?.clerkId || '', email, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64');
+    const unsubUrl = `${appUrl}/unsubscribe?token=${unsubToken}`;
     const isZAR = !currency || currency === 'ZAR';
     const price = isZAR ? 'R249/month' : '$14/month';
     const upgradeUrl = `${appUrl}/account`;
@@ -68,7 +70,7 @@ export async function POST(req: NextRequest) {
 <tr><td style="background:#031A0C;border-radius:0 0 16px 16px;padding:20px 36px;text-align:center;border-top:1px solid #0D3A1A;">
   <p style="margin:0 0 8px;font-size:11px;color:#1A4A2A;">© 2025 Jobsesame (Pty) Ltd · <a href="${appUrl}/privacy" style="color:#1A5A2A;text-decoration:none;">Privacy</a> · <a href="${appUrl}/terms" style="color:#1A5A2A;text-decoration:none;">Terms</a></p>
   <p style="margin:0 0 6px;font-size:11px;color:#1A4A2A;">Jobsesame (Pty) Ltd, South Africa</p>
-  <p style="margin:0;font-size:11px;"><a href="${appUrl}/unsubscribe" style="color:#3A7A4A;text-decoration:underline;">Don't want these emails? Unsubscribe here</a></p>
+  <p style="margin:0;font-size:11px;"><a href="${unsubUrl}" style="color:#3A7A4A;text-decoration:underline;">Don't want these emails? Unsubscribe here</a></p>
 </td></tr>
 </table></td></tr></table>
 </body></html>`;
