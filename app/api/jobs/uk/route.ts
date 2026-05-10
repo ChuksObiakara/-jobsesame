@@ -404,7 +404,7 @@ export async function GET(req: NextRequest) {
     const [
       adzunaPage1, adzunaPage2, adzunaPage3, adzunaPage4, adzunaPage5,
       jsearchJobs,
-      reedBatch1, reedBatch2,
+      reedBatch1, reedBatch2, reedBatch3, reedBatch4,
       arbeitnowPage1, arbeitnowPage2,
       remotiveJobs,
       jooble1, jooble2, jooble3,
@@ -413,7 +413,7 @@ export async function GET(req: NextRequest) {
     ] = await Promise.all([
       fetchAdzunaGB(1), fetchAdzunaGB(2), fetchAdzunaGB(3), fetchAdzunaGB(4), fetchAdzunaGB(5),
       fetchJSearchUK(),
-      fetchReed(0), fetchReed(100),
+      fetchReed(0), fetchReed(100), fetchReed(200), fetchReed(300),
       fetchArbeitnow(1), fetchArbeitnow(2),
       fetchRemotive(),
       fetchJooble(1), fetchJooble(2), fetchJooble(3),
@@ -422,7 +422,7 @@ export async function GET(req: NextRequest) {
     ]);
 
     const adzunaTotal = adzunaPage1.length + adzunaPage2.length + adzunaPage3.length + adzunaPage4.length + adzunaPage5.length;
-    const reedTotal = reedBatch1.length + reedBatch2.length;
+    const reedTotal = reedBatch1.length + reedBatch2.length + reedBatch3.length + reedBatch4.length;
     const arbeitnowTotal = arbeitnowPage1.length + arbeitnowPage2.length;
     const joobleTotal = jooble1.length + jooble2.length + jooble3.length;
     const museTotal = muse1.length + muse2.length;
@@ -431,7 +431,7 @@ export async function GET(req: NextRequest) {
     const all = [
       ...adzunaPage1, ...adzunaPage2, ...adzunaPage3, ...adzunaPage4, ...adzunaPage5,
       ...jsearchJobs,
-      ...reedBatch1, ...reedBatch2,
+      ...reedBatch1, ...reedBatch2, ...reedBatch3, ...reedBatch4,
       ...arbeitnowPage1, ...arbeitnowPage2,
       ...remotiveJobs,
       ...jooble1, ...jooble2, ...jooble3,
