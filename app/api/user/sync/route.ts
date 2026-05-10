@@ -26,7 +26,7 @@ export async function POST() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, name, userId }),
-      }).catch(() => {});
+      }).catch((err) => console.error('[sync] welcome-email failed:', err));
     }
 
     return NextResponse.json({ success: true, user: dbUser, isNewUser: !existing });

@@ -123,12 +123,12 @@ export default function Dashboard() {
       // Defer referral link — non-critical, load after main content
       setTimeout(() => generateReferralLink(), 2000);
       // Sync user to database
-      fetch('/api/user/sync', { method: 'POST' }).catch(() => {});
+      fetch('/api/user/sync', { method: 'POST' }).catch((err) => console.error('[dashboard] sync failed:', err));
       // Fetch credits from database
       fetch('/api/credits').then(r => r.json()).then(d => {
         if (typeof d.credits === 'number') setCredits(d.credits);
         if (typeof d.isPro === 'boolean') setIsPro(d.isPro);
-      }).catch(() => {});
+      }).catch((err) => console.error('[dashboard] credits fetch failed:', err));
       // Fetch applications from database
       fetch('/api/user/applications?market=ZA')
         .then(r => r.json())
@@ -142,7 +142,7 @@ export default function Dashboard() {
         })
         .catch(() => {
           const stored = localStorage.getItem('jobsesame_applications');
-          if (stored) try { setApplications(JSON.parse(stored)); } catch {}
+          if (stored) try { setApplications(JSON.parse(stored)); } catch (err) { console.error('[dashboard] applications parse failed:', err); }
         })
         .finally(() => setLoadingApplications(false));
       // Fetch CV from database if not in localStorage
@@ -152,7 +152,7 @@ export default function Dashboard() {
           setCvData(cv);
           localStorage.setItem('jobsesame_cv_data', JSON.stringify(cv));
         }
-      }).catch(() => {});
+      }).catch((err) => console.error('[dashboard] cv fetch failed:', err));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, user]);
@@ -168,7 +168,7 @@ export default function Dashboard() {
     fetch('https://ipapi.co/json/')
       .then(r => r.json())
       .then(data => { if (data.country_code === 'ZA') setCurrency('ZAR'); })
-      .catch(() => {});
+      .catch((err) => console.error('[dashboard] geo-detect failed:', err));
   }, []);
 
   // Trigger job-matches email 24h after signup
@@ -185,7 +185,7 @@ export default function Dashboard() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, name, cvTitle }),
-    }).catch(() => {});
+    }).catch((err) => console.error('[dashboard] job-matches email failed:', err));
     localStorage.setItem('jobsesame_jobmatches_email_sent', 'true');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, user, cvData]);
@@ -201,7 +201,7 @@ export default function Dashboard() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, name, currency }),
-    }).catch(() => {});
+    }).catch((err) => console.error('[dashboard] upgrade-nudge email failed:', err));
     localStorage.setItem('jobsesame_nudge_email_sent', 'true');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applications.length, isSignedIn, user]);
@@ -218,7 +218,7 @@ export default function Dashboard() {
       fetch(`/api/jobs?query=${encodeURIComponent(fullQuery)}&location=`)
         .then(r => r.json())
         .then(data => setRecommendedJobs((data.jobs || []).slice(0, 6)))
-        .catch(() => {})
+        .catch((err) => console.error('[dashboard] recommended jobs failed:', err))
         .finally(() => setLoadingJobs(false));
     }, 800);
     return () => clearTimeout(t);
@@ -301,7 +301,7 @@ export default function Dashboard() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
-    }).catch(() => {});
+    }).catch((err) => console.error('[dashboard] status update failed:', err));
   };
 
   const sendWelcomeEmailOnce = async () => {
@@ -362,7 +362,7 @@ export default function Dashboard() {
       if (data.success) {
         setCvData(data.cvData);
         localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.cvData));
-        fetch('/api/user/cv', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cvData: data.cvData }) }).catch(() => {});
+        fetch('/api/user/cv', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cvData: data.cvData }) }).catch((err) => console.error('[dashboard] cv save failed:', err));
         const shockScore = (() => {
           let s = 30;
           if (data.cvData.summary) s += 10;
@@ -1119,7 +1119,7 @@ export default function Dashboard() {
                 ].map(a=>(
                   a.href
                     ? <a key={a.label} href={a.href} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:10,padding:"10px 18px",fontSize:13,color:"#A8D8B0",fontWeight:600,textDecoration:"none"}}>{a.label}</a>
-                    : <button key={a.label} onClick={a.onClick} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:10,padding:"10px 18px",fontSize:13,color:"#A8D8B0",fontWeight:600,cursor:"pointer",border:"1.5px solid #1A4A2A"} as React.CSSProperties}>{a.label}</button>
+                    : <button key={a.label} onClick={a.onClick} style={{background:"#072E16",borderRadius:10,padding:"10px 18px",fontSize:13,color:"#A8D8B0",fontWeight:600,cursor:"pointer",border:"1.5px solid #1A4A2A"} as React.CSSProperties}>{a.label}</button>
                 ))}
               </div>
             </div>

@@ -134,13 +134,13 @@ export default function OnboardingPage() {
     localStorage.setItem('jobsesame_profile', JSON.stringify(fullProfile));
     localStorage.setItem('jobsesame_onboarding_complete', 'true');
     // Persist user and CV to DB (fire-and-forget — don't block navigation)
-    fetch('/api/user/sync', { method: 'POST' }).catch(() => {});
+    fetch('/api/user/sync', { method: 'POST' }).catch((err) => console.error('[onboarding] sync failed:', err));
     if (cvData) {
       fetch('/api/user/cv', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cvData }),
-      }).catch(() => {});
+      }).catch((err) => console.error('[onboarding] cv save failed:', err));
     }
     router.push('/dashboard');
   };

@@ -57,7 +57,7 @@ export default function SavedJobsPage() {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(job.dbId ? { jobId: job.dbId } : { jobUrl: job.url }),
-    }).catch(() => {});
+    }).catch((err) => console.error('[saved-jobs] unsave failed:', err));
   };
 
   return (

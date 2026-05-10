@@ -238,14 +238,14 @@ export default function JobsPage() {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobUrl: job.url }),
-      }).catch(() => {});
+      }).catch((err) => console.error('[jobs] unsave failed:', err));
     } else {
       updated = [...savedList, job];
       fetch('/api/user/saved-jobs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobTitle: job.title, company: job.company, location: job.location, jobUrl: job.url, jobData: job }),
-      }).catch(() => {});
+      }).catch((err) => console.error('[jobs] save failed:', err));
     }
     localStorage.setItem('jobsesame_saved_jobs', JSON.stringify(updated));
     setSavedJobs(updated.map(j => String(j.id)));
@@ -272,7 +272,7 @@ export default function JobsPage() {
     try {
       const stored = localStorage.getItem('jobsesame_cv_data');
       if (stored) setCvData(JSON.parse(stored));
-    } catch {}
+    } catch (err) { console.error('[jobs] cv parse failed:', err); }
   }, []);
 
   const fetchJobs = async (tab = 'all', searchQuery = '', loc = '', pageNum = 1, append = false) => {

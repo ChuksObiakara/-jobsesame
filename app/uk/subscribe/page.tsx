@@ -97,7 +97,7 @@ function SubscribePageInner() {
           }
         }
       }
-    } catch {}
+    } catch (err) { console.error('[uk/subscribe] pending cv parse failed:', err); }
   }, []);
 
   if (!isLoaded) return null;

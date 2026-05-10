@@ -40,7 +40,7 @@ function saveToStorage(job: OptimiseJob, optimisedCV: any) {
       company: job.company,
       optimisedCV,
     }));
-  } catch {}
+  } catch (err) { console.error('[optimise] storage save failed:', err); }
 }
 
 export default function OptimiseModal({ job, cvData, sub: subProp, onClose }: Props) {

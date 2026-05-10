@@ -227,7 +227,7 @@ export async function POST(req: NextRequest) {
             filled.push(label);
             return true;
           }
-        } catch {}
+        } catch (err) { console.error('[auto-apply] field fill attempt failed:', err); }
       }
       return false;
     };
@@ -277,7 +277,7 @@ export async function POST(req: NextRequest) {
           await fillField(ta, cvData.summary);
           filled.push('cover_text');
         }
-      } catch {}
+      } catch (err) { console.error('[auto-apply] textarea fill failed:', err); }
     }
 
     // File upload
@@ -290,7 +290,7 @@ export async function POST(req: NextRequest) {
         await (fileInput as any).uploadFile(tempFile);
         filled.push('cv_file');
       }
-    } catch {}
+    } catch (err) { console.error('[auto-apply] file upload failed:', err); }
 
     if (filled.length === 0) {
       return NextResponse.json({
@@ -377,7 +377,7 @@ export async function POST(req: NextRequest) {
       jobUrl: '',
     });
   } finally {
-    if (browser) { try { await browser.close(); } catch {} }
-    if (tempFile) { try { fs.unlinkSync(tempFile); } catch {} }
+    if (browser) { try { await browser.close(); } catch (err) { console.error('[auto-apply] browser.close failed:', err); } }
+    if (tempFile) { try { fs.unlinkSync(tempFile); } catch (err) { console.error('[auto-apply] temp file cleanup failed:', err); } }
   }
 }

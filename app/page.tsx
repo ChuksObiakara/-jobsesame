@@ -43,7 +43,7 @@ export default function Home() {
     fetch('https://ipapi.co/json/')
       .then(r => r.json())
       .then(data => { if (data.country_code !== 'ZA') setCurrency('USD'); })
-      .catch(() => {});
+      .catch((err) => console.error('[home] geo-detect failed:', err));
   }, []);
 
   useEffect(() => {

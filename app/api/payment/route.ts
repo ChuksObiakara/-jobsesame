@@ -2,6 +2,19 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+function checkRateLimit(userId: string, max: number): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (!entry || now > entry.resetTime) {
+    rateLimitMap.set(userId, { count: 1, resetTime: now + 3_600_000 });
+    return true;
+  }
+  if (entry.count >= max) return false;
+  entry.count++;
+  return true;
+}
+
 const PLAN_AMOUNTS: Record<string, Record<string, number>> = {
   credits: { ZAR: 9900, USD: 599 },
   pro:     { ZAR: 24900, USD: 1399 },
@@ -11,6 +24,9 @@ export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  if (!checkRateLimit(userId, 5)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   try {

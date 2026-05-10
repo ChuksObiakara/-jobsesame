@@ -535,7 +535,7 @@ export default function UKJobsPage() {
     try {
       const stored = localStorage.getItem('jobsesame_cv_data');
       if (stored) setCvData(JSON.parse(stored));
-    } catch {}
+    } catch (err) { console.error('[uk/jobs] cv parse failed:', err); }
     // Check for pending job saved before subscribe redirect
     try {
       const raw = localStorage.getItem('jobsesame_uk_pending_job');
@@ -544,7 +544,7 @@ export default function UKJobsPage() {
         if (pending?.id) setPendingJobId(pending.id);
         localStorage.removeItem('jobsesame_uk_pending_job');
       }
-    } catch {}
+    } catch (err) { console.error('[uk/jobs] pending job parse failed:', err); }
   }, []);
 
   // Scroll to the pending job once jobs have rendered
@@ -648,7 +648,7 @@ export default function UKJobsPage() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ jobTitle: selectedJob.title, company: selectedJob.company, location: selectedJob.location, jobUrl: selectedJob.applyUrl, jobSource: selectedJob.source, market: 'GB' }),
-            }).catch(() => {});
+            }).catch((err) => console.error('[uk/jobs] application log failed:', err));
             setSelectedJob(null);
             if (sub?.plan === 'credits') setSub(s => s ? { ...s, credits: s.credits - 1 } : s);
           }}
@@ -830,7 +830,7 @@ export default function UKJobsPage() {
                               onClick={() => {
                                 try {
                                   localStorage.setItem('jobsesame_uk_pending_job', JSON.stringify(job));
-                                } catch {}
+                                } catch (err) { console.error('[uk/jobs] pending job save failed:', err); }
                                 router.push('/uk/subscribe');
                               }}
                               style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 700, padding: '10px 16px', borderRadius: 99, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}

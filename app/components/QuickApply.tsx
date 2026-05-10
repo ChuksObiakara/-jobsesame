@@ -300,7 +300,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       }
       const fileName = `${(cv.name || 'CV').replace(/\s+/g, '_')}_tailored_for_${(job.company || 'Job').replace(/\s+/g, '_')}.pdf`;
       doc.save(fileName);
-    } catch {}
+    } catch (err) { console.error('[quickapply] pdf download failed:', err); }
   };
 
   const logApplication = (status: string) => {
@@ -326,11 +326,11 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
         jobUrl: job.url, jobSource: job.type || 'web', matchScore: rewrittenMatchPct,
         market: 'ZA',
       }),
-    }).catch(() => {});
+    }).catch((err) => console.error('[apply] application log failed:', err));
   };
 
   const deductCredit = () => {
-    fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deduct' }) }).catch(() => {});
+    fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deduct' }) }).catch((err) => console.error('[credits] deduction failed:', err));
   };
 
   const handleApply = async () => {

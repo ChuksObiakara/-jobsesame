@@ -35,7 +35,7 @@ export default function AccountPage() {
     fetch('https://ipapi.co/json/')
       .then(r => r.json())
       .then(d => { if (d.country_code !== 'ZA') setCurrency('USD'); })
-      .catch(() => {});
+      .catch((err) => console.error('[account] geo-detect failed:', err));
   }, []);
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function AccountPage() {
         if (typeof d.isPro === 'boolean') setIsPro(d.isPro);
         if (d.proExpiresAt) setProExpiresAt(d.proExpiresAt);
       })
-      .catch(() => {})
+      .catch((err) => console.error('[account] credits fetch failed:', err))
       .finally(() => setLoadingPlan(false));
   }, [isSignedIn]);
 
@@ -86,7 +86,7 @@ export default function AccountPage() {
       setProExpiresAt(null);
       setCancelDone(true);
       setCancelConfirm(false);
-    } catch {}
+    } catch (err) { console.error('[account] cancel failed:', err); }
     setCancelling(false);
   };
 

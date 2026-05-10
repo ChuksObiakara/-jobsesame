@@ -219,7 +219,7 @@ export default function UKDashboard() {
     try {
       const s = localStorage.getItem('jobsesame_cv_data');
       if (s) setCvData(JSON.parse(s));
-    } catch {}
+    } catch (err) { console.error('[uk/dashboard] cv parse failed:', err); }
   }, []);
 
   // Fetch UK jobs for matching whenever we have CV data
@@ -235,7 +235,7 @@ export default function UKDashboard() {
           : jobs;
         setUkJobs(sorted);
       })
-      .catch(() => {});
+      .catch((err) => console.error('[uk/dashboard] jobs fetch failed:', err));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvData]);
 
@@ -322,7 +322,7 @@ export default function UKDashboard() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
-    }).catch(() => {});
+    }).catch((err) => console.error('[uk/dashboard] status update failed:', err));
     setApplications(prev => prev.map(a => a.id === appId ? { ...a, status } : a));
     setUpdatingStatus(null);
   };

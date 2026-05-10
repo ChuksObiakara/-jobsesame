@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 
 const VALID_STATUSES = ['Applied', 'Interview', 'Offer', 'Rejected'];
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -14,17 +14,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
+    const { id } = await params;
     const { prisma } = await import('@/app/lib/prisma');
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    const existing = await prisma.application.findUnique({ where: { id: params.id } });
+    const existing = await prisma.application.findUnique({ where: { id } });
     if (!existing || existing.userId !== user.id) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
     const application = await prisma.application.update({
-      where: { id: params.id },
+      where: { id },
       data: { status },
     });
     return NextResponse.json({ success: true, application });

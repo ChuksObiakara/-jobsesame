@@ -78,7 +78,7 @@ export default function AdminPage() {
       setSavedJobsCount(saved ? JSON.parse(saved).length : 0);
       const stored = localStorage.getItem('jobsesame_blog_posts');
       setLocalPosts(stored ? JSON.parse(stored) : []);
-    } catch {}
+    } catch (err) { console.error('[admin] localStorage parse failed:', err); }
 
     setLoadingStats(true);
     fetch(`/api/admin/stats?pw=${encodeURIComponent(pw)}`)
@@ -89,7 +89,7 @@ export default function AdminPage() {
           setStatsUpdatedAt(d.lastUpdated);
         }
       })
-      .catch(() => {})
+      .catch((err) => console.error('[admin] stats fetch failed:', err))
       .finally(() => setLoadingStats(false));
   }, [authed]);
 
