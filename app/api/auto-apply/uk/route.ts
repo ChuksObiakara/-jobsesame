@@ -77,7 +77,7 @@ async function applyViaGreenhouse(
   if (phone) form.append('phone', phone);
 
   const pdfBuf = buildTempPDF(cvData);
-  const blob = new Blob([pdfBuf], { type: 'application/pdf' });
+  const blob = new Blob([pdfBuf as unknown as BlobPart], { type: 'application/pdf' });
   form.append('resume', blob, `${firstName}_${lastName || 'CV'}.pdf`);
 
   const res = await fetch(

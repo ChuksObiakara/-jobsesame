@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('Job-matches email error:', JSON.stringify(error));
-      return NextResponse.json({ error: (error as any).message }, { status: 500 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ success: true });
   } catch (err: any) {

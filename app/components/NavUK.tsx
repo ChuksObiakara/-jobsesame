@@ -85,7 +85,7 @@ export default function NavUK({ home, planBadge }: Props) {
             <a href="/uk/dashboard" style={{ fontSize: 13, color: '#C8E600', fontWeight: 700, textDecoration: 'none', padding: '8px 14px', background: 'rgba(200,230,0,0.08)', borderRadius: 8, border: '1px solid rgba(200,230,0,0.22)' }}>Dashboard</a>
           )}
           {isSignedIn
-            ? <UserButton afterSignOutUrl="/uk" />
+            ? <UserButton />
             : <a href="/sign-up" style={{ background: '#C8E600', color: '#061A0C', fontSize: 13, fontWeight: 800, padding: '9px 20px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>Get started free</a>
           }
           {isMobile && (

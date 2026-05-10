@@ -662,7 +662,7 @@ export default function JobsPage() {
                         {isAutoApply(job.url) && <span style={{fontSize:10,padding:"3px 9px",borderRadius:99,fontWeight:800,background:"rgba(200,230,0,0.12)",color:"#C8E600",border:"1px solid rgba(200,230,0,0.4)",whiteSpace:"nowrap"}}>⚡ Auto-apply</span>}
 
                       </div>
-                      <p style={{fontSize:12,color:"#666",lineHeight:1.55,margin:0,display:"-webkit-box" as any,WebkitLineClamp:2,WebkitBoxOrient:"vertical" as any,overflow:"hidden"}}>{job.description}</p>
+                      <p style={{fontSize:12,color:"#666",lineHeight:1.55,margin:0,display:"-webkit-box" as string,WebkitLineClamp:2,WebkitBoxOrient:"vertical" as any,overflow:"hidden"}}>{job.description}</p>
                     </div>
                   </div>
 

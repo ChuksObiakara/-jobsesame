@@ -141,7 +141,7 @@ ${weakHtml ? `<tr><td style="background:#0D3A1A;padding:28px 36px;">
 
     if (error) {
       console.error('Welcome email error:', JSON.stringify(error));
-      return NextResponse.json({ error: (error as any).message }, { status: 500 });
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
     return NextResponse.json({ success: true });
   } catch (err: any) {

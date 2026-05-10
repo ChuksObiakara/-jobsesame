@@ -13,6 +13,8 @@ interface Job {
   level: string;
   salary?: string;
   type?: string;
+  boardToken?: string;
+  jobId?: string;
 }
 
 interface QuickApplyProps {
@@ -352,8 +354,8 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
             candidatePhone: rewrittenCV?.phone || '',
             cvData: rewrittenCV,
             jobType: job.type,
-            boardToken: (job as any).boardToken,
-            jobId: (job as any).jobId,
+            boardToken: job.boardToken,
+            jobId: job.jobId,
           }),
         });
         const data = await res.json();

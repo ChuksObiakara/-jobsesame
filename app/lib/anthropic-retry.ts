@@ -22,12 +22,12 @@ function delay(ms: number) {
 export async function createMessage(
   params: Parameters<typeof anthropic.messages.create>[0],
   maxRetries = 3,
-): Promise<Awaited<ReturnType<typeof anthropic.messages.create>>> {
+): Promise<Anthropic.Message> {
   let lastErr: unknown;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      return await anthropic.messages.create(params);
+      return await anthropic.messages.create(params) as Anthropic.Message;
     } catch (err: any) {
       lastErr = err;
 

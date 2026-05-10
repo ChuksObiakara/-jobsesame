@@ -108,7 +108,7 @@ export default function NavSA({ home }: Props) {
             <a href="/dashboard" style={{ fontSize: 13, color: '#C8E600', fontWeight: 700, textDecoration: 'none', padding: '8px 16px', background: 'rgba(200,230,0,0.08)', borderRadius: 8, border: '1px solid rgba(200,230,0,0.22)' }}>Dashboard</a>
           )}
           {isSignedIn
-            ? <UserButton afterSignOutUrl="/" />
+            ? <UserButton />
             : <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '9px 22px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>Get started free</a>
           }
           {isMobile && (

@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('Resend error full response:', JSON.stringify(error, null, 2));
       console.error('Resend from:', fromEmail, 'to:', employerEmail);
-      return NextResponse.json({ error: (error as any).message || 'Email send failed', resendError: error }, { status: 500 });
+      return NextResponse.json({ error: error.message || 'Email send failed', resendError: error }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, id: data?.id });

@@ -32,7 +32,7 @@ async function applyViaGreenhouse(
 
   // Attach a minimal PDF resume
   const pdfBuf = buildTempPDF(cvData);
-  const blob = new Blob([pdfBuf], { type: 'application/pdf' });
+  const blob = new Blob([pdfBuf as unknown as BlobPart], { type: 'application/pdf' });
   form.append('resume', blob, `${firstName}_${lastName || 'CV'}.pdf`);
 
   const res = await fetch(
@@ -287,7 +287,7 @@ export async function POST(req: NextRequest) {
         const pdfBuf = buildTempPDF(cvData);
         tempFile = path.join(os.tmpdir(), `jse_cv_${Date.now()}.pdf`);
         fs.writeFileSync(tempFile, pdfBuf);
-        await (fileInput as any).uploadFile(tempFile);
+        await (fileInput as unknown as { uploadFile: (path: string) => Promise<void> }).uploadFile(tempFile);
         filled.push('cv_file');
       }
     } catch (err) { console.error('[auto-apply] file upload failed:', err); }

@@ -29,11 +29,11 @@ export default function SavedJobsPage() {
           title: s.jobTitle,
           company: s.company,
           location: s.location || '',
-          description: (s.jobData as any)?.description || '',
+          description: (s.jobData as Record<string, unknown>)?.description as string || '',
           url: s.jobUrl,
-          category: (s.jobData as any)?.category || '',
-          level: (s.jobData as any)?.level || '',
-          salary: (s.jobData as any)?.salary,
+          category: (s.jobData as Record<string, unknown>)?.category as string || '',
+          level: (s.jobData as Record<string, unknown>)?.level as string || '',
+          salary: (s.jobData as Record<string, unknown>)?.salary as string,
         }));
         if (dbJobs.length > 0) {
           setSavedJobs(dbJobs);

@@ -68,7 +68,7 @@ export async function GET() {
 
   // If domain not verified, automatically retry with onboarding@resend.dev fallback
   if (error && primaryFrom !== 'Jobsesame <onboarding@resend.dev>') {
-    primaryError = (error as any).message || 'Unknown error';
+    primaryError = error.message || 'Unknown error';
     const fallback = await resend.emails.send({
       from: 'Jobsesame <onboarding@resend.dev>',
       ...emailOpts,
@@ -88,7 +88,7 @@ export async function GET() {
       fallbackUsed,
       primaryError,
       emailId: data?.id ?? null,
-      error: error ? (error as any).message : null,
+      error: error ? error.message : null,
       sentTo: testRecipient,
       sentAt,
     },
