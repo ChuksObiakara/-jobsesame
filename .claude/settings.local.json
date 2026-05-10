@@ -40,7 +40,12 @@
       "Bash(rm middleware.ts)",
       "Bash(ls middleware.ts)",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(findstr /i \"cookie\")"
+      "Bash(findstr /i \"cookie\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\chuks\\\\OneDrive\\\\Desktop\\\\jobsesame\" -Recurse -Force)",
+      "Bash(Select-Object FullName)",
+      "Bash(npx next *)",
+      "Bash(Get-Content *)",
+      "Bash(grep -v \"//.*password\\\\|//.*secret\\\\|//.*key\")"
     ]
   }
 }
