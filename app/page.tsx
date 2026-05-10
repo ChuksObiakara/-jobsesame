@@ -167,8 +167,10 @@ export default function Home() {
         .row-feat:last-child { border-bottom: none; }
         input::placeholder { color: rgba(255,255,255,0.22); }
         input:focus { border-color: rgba(200,230,0,0.38) !important; outline: none; }
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-thumb { background: rgba(200,230,0,0.12); border-radius: 2px; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(200,230,0,0.35); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(200,230,0,0.55); }
         @media(max-width:767px) {
           .hide-mobile { display:none !important; }
           .mob-col { flex-direction:column !important; }

@@ -153,7 +153,7 @@ export default function UKPage() {
         .nav-link:hover { color:#fff !important; }
         input::placeholder { color:rgba(255,255,255,.2); }
         input:focus { border-color:rgba(200,230,0,.4) !important; outline:none; }
-        ::-webkit-scrollbar { width:3px; } ::-webkit-scrollbar-thumb { background:rgba(200,230,0,.12); border-radius:2px; }
+        ::-webkit-scrollbar { width:8px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:rgba(200,230,0,.35); border-radius:4px; } ::-webkit-scrollbar-thumb:hover { background:rgba(200,230,0,.55); }
         .feat-row { border-bottom: 1px solid rgba(255,255,255,.06); transition: background .15s; }
         .feat-row:hover { background: rgba(200,230,0,.03) !important; }
         .feat-row:last-child { border-bottom: none; }
