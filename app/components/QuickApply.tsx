@@ -30,7 +30,7 @@ export function isAutoApply(url: string, type?: string): boolean {
   return type === 'greenhouse' || u.includes('greenhouse.io') || u.includes('arbeitnow.com');
 }
 
-type Step = 'signin' | 'cv' | 'rewrite' | 'profile' | 'result' | 'apply' | 'done' | 'paywall';
+type Step = 'signin' | 'cv' | 'rewrite' | 'profile' | 'result' | 'apply' | 'done' | 'paywall' | 'error';
 
 const REWRITE_PHASES = [
   'Reading your CV...',
@@ -66,6 +66,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   const [autoApplyStatus, setAutoApplyStatus] = useState<'idle' | 'trying' | 'success' | 'manual'>('idle');
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState('');
+  const [applyError, setApplyError] = useState('');
   const [savedProfile, setSavedProfile] = useState<any>(null);
   const [profileForm, setProfileForm] = useState({ name: '', email: '', phone: '', location: '', title: '' });
 
@@ -135,8 +136,6 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       const data = await response.json();
       clearInterval(interval);
       if (data.success) {
-        // Deduct credit only after successful rewrite
-        fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deduct' }) }).catch(() => {});
         setRewritePhase(REWRITE_PHASES.length);
         const newScore = calcScore(data.rewrittenCV);
         setRewrittenMatchPct(newScore);
@@ -330,9 +329,14 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
     }).catch(() => {});
   };
 
+  const deductCredit = () => {
+    fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deduct' }) }).catch(() => {});
+  };
+
   const handleApply = async () => {
     if (applyCount >= FREE_LIMIT) { setStep('paywall'); return; }
     setApplying(true);
+    setApplyError('');
     if (autoApply && autoApplyStatus === 'idle') {
       setAutoApplyStatus('trying');
       try {
@@ -355,6 +359,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
         const data = await res.json();
         if (data.success) {
           setAutoApplyStatus('success');
+          deductCredit();
           logApplication('Auto-Applied');
           setApplying(false);
           setStep('done');
@@ -368,12 +373,18 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       setApplying(false);
       return;
     }
-    await downloadCVAsPDF(rewrittenCV);
-    await new Promise(r => setTimeout(r, 800));
-    window.open(job.url, '_blank');
-    logApplication('Applied');
-    setApplying(false);
-    setStep('done');
+    try {
+      await downloadCVAsPDF(rewrittenCV);
+      await new Promise(r => setTimeout(r, 800));
+      window.open(job.url, '_blank');
+      deductCredit();
+      logApplication('Applied');
+      setApplying(false);
+      setStep('done');
+    } catch {
+      setApplyError('Something went wrong. Please try applying directly.');
+      setApplying(false);
+    }
   };
 
   const handlePayment = async (plan: 'credits' | 'pro') => {
@@ -698,6 +709,11 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
                     <span style={{fontSize:12,color:'#90C898'}}>{s}</span>
                   </div>
                 ))}
+                <div style={{marginTop:10,paddingTop:10,borderTop:'1px solid rgba(255,165,0,0.2)'}}>
+                  <a href={job.url} target="_blank" rel="noreferrer" style={{fontSize:12,color:'#C8E600',fontWeight:700,textDecoration:'none'}}>
+                    Apply directly at {job.company} →
+                  </a>
+                </div>
               </div>
             )}
 
@@ -728,6 +744,14 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
                       ? '⚡ Auto-apply now'
                       : '📥 Download CV + Apply →'}
             </button>
+            {applyError && (
+              <div style={{background:'rgba(163,45,45,0.15)',border:'1px solid rgba(163,45,45,0.4)',borderRadius:10,padding:'10px 14px',marginBottom:12,fontSize:13,color:'#F09595',lineHeight:1.6}}>
+                <div style={{marginBottom:4}}>{applyError}</div>
+                <a href={job.url} target="_blank" rel="noreferrer" style={{color:'#C8E600',fontWeight:700,fontSize:12,textDecoration:'none'}}>
+                  Apply directly at {job.company} →
+                </a>
+              </div>
+            )}
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <button onClick={onClose} style={{background:'transparent',color:'#5A9A6A',fontSize:12,padding:'8px 0',border:'none',cursor:'pointer'}}>
                 Save for later
@@ -742,25 +766,15 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
         {/* ── DONE ────────────────────────────────────────────────── */}
         {step === 'done' && (
           <div style={{textAlign:'center',padding:'24px 0'}}>
-            {autoApplyStatus === 'success' ? (
-              <>
-                <div style={{fontSize:52,marginBottom:16}}>✅</div>
-                <h3 style={{fontSize:20,fontWeight:800,color:'#FFFFFF',marginBottom:8}}>
-                  {isGreenhouse ? 'Application submitted!' : 'Applied automatically!'}
-                </h3>
-                <p style={{fontSize:14,color:'#5A9A6A',marginBottom:20,lineHeight:1.7}}>
-                  Your application was sent directly to <strong style={{color:'#FFFFFF'}}>{job.company}</strong>. Check your email for any confirmation.
-                </p>
-              </>
-            ) : (
-              <>
-                <div style={{fontSize:52,marginBottom:16}}>🎉</div>
-                <h3 style={{fontSize:20,fontWeight:800,color:'#FFFFFF',marginBottom:8}}>Your tailored CV is downloading...</h3>
-                <p style={{fontSize:14,color:'#5A9A6A',marginBottom:8,lineHeight:1.7}}>
-                  Opening the application portal now. Upload your downloaded CV to complete your application at {job.company}.
-                </p>
-              </>
-            )}
+            <div style={{fontSize:52,marginBottom:16}}>✅</div>
+            <h3 style={{fontSize:20,fontWeight:800,color:'#FFFFFF',marginBottom:8}}>
+              Applied to {job.company}
+            </h3>
+            <p style={{fontSize:14,color:'#5A9A6A',marginBottom:20,lineHeight:1.7}}>
+              {autoApplyStatus === 'success'
+                ? `Your application was sent directly to ${job.company}. Check your email for a confirmation.`
+                : `Your tailored CV has been downloaded. Complete your application at the ${job.company} portal.`}
+            </p>
             <button onClick={onClose} style={{background:'#C8E600',color:'#052A14',fontSize:14,fontWeight:800,padding:'13px 28px',borderRadius:99,border:'none',cursor:'pointer'}}>
               Back to jobs
             </button>

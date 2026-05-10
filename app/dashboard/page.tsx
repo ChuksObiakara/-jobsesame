@@ -297,10 +297,10 @@ export default function Dashboard() {
     const updated = applications.map(a => a.id === id ? { ...a, status } : a);
     setApplications(updated);
     localStorage.setItem('jobsesame_applications', JSON.stringify(updated));
-    fetch('/api/user/applications', {
+    fetch(`/api/user/applications/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ applicationId: id, status }),
+      body: JSON.stringify({ status }),
     }).catch(() => {});
   };
 

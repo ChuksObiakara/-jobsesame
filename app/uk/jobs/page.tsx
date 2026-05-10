@@ -383,8 +383,9 @@ function ApplyModal({ job, user, cvData, onClose, onSuccess }: {
         {status === 'success' ? (
           <div style={{ textAlign: 'center', padding: '24px 0' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-            <h3 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', marginBottom: 8 }}>Application sent!</h3>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>Your application to <strong style={{ color: '#C8E600' }}>{job.company}</strong> has been submitted.</p>
+            <h3 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', marginBottom: 8 }}>Applied to {job.company}</h3>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>Your application has been submitted successfully. Check your email for a confirmation.</p>
+            <button onClick={onClose} style={{ background: '#C8E600', color: '#052A14', fontSize: 14, fontWeight: 800, padding: '12px 28px', borderRadius: 99, border: 'none', cursor: 'pointer' }}>Done</button>
           </div>
         ) : (
           <>
@@ -446,8 +447,11 @@ function ApplyModal({ job, user, cvData, onClose, onSuccess }: {
             </div>
 
             {errorMsg && (
-              <div style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#FF8080', marginBottom: 14 }}>
-                {errorMsg}
+              <div style={{ background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.25)', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#FF8080', marginBottom: 14, lineHeight: 1.6 }}>
+                <div style={{ marginBottom: 6 }}>Application failed — {errorMsg}</div>
+                <a href={job.applyUrl || job.url} target="_blank" rel="noreferrer" style={{ color: '#C8E600', fontWeight: 700, fontSize: 12, textDecoration: 'none' }}>
+                  Try applying directly → {job.company}
+                </a>
               </div>
             )}
 
@@ -692,11 +696,29 @@ export default function UKJobsPage() {
                     {minSalary ? ` · £${(minSalary / 1000).toFixed(0)}k+ salary` : ''}
                   </p>
                 </div>
-                {cvData && (
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '6px 12px' }}>
-                    🎯 Sorted by CV match — {cvData.title || 'your profile'}
-                  </div>
-                )}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                  {cvData && (
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '6px 12px' }}>
+                      🎯 Sorted by CV match — {cvData.title || 'your profile'}
+                    </div>
+                  )}
+                  {sub?.plan === 'credits' && sub.active && (
+                    sub.credits === 0 ? (
+                      <a href="/uk/subscribe" style={{ display: 'inline-block', padding: '6px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                        No credits — Subscribe to continue
+                      </a>
+                    ) : sub.credits < 3 ? (
+                      <div style={{ padding: '6px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)', whiteSpace: 'nowrap' }}>
+                        Credits: {sub.credits} remaining —{' '}
+                        <a href="/uk/subscribe" style={{ color: '#F59E0B', textDecoration: 'underline' }}>Top up</a>
+                      </div>
+                    ) : (
+                      <div style={{ padding: '6px 12px', borderRadius: 99, fontSize: 11, fontWeight: 700, background: 'rgba(34,197,94,0.12)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.25)', whiteSpace: 'nowrap' }}>
+                        Credits: {sub.credits} remaining
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
 
               {/* AI SEARCH ASSISTANT */}

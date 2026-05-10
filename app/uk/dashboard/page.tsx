@@ -318,10 +318,10 @@ export default function UKDashboard() {
 
   const updateStatus = async (appId: string, status: string) => {
     setUpdatingStatus(appId);
-    await fetch('/api/user/applications', {
+    await fetch(`/api/user/applications/${appId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ applicationId: appId, status }),
+      body: JSON.stringify({ status }),
     }).catch(() => {});
     setApplications(prev => prev.map(a => a.id === appId ? { ...a, status } : a));
     setUpdatingStatus(null);
@@ -463,15 +463,33 @@ export default function UKDashboard() {
       <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '24px 16px 60px' : '36px 24px 72px', animation: 'fadeIn 0.35s ease-out' }}>
 
         {/* WELCOME */}
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
-            Hi, {firstName} 👋
-          </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
-            {applications.length > 0
-              ? `${applications.length} UK application${applications.length !== 1 ? 's' : ''} tracked`
-              : 'Your UK job search hub'}
-          </p>
+        <div style={{ marginBottom: 28, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div>
+            <h1 style={{ fontSize: isMobile ? 22 : 26, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+              Hi, {firstName} 👋
+            </h1>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+              {applications.length > 0
+                ? `${applications.length} UK application${applications.length !== 1 ? 's' : ''} tracked`
+                : 'Your UK job search hub'}
+            </p>
+          </div>
+          {sub?.plan === 'credits' && (
+            sub.credits === 0 ? (
+              <a href="/uk/subscribe" style={{ display: 'inline-block', padding: '7px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: 'rgba(239,68,68,0.15)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                No credits — Subscribe to continue
+              </a>
+            ) : sub.credits < 3 ? (
+              <div style={{ padding: '7px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)', whiteSpace: 'nowrap' }}>
+                Credits: {sub.credits} remaining —{' '}
+                <a href="/uk/subscribe" style={{ color: '#F59E0B', textDecoration: 'underline' }}>Top up</a>
+              </div>
+            ) : (
+              <div style={{ padding: '7px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700, background: 'rgba(34,197,94,0.12)', color: '#22C55E', border: '1px solid rgba(34,197,94,0.25)', whiteSpace: 'nowrap' }}>
+                Credits: {sub.credits} remaining
+              </div>
+            )
+          )}
         </div>
 
         {/* TABS */}
