@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createMessage } from '@/app/lib/anthropic-retry';
 import { auth } from '@clerk/nextjs/server';
 
+function extractJSON(text: string): string {
+  const stripped = text.replace(/```json|```/g, '').trim();
+  const start = stripped.indexOf('{');
+  const end = stripped.lastIndexOf('}');
+  if (start !== -1 && end > start) return stripped.slice(start, end + 1);
+  return stripped;
+}
+
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 function checkRateLimit(userId: string, maxRequests: number): boolean {
   const now = Date.now();
@@ -55,7 +63,7 @@ export async function POST(request: NextRequest) {
 
       const response = await createMessage({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2500,
+        max_tokens: 4000,
         messages: [{
           role: 'user',
           content: `You are an expert UK CV writer. Rewrite this CV specifically for a ${jobTitle} role at ${resolvedCompany}.
@@ -95,8 +103,13 @@ Return ONLY valid JSON, no markdown:
       });
 
       const raw = response.content[0].type === 'text' ? response.content[0].text : '';
-      const clean = raw.replace(/```json|```/g, '').trim();
-      const parsed = JSON.parse(clean);
+      let parsed: any;
+      try {
+        parsed = JSON.parse(extractJSON(raw));
+      } catch (parseErr) {
+        console.error('[rewrite/ukOptimise] JSON parse failed. Raw length:', raw.length, 'First 300 chars:', raw.substring(0, 300));
+        throw new Error('CV optimisation returned invalid data — please try again');
+      }
       const { changes, ...optimisedCV } = parsed;
       return NextResponse.json({ success: true, optimisedCV, changes: changes || [] });
     }
@@ -148,7 +161,7 @@ Description: ${jobDescription || 'Not provided'}`,
     // ── CV rewrite mode ───────────────────────────────────────────────────────
     const response = await createMessage({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
+      max_tokens: 3500,
       messages: [
         {
           role: 'user',
@@ -216,8 +229,13 @@ Return ONLY a valid JSON object with no markdown or extra text:
       throw new Error('Unexpected response type');
     }
 
-    const cleanText = content.text.replace(/```json|```/g, '').trim();
-    const rewrittenCV = JSON.parse(cleanText);
+    let rewrittenCV: any;
+    try {
+      rewrittenCV = JSON.parse(extractJSON(content.text));
+    } catch (parseErr) {
+      console.error('[rewrite] JSON parse failed. Raw length:', content.text.length, 'First 300 chars:', content.text.substring(0, 300));
+      throw new Error('CV rewrite returned invalid data — please try again');
+    }
 
     return NextResponse.json({
       success: true,
