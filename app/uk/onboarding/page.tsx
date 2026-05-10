@@ -178,7 +178,10 @@ export default function UKOnboarding() {
   const progress = ((step - 1) / 3) * 100;
 
   return (
-    <main style={{ background: BG, minHeight: '100vh', fontFamily: "'Plus Jakarta Sans',sans-serif", display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '24px 16px' : '48px 24px' }}>
+    <main style={{ background: BG, minHeight: '100vh', fontFamily: "'Plus Jakarta Sans',sans-serif", display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '24px 16px' : '48px 24px', position: 'relative' }}>
+      <a href="/uk" style={{ position: 'absolute', top: isMobile ? 16 : 20, left: isMobile ? 16 : 24, fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.45)', textDecoration: 'none', letterSpacing: '0.2px' }}>
+        ← Back
+      </a>
       <style>{`
         *,*::before,*::after{box-sizing:border-box}
         input::placeholder{color:rgba(255,255,255,0.2)}

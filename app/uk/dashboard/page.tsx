@@ -236,6 +236,7 @@ export default function UKDashboard() {
         setUkJobs(sorted);
       })
       .catch((err) => console.error('[uk/dashboard] jobs fetch failed:', err));
+  // ukJobs omitted intentionally — adding it would cause an infinite loop since this effect sets ukJobs
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvData]);
 

@@ -1,7 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 
-const HARDCODED_APP_ID = '73658bdc';
 
 function mapJob(job: any, country: string): any {
   const location =
@@ -67,11 +66,11 @@ export async function GET(request: NextRequest) {
   const query   = request.nextUrl.searchParams.get('query') || request.nextUrl.searchParams.get('what') || 'software engineer';
   const country = (request.nextUrl.searchParams.get('country') || 'all').toLowerCase();
 
-  const appId  = process.env.ADZUNA_APP_ID || HARDCODED_APP_ID;
+  const appId  = process.env.ADZUNA_APP_ID;
   const apiKey = process.env.ADZUNA_API_KEY;
 
-  if (!apiKey) {
-    return NextResponse.json({ jobs: [], total: 0, error: 'ADZUNA_API_KEY not configured' });
+  if (!appId || !apiKey) {
+    return NextResponse.json({ jobs: [], total: 0, error: 'Adzuna credentials not configured' });
   }
 
   try {

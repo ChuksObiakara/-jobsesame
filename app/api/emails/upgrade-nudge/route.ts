@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
     const firstName = (name || email.split('@')[0]).split(' ')[0];
-    const appUrl = 'https://jobsesame.co.za';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co.za';
     const unsubToken = Buffer.from(JSON.stringify({ userId: dbUser?.clerkId || '', email, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64');
     const unsubUrl = `${appUrl}/unsubscribe?token=${unsubToken}`;
     const isZAR = !currency || currency === 'ZAR';

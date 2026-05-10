@@ -97,6 +97,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
     } else {
       setStep('cv');
     }
+  // startRewrite changes identity on every render; this effect should fire once when auth state resolves
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, isSignedIn]);
 

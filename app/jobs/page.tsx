@@ -326,6 +326,7 @@ export default function JobsPage() {
     );
     observer.observe(el);
     return () => observer.disconnect();
+  // fetchJobs changes identity on every render; this observer must be registered once on mount only
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

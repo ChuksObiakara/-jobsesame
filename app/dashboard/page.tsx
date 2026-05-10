@@ -154,6 +154,7 @@ export default function Dashboard() {
         }
       }).catch((err) => console.error('[dashboard] cv fetch failed:', err));
     }
+  // generateReferralLink is defined in component scope; adding it to deps causes re-runs on every render
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, user]);
 
@@ -187,7 +188,6 @@ export default function Dashboard() {
       body: JSON.stringify({ email, name, cvTitle }),
     }).catch((err) => console.error('[dashboard] job-matches email failed:', err));
     localStorage.setItem('jobsesame_jobmatches_email_sent', 'true');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, user, cvData]);
 
   // Trigger upgrade-nudge email when user hits 2 applications
@@ -203,8 +203,7 @@ export default function Dashboard() {
       body: JSON.stringify({ email, name, currency }),
     }).catch((err) => console.error('[dashboard] upgrade-nudge email failed:', err));
     localStorage.setItem('jobsesame_nudge_email_sent', 'true');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [applications.length, isSignedIn, user]);
+  }, [applications.length, isSignedIn, user, currency]);
 
   // Fetch recommended jobs — re-runs when profile or cvData changes
   useEffect(() => {
@@ -222,7 +221,6 @@ export default function Dashboard() {
         .finally(() => setLoadingJobs(false));
     }, 800);
     return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, cvData]);
 
   const atsScore = useMemo(() => {

@@ -1,5 +1,5 @@
 export const revalidate = 1800;
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const FETCH_TIMEOUT_MS = 5000;
 
@@ -332,7 +332,7 @@ async function fetchTheMuse(page = 0): Promise<UKJob[]> {
 }
 
 // ── Careerjet ─────────────────────────────────────────────────────────────────
-async function fetchCareerjet(page = 1): Promise<UKJob[]> {
+async function fetchCareerjet(page = 1, ip = '0.0.0.0'): Promise<UKJob[]> {
   const affid = process.env.CAREERJET_AFFILIATE_ID;
   if (!affid) return [];
   try {
@@ -341,7 +341,7 @@ async function fetchCareerjet(page = 1): Promise<UKJob[]> {
       keywords: '',
       location: 'United Kingdom',
       locale_code: 'en_GB',
-      user_ip: '127.0.0.1',
+      user_ip: ip,
       user_agent: 'Jobsesame/1.0',
       url: 'https://www.jobsesame.co.za/uk/jobs',
       sort: 'date',
@@ -396,7 +396,10 @@ function dedupe(jobs: UKJob[]): UKJob[] {
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim()
+    || req.headers.get('x-real-ip')
+    || '0.0.0.0';
   try {
     const [
       adzunaPage1, adzunaPage2, adzunaPage3, adzunaPage4, adzunaPage5,
@@ -415,7 +418,7 @@ export async function GET() {
       fetchRemotive(),
       fetchJooble(1), fetchJooble(2),
       fetchTheMuse(0), fetchTheMuse(1),
-      fetchCareerjet(1), fetchCareerjet(2),
+      fetchCareerjet(1, ip), fetchCareerjet(2, ip),
     ]);
 
     const adzunaTotal = adzunaPage1.length + adzunaPage2.length + adzunaPage3.length + adzunaPage4.length + adzunaPage5.length;

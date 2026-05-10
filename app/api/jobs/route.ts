@@ -82,7 +82,7 @@ const LOCATION_MAP: Record<string, string[]> = {
   'Kenya':          ['Nairobi, Kenya'],
 };
 
-const ADZUNA_APP_ID = '73658bdc';
+const ADZUNA_APP_ID = process.env.ADZUNA_APP_ID ?? '';
 
 // ── Adzuna helpers ────────────────────────────────────────────────────────────
 
