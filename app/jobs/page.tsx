@@ -210,6 +210,7 @@ export default function JobsPage() {
   const [isDesktop, setIsDesktop] = useState(false);
   const jobsSectionRef = useRef<HTMLDivElement>(null);
   const jobsFetchedRef = useRef(false);
+  const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set());
   const [savedJobs, setSavedJobs] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('jobsesame_saved_jobs');
@@ -302,7 +303,10 @@ export default function JobsPage() {
       }
       setTotal(data.total || 0);
       setHasMore(newJobs.length >= 20 && loc !== 'South Africa');
-      if (!append) setLastSearchQuery(searchQuery || cvData?.title || '');
+      if (!append) {
+        setLastSearchQuery(searchQuery || cvData?.title || '');
+        setLoadedTabs(prev => new Set(prev).add(tab));
+      }
     } catch {
     }
     if (append) setLoadingMore(false); else setLoading(false);
@@ -328,18 +332,22 @@ export default function JobsPage() {
   const handleTabChange = (tab: 'all' | 'remote' | 'relocation' | 'teaching') => {
     setActiveTab(tab);
     setPage(1);
-    fetchJobs(tab, query, location, 1, false);
+    if (!loadedTabs.has(tab)) {
+      fetchJobs(tab, query, location, 1, false);
+    }
   };
 
   const handleLocationChange = (newLoc: string) => {
     setLocation(newLoc);
     setPage(1);
+    setLoadedTabs(new Set());
     fetchJobs(activeTab, query, newLoc, 1, false);
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
+    setLoadedTabs(new Set());
     fetchJobs(activeTab, query, location, 1, false);
   };
 
@@ -358,6 +366,7 @@ export default function JobsPage() {
     setLocation(newLocation);
     setPage(1);
     setAiActive(true);
+    setLoadedTabs(new Set());
     fetchJobs(newTab, newQuery, newLocation, 1, false);
   };
 
@@ -367,6 +376,7 @@ export default function JobsPage() {
     setActiveTab('all');
     setPage(1);
     setAiActive(false);
+    setLoadedTabs(new Set());
     fetchJobs('all', '', '', 1, false);
   };
 

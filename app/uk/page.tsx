@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import Image from 'next/image';
 import NavUK from '../components/NavUK';
 import FooterUK from '../components/FooterUK';
 
@@ -362,7 +363,7 @@ export default function UKPage() {
                 <div style={{ display:'flex', gap:2, marginBottom:16 }}>{Array.from({length:5}).map((_,i) => <span key={i} style={{ color:'#C8E600', fontSize:14 }}>★</span>)}</div>
                 <p style={{ fontSize: isMobile ? 17 : 21, fontWeight:600, color:'rgba(255,255,255,.82)', lineHeight:1.55, fontStyle:'italic', marginBottom:20, letterSpacing:-.2 }}>&ldquo;{t.quote}&rdquo;</p>
                 <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                  <img src={t.photo} alt={t.name} width={38} height={38} style={{ borderRadius:'50%', objectFit:'cover', flexShrink:0 }} />
+                  <Image src={t.photo} alt={t.name} width={38} height={38} style={{ borderRadius:'50%', objectFit:'cover', flexShrink:0 }} />
                   <div>
                     <div style={{ fontSize:13, fontWeight:700, color:'#fff' }}>{t.name}</div>
                     <div style={{ fontSize:12, color:'rgba(255,255,255,.3)', marginTop:1 }}>{t.role}</div>

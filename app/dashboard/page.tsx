@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from 'react';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
 import CoverLetter from '../components/CoverLetter';
 import MarketSwitcher from '../components/MarketSwitcher';
-import { jsPDF } from 'jspdf';
 
 const SALARY_DATA: Record<string, { min: number; max: number }> = {
   'software engineer': { min: 480000, max: 720000 },
@@ -414,7 +413,8 @@ export default function Dashboard() {
     finally { setRewriting(false); }
   };
 
-  const downloadCV = () => {
+  const downloadCV = async () => {
+    const { jsPDF } = await import('jspdf');
     const cv = rewrittenCV;
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
     const pageW = 210;

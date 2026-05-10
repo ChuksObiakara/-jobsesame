@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import Image from 'next/image';
 import NavSA from './components/NavSA';
 import FooterSA from './components/FooterSA';
 
@@ -226,7 +227,7 @@ export default function Home() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
               <div style={{ display: 'flex' }}>
                 {PHOTOS.map((src, i) => (
-                  <img key={i} src={src} loading="lazy" width={34} height={34} alt=""
+                  <Image key={i} src={src} loading="lazy" width={34} height={34} alt=""
                     style={{ borderRadius: '50%', border: `2.5px solid ${BG}`, marginLeft: i === 0 ? 0 : -9, zIndex: 6 - i, position: 'relative', objectFit: 'cover', background: '#1A4A2A' }} />
                 ))}
               </div>
@@ -605,7 +606,7 @@ export default function Home() {
                 </div>
                 <p style={{ fontSize: isMobile ? 16 : 19, color: 'rgba(255,255,255,0.78)', lineHeight: 1.58, fontStyle: 'italic', marginBottom: 18, fontWeight: 500, letterSpacing: -0.2 }}>&ldquo;{t.quote}&rdquo;</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <img src={t.photo} loading="lazy" width={38} height={38} alt={t.name} style={{ borderRadius: '50%', border: '2px solid rgba(200,230,0,0.18)', background: '#1A4A2A', flexShrink: 0, objectFit: 'cover' }} />
+                  <Image src={t.photo} loading="lazy" width={38} height={38} alt={t.name} style={{ borderRadius: '50%', border: '2px solid rgba(200,230,0,0.18)', background: '#1A4A2A', flexShrink: 0, objectFit: 'cover' }} />
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{t.name}</div>
                     <div style={{ fontSize: 12, color: '#C8E600', fontWeight: 600 }}>{t.result}</div>
@@ -712,7 +713,7 @@ export default function Home() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex' }}>
               {PHOTOS.map((src, i) => (
-                <img key={i} src={src} loading="lazy" width={28} height={28} alt=""
+                <Image key={i} src={src} loading="lazy" width={28} height={28} alt=""
                   style={{ borderRadius: '50%', border: `2px solid ${BG}`, marginLeft: i === 0 ? 0 : -7, zIndex: 6 - i, position: 'relative', objectFit: 'cover', background: '#1A4A2A' }} />
               ))}
             </div>

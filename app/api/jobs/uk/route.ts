@@ -1,7 +1,7 @@
 export const revalidate = 1800;
 import { NextResponse } from 'next/server';
 
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 5000;
 
 // ── Normalised shape ──────────────────────────────────────────────────────────
 interface UKJob {
