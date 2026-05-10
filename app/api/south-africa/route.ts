@@ -1,9 +1,30 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Keywords that confirm a job is genuinely African
+const MAX_AGE_DAYS = 60;
+
+function isRecent(dateStr: string | undefined): boolean {
+  if (!dateStr) return true; // keep if date unknown — can't determine age
+  try {
+    const ms = new Date(dateStr).getTime();
+    if (isNaN(ms)) return true;
+    return Date.now() - ms < MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
+  } catch {
+    return true;
+  }
+}
+
+function sortByDate(jobs: any[]): any[] {
+  return [...jobs].sort((a, b) => {
+    const da = a.postedAt ? new Date(a.postedAt).getTime() : 0;
+    const db = b.postedAt ? new Date(b.postedAt).getTime() : 0;
+    return db - da; // newest first; undated jobs fall to the end
+  });
+}
+
 const AFRICAN_KEYWORDS = [
-  'south africa', 'johannesburg', 'cape town', 'pretoria', 'durban', 'sandton', 'soweto',
+  'south africa', 'johannesburg', 'cape town', 'pretoria', 'durban', 'sandton',
+  'soweto', 'stellenbosch', 'bloemfontein', 'port elizabeth', 'east london',
   'nigeria', 'lagos', 'abuja', 'port harcourt', 'ibadan',
   'kenya', 'nairobi', 'mombasa', 'kisumu',
   'ghana', 'accra', 'kumasi',
@@ -19,43 +40,41 @@ const AFRICAN_KEYWORDS = [
 
 function isAfricanJob(job: any): boolean {
   const haystack = [job.title, job.company, job.location, job.description]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+    .filter(Boolean).join(' ').toLowerCase();
   return AFRICAN_KEYWORDS.some(kw => haystack.includes(kw));
 }
 
 function dedupe(jobs: any[]): any[] {
-  const seen = new Set<string>();
+  const seenKeys = new Set<string>();
+  const seenUrls = new Set<string>();
   return jobs.filter(job => {
     const key = `${(job.title || '').toLowerCase().trim()}|${(job.company || '').toLowerCase().trim()}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
+    const url = job.url && job.url !== '#' ? job.url : null;
+    if (seenKeys.has(key)) return false;
+    if (url && seenUrls.has(url)) return false;
+    seenKeys.add(key);
+    if (url) seenUrls.add(url);
     return true;
   });
 }
 
-// ── Source 1: Remotive — search African keywords ─────────────────────────────
-
+// ── Source 1: Remotive ────────────────────────────────────────────────────────
 async function fetchRemotive(query: string): Promise<any[]> {
-  // Run separate searches for each region so we get broad coverage
   const searches = [
-    'south africa',
-    'nigeria',
-    'kenya africa',
-    query !== 'software engineer' ? query : '', // user search query if custom
+    'south africa', 'nigeria', 'kenya africa',
+    query !== 'software engineer' ? query : '',
   ].filter(Boolean);
 
   const results = await Promise.all(
     searches.map(q =>
-      fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(q)}&limit=20`)
+      fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(q)}&limit=30`)
         .then(r => r.json())
         .then(d => d.jobs || [])
         .catch(() => [])
     )
   );
 
-  const jobs = results.flat().map((job: any) => ({
+  return results.flat().map((job: any) => ({
     id: `remotive-${job.id}`,
     title: job.title || '',
     company: job.company_name || 'Company',
@@ -67,20 +86,19 @@ async function fetchRemotive(query: string): Promise<any[]> {
     salary: job.salary || '',
     category: job.category || 'General',
     level: 'All levels',
+    postedAt: job.publication_date || '',
     type: 'south-africa',
   }));
-
-  return jobs;
 }
 
-// ── Source 2: The Muse — African city location strings ───────────────────────
-
+// ── Source 2: The Muse ────────────────────────────────────────────────────────
 async function fetchMuse(): Promise<any[]> {
   const locations = [
     'Johannesburg, South Africa',
     'Cape Town, South Africa',
     'Lagos, Nigeria',
     'Nairobi, Kenya',
+    'Accra, Ghana',
   ];
 
   const results = await Promise.all(
@@ -101,6 +119,7 @@ async function fetchMuse(): Promise<any[]> {
             salary: '',
             category: job.categories?.[0]?.name || 'General',
             level: job.levels?.[0]?.name || 'All levels',
+            postedAt: job.publication_date || '',
             type: 'south-africa',
           }))
         )
@@ -108,53 +127,59 @@ async function fetchMuse(): Promise<any[]> {
     )
   );
 
-  const jobs = results.flat();
-  return jobs;
+  return results.flat();
 }
 
-// ── Source 3: Adzuna ZA (pages 1 + 2) ────────────────────────────────────────
-
+// ── Source 3: Adzuna ZA — pages 1–4 (up to 200 raw) ─────────────────────────
 async function fetchAdzunaZA(query: string): Promise<any[]> {
-  const appId = process.env.ADZUNA_APP_ID;
+  const appId  = process.env.ADZUNA_APP_ID;
   const apiKey = process.env.ADZUNA_API_KEY;
   if (!appId || !apiKey) return [];
+
   try {
-    const makeParams = () => new URLSearchParams({
-      app_id: appId,
-      app_key: apiKey,
-      results_per_page: '50',
-      what: query,
-    }).toString();
-    const [res1, res2] = await Promise.all([
-      fetch(`https://api.adzuna.com/v1/api/jobs/za/search/1?${makeParams()}`),
-      fetch(`https://api.adzuna.com/v1/api/jobs/za/search/2?${makeParams()}`),
-    ]);
-    const d1 = res1.ok ? await res1.json() : { results: [] };
-    const d2 = res2.ok ? await res2.json() : { results: [] };
-    return [...(d1.results || []), ...(d2.results || [])].map((job: any) => ({
-      id: `adzuna-za-${job.id}`,
-      title: job.title || '',
-      company: job.company?.display_name || 'Company',
-      location: job.location?.display_name || 'South Africa',
-      description: (job.description || '').substring(0, 220) + '...',
-      url: job.redirect_url || '#',
-      salary: job.salary_min ? `R${Math.round(job.salary_min)}${job.salary_max ? `–R${Math.round(job.salary_max)}` : ''}` : '',
-      category: job.category?.label || 'General',
-      level: job.contract_time || 'full_time',
-      type: 'south-africa',
-    }));
+    const makeUrl = (page: number) => {
+      const p = new URLSearchParams({
+        app_id: appId, app_key: apiKey,
+        results_per_page: '50', what: query,
+      });
+      return `https://api.adzuna.com/v1/api/jobs/za/search/${page}?${p}`;
+    };
+
+    const responses = await Promise.all(
+      [1, 2, 3, 4].map(page =>
+        fetch(makeUrl(page)).then(r => r.ok ? r.json() : { results: [] }).catch(() => ({ results: [] }))
+      )
+    );
+
+    return responses.flatMap(d =>
+      (d.results || []).map((job: any) => ({
+        id: `adzuna-za-${job.id}`,
+        title: job.title || '',
+        company: job.company?.display_name || 'Company',
+        location: job.location?.display_name || 'South Africa',
+        description: (job.description || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+        url: job.redirect_url || '#',
+        salary: job.salary_min
+          ? `R${Math.round(job.salary_min)}${job.salary_max ? `–R${Math.round(job.salary_max)}` : ''}`
+          : '',
+        category: job.category?.label || 'General',
+        level: job.contract_time || 'full_time',
+        postedAt: job.created || '',
+        type: 'south-africa',
+      }))
+    );
   } catch {
     return [];
   }
 }
 
-// ── Source 4: JSearch — "query South Africa" (3 pages) ───────────────────────
-
+// ── Source 4: JSearch SA — 5 pages (up to 50 raw) ────────────────────────────
 async function fetchJSearchSA(query: string): Promise<any[]> {
   const apiKey = process.env.RAPIDAPI_KEY;
   if (!apiKey) return [];
+
   const searchQuery = `${query} South Africa`;
-  const fetchPage = async (page: number) => {
+  const fetchPage = async (page: number): Promise<any[]> => {
     try {
       const params = new URLSearchParams({ query: searchQuery, page: String(page), num_pages: '1' });
       const res = await fetch(`https://jsearch.p.rapidapi.com/search?${params}`, {
@@ -172,27 +197,32 @@ async function fetchJSearchSA(query: string): Promise<any[]> {
         salary: job.job_min_salary ? `R${Math.round(job.job_min_salary)}` : '',
         category: 'General',
         level: job.job_employment_type || 'FULLTIME',
+        postedAt: job.job_posted_at_datetime_utc || '',
         type: 'south-africa',
       }));
     } catch {
       return [];
     }
   };
-  const [p1, p2, p3] = await Promise.all([fetchPage(1), fetchPage(2), fetchPage(3)]);
-  return [...p1, ...p2, ...p3];
+
+  const pages = await Promise.all([1, 2, 3, 4, 5].map(fetchPage));
+  return pages.flat();
 }
 
 // ── Source 5: Greenhouse SA companies ────────────────────────────────────────
-
 const GH_SA_BOARDS = [
-  { token: 'paystack', name: 'Paystack' },
+  { token: 'paystack',    name: 'Paystack' },
+  { token: 'andela',      name: 'Andela' },
+  { token: 'flutterwave', name: 'Flutterwave' },
 ];
 
 async function fetchGreenhouseSA(): Promise<any[]> {
   const results = await Promise.all(
     GH_SA_BOARDS.map(async ({ token, name }) => {
       try {
-        const res = await fetch(`https://api.greenhouse.io/v1/boards/${token}/jobs`, { next: { revalidate: 3600 } });
+        const res = await fetch(`https://api.greenhouse.io/v1/boards/${token}/jobs`, {
+          next: { revalidate: 3600 },
+        });
         if (!res.ok) return [];
         const data = await res.json();
         return (data.jobs || []).map((job: any) => ({
@@ -205,18 +235,20 @@ async function fetchGreenhouseSA(): Promise<any[]> {
           salary: '',
           category: job.departments?.[0]?.name || 'General',
           level: 'Full-time',
+          postedAt: job.updated_at || '',
           type: 'greenhouse',
           boardToken: token,
           jobId: String(job.id),
         }));
-      } catch { return []; }
+      } catch {
+        return [];
+      }
     })
   );
   return results.flat();
 }
 
-// ── Handler ──────────────────────────────────────────────────────────────────
-
+// ── Handler ───────────────────────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('query') || 'software engineer';
 
@@ -229,16 +261,26 @@ export async function GET(request: NextRequest) {
       fetchGreenhouseSA(),
     ]);
 
-    // Adzuna, JSearch, Greenhouse SA are already SA-specific
-    const saJobs = dedupe([...adzunaJobs, ...jsearchJobs, ...ghSAJobs]);
+    // Filter stale jobs from sources that provide dates
+    const freshAdzuna   = adzunaJobs.filter(j => isRecent(j.postedAt));
+    const freshJSearch  = jsearchJobs.filter(j => isRecent(j.postedAt));
+    const freshRemotive = remotiveJobs.filter(j => isRecent(j.postedAt));
+    const freshMuse     = museJobs.filter(j => isRecent(j.postedAt));
 
-    // Remotive/Muse still go through the African keyword filter
-    const filtered = dedupe([...museJobs, ...remotiveJobs]).filter(isAfricanJob);
+    // Adzuna, JSearch, Greenhouse are already SA-specific
+    const saSpecific = dedupe([...freshAdzuna, ...freshJSearch, ...ghSAJobs]);
 
-    const all = dedupe([...saJobs, ...filtered]).slice(0, 150);
+    // Remotive + Muse need the African keyword filter
+    const africanFiltered = dedupe([...freshMuse, ...freshRemotive]).filter(isAfricanJob);
+
+    // Merge, final dedupe, sort newest-first, cap at 250
+    const all = sortByDate(dedupe([...saSpecific, ...africanFiltered])).slice(0, 250);
+
+    console.log(`[SA Jobs] adzuna=${freshAdzuna.length} jsearch=${freshJSearch.length} greenhouse=${ghSAJobs.length} remotive=${freshRemotive.length} muse=${freshMuse.length} → total=${all.length}`);
 
     return NextResponse.json({ jobs: all, total: all.length, source: 'Multi-source' });
   } catch (err) {
+    console.error('[SA Jobs] Error:', err);
     return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch African jobs' });
   }
 }

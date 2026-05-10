@@ -257,8 +257,8 @@ export async function GET(request: NextRequest) {
 
   // ── South Africa → Adzuna ZA only ────────────────────────────────────────
   if (location === 'South Africa') {
-    const jobs = await fetchAdzunaPages('za', [1, 2, 3], query);
-    const deduped = dedupe(jobs).slice(0, 100);
+    const jobs = await fetchAdzunaPages('za', [1, 2, 3, 4, 5], query);
+    const deduped = dedupe(jobs).slice(0, 200);
     console.log(`[Jobs] South Africa (Adzuna): ${deduped.length}`);
     return NextResponse.json({ jobs: deduped, total: deduped.length, source: 'Adzuna' });
   }
@@ -275,7 +275,7 @@ export async function GET(request: NextRequest) {
   if (!location) {
     try {
       const [adzunaZA, museData, jsearchJobs, ghJobs, lvrJobs] = await Promise.all([
-        fetchAdzunaPages('za', [1], query),
+        fetchAdzunaPages('za', [1, 2, 3], query),
         fetch(
           `https://www.themuse.com/api/public/jobs?page=${page}&descended=true`,
           { headers: { Accept: 'application/json' }, next: { revalidate: 3600 } }
@@ -285,7 +285,7 @@ export async function GET(request: NextRequest) {
         fetchLever(),
       ]);
       const museJobs = (museData.results || []).map(mapMuseJob);
-      const jobs = dedupe([...ghJobs, ...lvrJobs, ...adzunaZA, ...museJobs, ...jsearchJobs]).slice(0, 80);
+      const jobs = dedupe([...ghJobs, ...lvrJobs, ...adzunaZA, ...museJobs, ...jsearchJobs]).slice(0, 150);
       return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
     } catch (error) {
       return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
