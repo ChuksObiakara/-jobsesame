@@ -159,6 +159,20 @@ Description: ${jobDescription || 'Not provided'}`,
     }
 
     // ── CV rewrite mode ───────────────────────────────────────────────────────
+    const cvJson = JSON.stringify({
+      name: cvData.name || '',
+      title: cvData.title || '',
+      location: cvData.location || '',
+      email: cvData.email || '',
+      phone: cvData.phone || '',
+      summary: cvData.summary || '',
+      skills: cvData.skills || [],
+      experience_years: cvData.experience_years || 0,
+      education: cvData.education || '',
+      languages: cvData.languages || [],
+      experience: cvData.experience || [],
+    });
+
     const response = await createMessage({
       model: 'claude-sonnet-4-6',
       max_tokens: 3500,
@@ -179,43 +193,32 @@ CRITICAL RULES — YOU MUST FOLLOW THESE EXACTLY:
 JOB DETAILS:
 Title: ${jobTitle}
 Company: ${resolvedCompany}
-Description: ${jobDescription || 'Not provided'}
+Description: ${(jobDescription || 'Not provided').substring(0, 1000)}
+${userPrompt ? `\nSPECIAL INSTRUCTIONS FROM CANDIDATE:\n${userPrompt}` : ''}
 
-${userPrompt ? `SPECIAL INSTRUCTIONS FROM CANDIDATE:\n${userPrompt}` : ''}
+CANDIDATE CV (JSON):
+${cvJson}
 
-CANDIDATE CV:
-Name: ${cvData.name}
-Current Title: ${cvData.title}
-Location: ${cvData.location}
-Email: ${cvData.email || ''}
-Phone: ${cvData.phone || ''}
-Summary: ${cvData.summary}
-Skills: ${Array.isArray(cvData.skills) ? cvData.skills.join(', ') : cvData.skills}
-Experience: ${cvData.experience_years} years
-Education: ${cvData.education}
-Languages: ${Array.isArray(cvData.languages) ? cvData.languages.join(', ') : cvData.languages}
-${cvData.experience ? `Previous roles: ${cvData.experience.map((e: any) => `${e.title} at ${e.company} (${e.duration})`).join('; ')}` : ''}
-
-Return ONLY a valid JSON object with no markdown or extra text:
+Return ONLY a valid JSON object — no markdown, no code fences, no extra text:
 {
-  "name": "${cvData.name}",
+  "name": "exact candidate name unchanged",
   "title": "rewritten job title targeting this specific role",
-  "location": "${cvData.location}",
-  "email": "${cvData.email || ''}",
-  "phone": "${cvData.phone || ''}",
-  "summary": "powerful 3 sentence summary targeting this specific job using candidate real background",
-  "skills": ["most relevant skills for this job — list 8 to 10 — use candidate real skills"],
+  "location": "exact candidate location unchanged",
+  "email": "exact candidate email unchanged",
+  "phone": "exact candidate phone unchanged",
+  "summary": "powerful 3-sentence summary targeting this specific job using candidate real background",
+  "skills": ["8 to 10 most relevant skills for this job drawn from candidate skills"],
   "experience": [
     {
       "title": "EXACT job title candidate held — do not change",
-      "company": "EXACT company name candidate worked at — do not change",
-      "duration": "exact duration as provided",
+      "company": "EXACT company name — do not change",
+      "duration": "exact duration unchanged",
       "location": "city if known",
-      "bullets": ["rewritten achievement with metrics", "rewritten achievement with metrics", "rewritten achievement"]
+      "bullets": ["rewritten achievement with metric", "rewritten achievement with metric", "rewritten achievement"]
     }
   ],
-  "education": "${cvData.education}",
-  "languages": ${JSON.stringify(cvData.languages)},
+  "education": "exact education unchanged",
+  "languages": ["exact languages unchanged"],
   "match_score": 85,
   "keywords_added": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
   "ats_score": 90
