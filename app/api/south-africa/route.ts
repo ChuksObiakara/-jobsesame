@@ -209,7 +209,42 @@ async function fetchJSearchSA(query: string): Promise<any[]> {
   return pages.flat();
 }
 
-// ── Source 5: Greenhouse SA companies ────────────────────────────────────────
+// ── Source 5: Jooble SA — pages 1–3 ──────────────────────────────────────────
+async function fetchJoobleZA(query: string, page = 1): Promise<any[]> {
+  const apiKey = process.env.JOOBLE_API_KEY;
+  if (!apiKey) return [];
+  try {
+    const res = await fetch(`https://jooble.org/api/${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keywords: query, location: 'South Africa', page }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) {
+      console.warn(`[SA Jobs] Jooble page ${page} → HTTP ${res.status}`);
+      return [];
+    }
+    const data = await res.json();
+    return (data.jobs || []).map((job: any) => ({
+      id: `jooble-za-${Buffer.from(job.link || job.title || String(Math.random())).toString('base64').substring(0, 16)}`,
+      title: job.title || '',
+      company: job.company || 'Company',
+      location: job.location || 'South Africa',
+      description: (job.snippet || '').replace(/<[^>]*>/g, '').substring(0, 220) + '...',
+      url: job.link || '#',
+      salary: job.salary || '',
+      category: job.type || 'General',
+      level: 'All levels',
+      postedAt: job.updated || '',
+      type: 'south-africa',
+    }));
+  } catch (err) {
+    console.error(`[SA Jobs] Jooble page ${page} error:`, err);
+    return [];
+  }
+}
+
+// ── Source 6: Greenhouse SA companies ────────────────────────────────────────
 const GH_SA_BOARDS = [
   { token: 'paystack',    name: 'Paystack' },
   { token: 'andela',      name: 'Andela' },
@@ -253,30 +288,36 @@ export async function GET(request: NextRequest) {
   const query = request.nextUrl.searchParams.get('query') || 'software engineer';
 
   try {
-    const [remotiveJobs, museJobs, adzunaJobs, jsearchJobs, ghSAJobs] = await Promise.all([
+    const [remotiveJobs, museJobs, adzunaJobs, jsearchJobs, ghSAJobs, jooble1, jooble2, jooble3] = await Promise.all([
       fetchRemotive(query),
       fetchMuse(),
       fetchAdzunaZA(query),
       fetchJSearchSA(query),
       fetchGreenhouseSA(),
+      fetchJoobleZA(query, 1),
+      fetchJoobleZA(query, 2),
+      fetchJoobleZA(query, 3),
     ]);
+
+    const joobleJobs = [...jooble1, ...jooble2, ...jooble3];
 
     // Filter stale jobs from sources that provide dates
     const freshAdzuna   = adzunaJobs.filter(j => isRecent(j.postedAt));
     const freshJSearch  = jsearchJobs.filter(j => isRecent(j.postedAt));
+    const freshJooble   = joobleJobs.filter(j => isRecent(j.postedAt));
     const freshRemotive = remotiveJobs.filter(j => isRecent(j.postedAt));
     const freshMuse     = museJobs.filter(j => isRecent(j.postedAt));
 
-    // Adzuna, JSearch, Greenhouse are already SA-specific
-    const saSpecific = dedupe([...freshAdzuna, ...freshJSearch, ...ghSAJobs]);
+    // Adzuna, JSearch, Jooble, Greenhouse are already SA-specific
+    const saSpecific = dedupe([...freshAdzuna, ...freshJSearch, ...freshJooble, ...ghSAJobs]);
 
     // Remotive + Muse need the African keyword filter
     const africanFiltered = dedupe([...freshMuse, ...freshRemotive]).filter(isAfricanJob);
 
-    // Merge, final dedupe, sort newest-first, cap at 250
-    const all = sortByDate(dedupe([...saSpecific, ...africanFiltered])).slice(0, 250);
+    // Merge, final dedupe, sort newest-first, cap at 300
+    const all = sortByDate(dedupe([...saSpecific, ...africanFiltered])).slice(0, 300);
 
-    console.log(`[SA Jobs] adzuna=${freshAdzuna.length} jsearch=${freshJSearch.length} greenhouse=${ghSAJobs.length} remotive=${freshRemotive.length} muse=${freshMuse.length} → total=${all.length}`);
+    console.log(`[SA Jobs] adzuna=${freshAdzuna.length} jsearch=${freshJSearch.length} jooble=${freshJooble.length} greenhouse=${ghSAJobs.length} remotive=${freshRemotive.length} muse=${freshMuse.length} → total=${all.length}`);
 
     return NextResponse.json({ jobs: all, total: all.length, source: 'Multi-source' });
   } catch (err) {
