@@ -108,7 +108,7 @@ Return ONLY valid JSON, no markdown:
         parsed = JSON.parse(extractJSON(raw));
       } catch (parseErr) {
         console.error('[rewrite/ukOptimise] JSON parse failed. Raw length:', raw.length, 'First 300 chars:', raw.substring(0, 300));
-        throw new Error('CV optimisation returned invalid data — please try again');
+        throw new Error(`CV optimisation returned invalid data. Claude responded: "${raw.substring(0, 120).replace(/\n/g, ' ')}"`);
       }
       const { changes, ...optimisedCV } = parsed;
       return NextResponse.json({ success: true, optimisedCV, changes: changes || [] });
@@ -175,7 +175,7 @@ Description: ${jobDescription || 'Not provided'}`,
 
     const response = await createMessage({
       model: 'claude-sonnet-4-6',
-      max_tokens: 3500,
+      max_tokens: 4096,
       messages: [
         {
           role: 'user',
@@ -237,7 +237,7 @@ Return ONLY a valid JSON object — no markdown, no code fences, no extra text:
       rewrittenCV = JSON.parse(extractJSON(content.text));
     } catch (parseErr) {
       console.error('[rewrite] JSON parse failed. Raw length:', content.text.length, 'First 300 chars:', content.text.substring(0, 300));
-      throw new Error('CV rewrite returned invalid data — please try again');
+      throw new Error(`CV rewrite returned invalid data. Claude responded: "${content.text.substring(0, 120).replace(/\n/g, ' ')}"`);
     }
 
     return NextResponse.json({
@@ -247,8 +247,10 @@ Return ONLY a valid JSON object — no markdown, no code fences, no extra text:
     });
 
   } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[rewrite] outer catch:', msg, error);
     return NextResponse.json(
-      { error: 'Failed to rewrite CV', details: String(error) },
+      { error: msg || 'Failed to rewrite CV', details: String(error) },
       { status: 500 }
     );
   }

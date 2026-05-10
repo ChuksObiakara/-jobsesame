@@ -300,8 +300,8 @@ export default function JobsPage() {
       const data = await res.json();
       if (data.success) setCvOptimizedResult(data.rewrittenCV);
       else setCvOptimizeError(data.error || 'Failed to optimize CV');
-    } catch {
-      setCvOptimizeError('Something went wrong. Please try again.');
+    } catch (err: any) {
+      setCvOptimizeError(err?.message || 'Something went wrong. Please try again.');
     }
     setCvOptimizing(false);
   };
