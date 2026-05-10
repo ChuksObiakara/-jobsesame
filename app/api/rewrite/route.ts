@@ -23,10 +23,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Rate limit exceeded. Try again in an hour.' }, { status: 429 });
     }
 
-    // Credit check via Prisma directly (server-side HTTP fetch can't pass auth cookies)
+    // Credit check via Prisma — also accepts active UK subscription
     const { prisma } = await import('@/app/lib/prisma');
-    const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
-    if (dbUser && !dbUser.isPro && dbUser.credits <= 0) {
+    const dbUser = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      include: { ukSubscription: true },
+    });
+    const hasUKSub = dbUser?.ukSubscription?.active === true;
+    if (dbUser && !dbUser.isPro && !hasUKSub && dbUser.credits <= 0) {
       return NextResponse.json({ error: 'No credits remaining', paywall: true }, { status: 402 });
     }
 
