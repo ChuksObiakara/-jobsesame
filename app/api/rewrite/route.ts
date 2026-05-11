@@ -31,13 +31,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Rate limit exceeded. Try again in an hour.' }, { status: 429 });
     }
 
-    // Credit check via Prisma — also accepts active UK subscription
+    // Credit check — SA users check isPro + credits; UK users check ukSubscription
     const { prisma } = await import('@/app/lib/prisma');
-    const dbUser = await prisma.user.findUnique({
-      where: { clerkId: userId },
-      include: { ukSubscription: true },
-    });
-    const hasUKSub = dbUser?.ukSubscription?.active === true;
+    const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+    let hasUKSub = false;
+    try {
+      const ukSub = await prisma.uKSubscription.findUnique({ where: { userId: dbUser?.id ?? '' } });
+      hasUKSub = ukSub?.active === true;
+    } catch { /* UKSubscription table absent in this DB — safe to skip */ }
     if (dbUser && !dbUser.isPro && !hasUKSub && dbUser.credits <= 0) {
       return NextResponse.json({ error: 'No credits remaining', paywall: true }, { status: 402 });
     }

@@ -1094,8 +1094,6 @@ UK cover letters do not include salary expectations unless the job posting speci
 
 Jobsesame's AI cover letter generator creates fully British-formatted cover letters automatically — tailored to the specific UK job you are applying for, in the correct structure, tone, and spelling conventions. It uses the job description and your CV to write a targeted letter you can send immediately. Browse UK jobs and generate your cover letter at jobsesame.co.za/uk.`,
   },
-];
-
   {
     slug: 'how-to-find-a-job-in-south-africa-2025',
     title: 'How to Find a Job in South Africa in 2025 — The Complete Guide',
