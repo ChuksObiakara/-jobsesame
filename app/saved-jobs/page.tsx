@@ -13,6 +13,7 @@ interface Job {
   category: string;
   level: string;
   salary?: string;
+  type?: string;
 }
 
 export default function SavedJobsPage() {
