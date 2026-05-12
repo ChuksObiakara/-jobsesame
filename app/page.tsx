@@ -30,6 +30,7 @@ export default function Home() {
   const [cvAnalysisScore, setCvAnalysisScore] = useState(0);
   const [cvAnalysisWeaknesses, setCvAnalysisWeaknesses] = useState<string[]>([]);
   const [cvAnalysisDragOver, setCvAnalysisDragOver] = useState(false);
+  const [scrollPct, setScrollPct] = useState(0);
   const exitReadyRef = useRef(false);
 
   useEffect(() => {
@@ -49,6 +50,16 @@ export default function Home() {
   useEffect(() => {
     const t = setTimeout(() => setNotifVisible(true), 2800);
     return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const doc = document.documentElement;
+      const pct = (window.scrollY / (doc.scrollHeight - doc.clientHeight)) * 100;
+      setScrollPct(pct);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
@@ -202,6 +213,14 @@ export default function Home() {
         </div>
       )}
 
+      {/* DESKTOP STICKY SCROLL CTA */}
+      {!isMobile && !isSignedIn && scrollPct > 20 && (
+        <div style={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 150, background: 'rgba(4,12,6,0.96)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(200,230,0,0.12)', padding: '10px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', animation: 'fadeInUp 0.25s ease-out' }}>
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>8 out of 10 CVs never reach a human — fix yours in 30 seconds</span>
+          <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '9px 24px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>Start free →</a>
+        </div>
+      )}
+
       <NavSA home />
 
       {/* ── HERO ─────────────────────────────────────────────── */}
@@ -240,13 +259,22 @@ export default function Home() {
             </div>
 
             {/* CTAs */}
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 32 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
               <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: isMobile ? 14 : 15, fontWeight: 800, padding: isMobile ? '15px 28px' : '16px 36px', borderRadius: 8, textDecoration: 'none', display: 'inline-block', animation: 'ctaGlow 2.5s ease-in-out infinite', whiteSpace: 'nowrap' }}>
                 Start free — no card needed →
               </a>
               <button onClick={() => scrollTo('cv-check')} style={{ background: 'transparent', color: 'rgba(255,255,255,0.62)', fontSize: isMobile ? 14 : 15, fontWeight: 600, padding: isMobile ? '15px 20px' : '16px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                 Check my CV score →
               </button>
+            </div>
+            {/* Trust signals */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 18px', marginBottom: 28, alignItems: 'center' }}>
+              {['No credit card', '3 free rewrites', 'POPIA compliant', 'Cancel anytime'].map(t => (
+                <span key={t} style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="none" stroke="rgba(200,230,0,0.35)" strokeWidth="1"/><path d="M3 5l1.4 1.5L7 3.5" stroke="#C8E600" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  {t}
+                </span>
+              ))}
             </div>
 
             {/* Stats inline */}
@@ -691,8 +719,12 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div style={{ textAlign: 'center', marginTop: 18 }}>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.18)' }}>30-day money-back guarantee · No questions asked</span>
+          <div style={{ textAlign: 'center', marginTop: 24 }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+              {['🔒 SSL secured', '✓ No credit card to start', '↩ 30-day refund guarantee', '⚡ Instant access'].map(t => (
+                <span key={t} style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 99, padding: '5px 12px' }}>{t}</span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -730,6 +762,19 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ── FAQ CTA ─────────────────────────────────────────── */}
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '0 22px 56px' : '0 40px 56px' }}>
+        <div style={{ background: 'rgba(200,230,0,0.04)', border: '1px solid rgba(200,230,0,0.15)', borderRadius: 14, padding: isMobile ? '24px 20px' : '28px 36px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Still unsure? Check your CV score first — it&apos;s free.</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)' }}>No signup. No card. Just drop your CV and see exactly where you stand in 15 seconds.</div>
+          </div>
+          <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: 14, fontWeight: 800, padding: '13px 28px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            Try it free →
+          </a>
+        </div>
+      </div>
 
       {/* ── FINAL CTA ────────────────────────────────────────── */}
       <section style={{ padding: isMobile ? '88px 22px' : '120px 40px', borderTop: DIVIDE }}>

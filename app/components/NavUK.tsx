@@ -39,6 +39,11 @@ export default function NavUK({ home, planBadge }: Props) {
 
   return (
     <>
+      <style>{`
+        .nav-uk-link { transition: color 0.15s, background 0.15s !important; }
+        .nav-uk-link:hover { color: rgba(255,255,255,0.9) !important; background: rgba(255,255,255,0.04) !important; border-radius: 6px; }
+        .nav-uk-btn:hover { color: rgba(255,255,255,0.9) !important; }
+      `}</style>
       <nav style={{
         position: 'sticky', top: 0, zIndex: 200, height: 64,
         padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -59,13 +64,13 @@ export default function NavUK({ home, planBadge }: Props) {
         <div style={{ display: isMobile ? 'none' : 'flex', gap: 2, alignItems: 'center' }}>
           {home ? (
             [['Features', 'features'], ['Jobs', 'jobs'], ['Pricing', 'pricing'], ['FAQ', 'faq']].map(([l, id]) => (
-              <button key={id} onClick={() => scrollTo(id)} style={{ background: 'transparent', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', borderRadius: 6, cursor: 'pointer', transition: 'color 0.15s' }}>{l}</button>
+              <button key={id} onClick={() => scrollTo(id)} className="nav-uk-btn" style={{ background: 'transparent', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', borderRadius: 6, cursor: 'pointer' }}>{l}</button>
             ))
           ) : (
             <>
-              <a href="/uk/jobs" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', textDecoration: 'none', transition: 'color 0.15s' }}>UK Jobs</a>
-              <a href="/uk/dashboard" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', textDecoration: 'none', transition: 'color 0.15s' }}>Dashboard</a>
-              <a href="/uk/subscribe" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', textDecoration: 'none', transition: 'color 0.15s' }}>Subscribe</a>
+              <a href="/uk/jobs" className="nav-uk-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', textDecoration: 'none', display: 'inline-block' }}>UK Jobs</a>
+              <a href="/uk/dashboard" className="nav-uk-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', textDecoration: 'none', display: 'inline-block' }}>Dashboard</a>
+              <a href="/uk/subscribe" className="nav-uk-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', textDecoration: 'none', display: 'inline-block' }}>Upgrade</a>
             </>
           )}
         </div>

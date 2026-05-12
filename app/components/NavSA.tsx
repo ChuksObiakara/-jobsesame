@@ -56,6 +56,11 @@ export default function NavSA({ home }: Props) {
 
   return (
     <>
+      <style>{`
+        .nav-sa-link { transition: color 0.15s, background 0.15s !important; }
+        .nav-sa-link:hover { color: #FFFFFF !important; background: rgba(255,255,255,0.04) !important; }
+        .nav-sa-btn:hover { color: #FFFFFF !important; }
+      `}</style>
       <nav style={{
         position: 'sticky', top: 0, zIndex: 200, height: 64,
         padding: '0 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -81,19 +86,19 @@ export default function NavSA({ home }: Props) {
                 { label: 'Pricing', id: 'pricing' },
                 { label: 'FAQ', id: 'faq' },
               ].map(item => (
-                <button key={item.id} onClick={() => scrollTo(item.id)} style={{ background: 'transparent', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.52)', fontWeight: 500, padding: '8px 14px', borderRadius: 6, cursor: 'pointer', transition: 'color 0.15s' }}>
+                <button key={item.id} onClick={() => scrollTo(item.id)} className="nav-sa-btn" style={{ background: 'transparent', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.52)', fontWeight: 500, padding: '8px 14px', borderRadius: 6, cursor: 'pointer' }}>
                   {item.label}
                 </button>
               ))}
-              <a href="/recruiters" style={linkStyle('/recruiters')}>Recruiters</a>
-              <a href="/blog" style={linkStyle('/blog')}>Blog</a>
+              <a href="/recruiters" className="nav-sa-link" style={linkStyle('/recruiters')}>Recruiters</a>
+              <a href="/blog" className="nav-sa-link" style={linkStyle('/blog')}>Blog</a>
             </>
           ) : (
             <>
-              <a href="/jobs" style={linkStyle('/jobs')}>Find Jobs</a>
-              <a href="/optimise" style={linkStyle('/optimise')}>CV Optimiser</a>
-              <a href="/blog" style={linkStyle('/blog')}>Blog</a>
-              <a href="/recruiters" style={linkStyle('/recruiters')}>Recruiters</a>
+              <a href="/jobs" className="nav-sa-link" style={linkStyle('/jobs')}>Find Jobs</a>
+              <a href="/optimise" className="nav-sa-link" style={linkStyle('/optimise')}>CV Optimiser</a>
+              <a href="/blog" className="nav-sa-link" style={linkStyle('/blog')}>Blog</a>
+              <a href="/recruiters" className="nav-sa-link" style={linkStyle('/recruiters')}>Recruiters</a>
             </>
           )}
         </div>

@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import NavSA from '../components/NavSA';
+import FooterSA from '../components/FooterSA';
 
 export default function OptimisePage() {
   const [step, setStep] = useState<'input' | 'uploading' | 'rewriting' | 'result'>('input');
@@ -406,6 +407,7 @@ export default function OptimisePage() {
           </div>
         )}
       </div>
+      <FooterSA />
     </main>
   );
 }

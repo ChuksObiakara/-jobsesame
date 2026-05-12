@@ -783,80 +783,94 @@ export default function UKJobsPage() {
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isDesktop ? 'repeat(3,1fr)' : '1fr 1fr', gap: 14, animation: 'fadeIn 0.3s ease-out' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isDesktop ? 'repeat(3,1fr)' : '1fr 1fr', gap: 14, animation: 'fadeIn 0.3s ease-out', alignItems: 'stretch' }}>
                   {visible.map(job => {
                     const matchPct = calcMatch(job, cvData);
                     const badge = matchPct !== null ? matchBadge(matchPct) : null;
                     const applied = appliedIds.has(job.id);
                     const locked = !sub?.active;
                     return (
-                      <div key={job.id} id={`job-${job.id}`} className="job-card" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${applied ? 'rgba(200,230,0,0.3)' : locked ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                      <div key={job.id} id={`job-${job.id}`} className="job-card" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${applied ? 'rgba(200,230,0,0.3)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 14, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, position: 'relative', height: '100%', boxSizing: 'border-box' }}>
+                        {/* Header: avatar + title + badge */}
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(200,230,0,0.1)', color: '#C8E600', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, flexShrink: 0, border: '1px solid rgba(200,230,0,0.15)' }}>
+                            {job.company.charAt(0).toUpperCase()}
+                          </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 15, fontWeight: 700, color: '#FFFFFF', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{job.title}</div>
-                            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>{job.company}</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#FFFFFF', marginBottom: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.title}</div>
+                            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{job.company}</div>
                           </div>
                           {badge && (
-                            <div style={{ background: badge.bg, color: badge.color, fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            <div style={{ background: badge.bg, color: badge.color, fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99, whiteSpace: 'nowrap', flexShrink: 0, alignSelf: 'flex-start' }}>
                               {badge.label}
                             </div>
                           )}
                         </div>
 
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                        {/* Location + salary + source */}
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>📍 {job.location}</span>
                           {job.salary && <span style={{ fontSize: 12, color: '#C8E600', fontWeight: 700 }}>{job.salary}</span>}
                           <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.04)', borderRadius: 99, padding: '2px 7px' }}>{job.source}</span>
                         </div>
 
-                        {job.tags.length > 0 && (
-                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', filter: locked ? 'blur(4px)' : 'none', userSelect: locked ? 'none' : 'auto', pointerEvents: locked ? 'none' : 'auto' }}>
-                            {job.tags.slice(0, 3).map(tag => (
-                              <span key={tag} style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.04)', borderRadius: 6, padding: '2px 7px', fontWeight: 600 }}>{tag}</span>
-                            ))}
-                          </div>
+                        {/* Description excerpt — consistent 2-line height */}
+                        {job.description && (
+                          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', lineHeight: 1.55, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                            {job.description}
+                          </p>
                         )}
 
-                        <button
-                          onClick={() => setOptimiseJob(job)}
-                          style={{ width: '100%', background: 'rgba(200,230,0,0.07)', border: '1px solid rgba(200,230,0,0.2)', color: '#C8E600', fontSize: 12, fontWeight: 700, padding: '8px', borderRadius: 8, cursor: 'pointer', textAlign: 'center' }}
-                        >
-                          ✦ Optimise CV for this job
-                        </button>
+                        {/* Tags — always rendered to keep consistent height */}
+                        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', minHeight: 22, filter: locked ? 'blur(4px)' : 'none', userSelect: locked ? 'none' : 'auto', pointerEvents: locked ? 'none' : 'auto' }}>
+                          {job.tags.slice(0, 3).map(tag => (
+                            <span key={tag} style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: '2px 8px', fontWeight: 600 }}>{tag}</span>
+                          ))}
+                        </div>
 
-                        <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
-                          {locked ? (
-                            <button
-                              onClick={() => {
-                                try {
-                                  localStorage.setItem('jobsesame_uk_pending_job', JSON.stringify(job));
-                                } catch (err) { console.error('[uk/jobs] pending job save failed:', err); }
-                                router.push('/uk/subscribe');
-                              }}
-                              style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 700, padding: '10px 16px', borderRadius: 99, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
-                            >
-                              🔒 Subscribe to Apply
-                            </button>
-                          ) : applied ? (
-                            <div style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#C8E600', padding: '10px', background: 'rgba(200,230,0,0.08)', borderRadius: 99, border: '1px solid rgba(200,230,0,0.2)' }}>
-                              ✓ Applied
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setSelectedJob(job)}
-                              style={{ flex: 1, background: '#C8E600', color: '#052A14', fontSize: 13, fontWeight: 800, padding: '10px 16px', borderRadius: 99, border: 'none', cursor: 'pointer' }}
-                            >
-                              ⚡ Quick Apply
-                            </button>
-                          )}
-                          <a
-                            href={job.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, padding: '10px 14px', borderRadius: 99, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.08)', whiteSpace: 'nowrap' }}
+                        {/* Action buttons pushed to bottom */}
+                        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <button
+                            onClick={() => setOptimiseJob(job)}
+                            style={{ width: '100%', background: 'rgba(200,230,0,0.07)', border: '1px solid rgba(200,230,0,0.2)', color: '#C8E600', fontSize: 12, fontWeight: 700, padding: '8px', borderRadius: 8, cursor: 'pointer', textAlign: 'center' }}
                           >
-                            View →
-                          </a>
+                            ✦ Optimise CV for this job
+                          </button>
+
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            {locked ? (
+                              <button
+                                onClick={() => {
+                                  try {
+                                    localStorage.setItem('jobsesame_uk_pending_job', JSON.stringify(job));
+                                  } catch (err) { console.error('[uk/jobs] pending job save failed:', err); }
+                                  router.push('/uk/subscribe');
+                                }}
+                                style={{ flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 700, padding: '10px 16px', borderRadius: 99, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                              >
+                                🔒 Subscribe to Apply
+                              </button>
+                            ) : applied ? (
+                              <div style={{ flex: 1, textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#C8E600', padding: '10px', background: 'rgba(200,230,0,0.08)', borderRadius: 99, border: '1px solid rgba(200,230,0,0.2)' }}>
+                                ✓ Applied
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setSelectedJob(job)}
+                                style={{ flex: 1, background: '#C8E600', color: '#052A14', fontSize: 13, fontWeight: 800, padding: '10px 16px', borderRadius: 99, border: 'none', cursor: 'pointer' }}
+                              >
+                                {job.applyType === 'greenhouse' ? '⚡ Quick Apply' : 'Apply →'}
+                              </button>
+                            )}
+                            <a
+                              href={job.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', fontSize: 13, fontWeight: 600, padding: '10px 14px', borderRadius: 99, textDecoration: 'none', border: '1px solid rgba(255,255,255,0.08)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}
+                            >
+                              View →
+                            </a>
+                          </div>
                         </div>
                       </div>
                     );
