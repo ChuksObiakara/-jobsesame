@@ -1,7 +1,13 @@
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const auth = req.headers.get('authorization');
+  if (!adminPassword || auth !== `Bearer ${adminPassword}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   const fromEnv = process.env.RESEND_FROM_EMAIL;
   const testRecipient = 'chuksobiakara@gmail.com';

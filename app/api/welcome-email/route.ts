@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { Resend } from 'resend';
 
 function buildReferralLink(userId: string): string {
@@ -203,6 +204,13 @@ function buildEmailHtml(name: string, email: string, userId: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const { userId: clerkUserId } = await auth();
+  const internalSecret = req.headers.get('x-internal-secret');
+  const configuredSecret = process.env.INTERNAL_API_SECRET;
+  if (!clerkUserId && (!configuredSecret || internalSecret !== configuredSecret)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { email, name, userId } = await req.json();
 

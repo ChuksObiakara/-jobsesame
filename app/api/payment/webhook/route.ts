@@ -6,7 +6,12 @@ export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
     const signature = request.headers.get('x-paystack-signature') || '';
-    const secret = process.env.PAYSTACK_SECRET_KEY || '';
+    const secret = process.env.PAYSTACK_SECRET_KEY;
+
+    if (!secret) {
+      console.error('Webhook: PAYSTACK_SECRET_KEY not configured');
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
+    }
 
     // Verify Paystack webhook signature
     const hash = crypto.createHmac('sha512', secret).update(rawBody).digest('hex');
