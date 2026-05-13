@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     const firstName = (name || email.split('@')[0]).split(' ')[0];
     const score = Math.round(atsScore || 0);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co.za';
-    const unsubToken = Buffer.from(JSON.stringify({ userId: userId || '', email, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64');
+    const unsubToken = Buffer.from(JSON.stringify({ userId: userId || '', email, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64url');
     const unsubUrl = `${appUrl}/unsubscribe?token=${unsubToken}`;
     const referralCode = userId ? Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase() : 'SHARE';
     const referralLink = `${appUrl}?ref=${referralCode}`;
@@ -121,25 +121,14 @@ ${weakHtml ? `<tr><td style="background:#0D3A1A;padding:28px 36px;">
 </table></td></tr></table>
 </body></html>`;
 
-    const fromAddress = process.env.RESEND_FROM_EMAIL
-      ? `Jobsesame <${process.env.RESEND_FROM_EMAIL}>`
-      : 'Jobsesame <noreply@jobsesame.co.za>';
-    const emailOpts = {
+    const fromAddress = `Jobsesame <${process.env.EMAIL_FROM || 'onboarding@resend.dev'}>`;
+    const { error } = await resend.emails.send({
+      from: fromAddress,
       replyTo: 'support@jobsesame.co.za',
       to: email,
       subject: 'Your CV score is ready — here is what we found',
       html,
-    };
-
-    let { error } = await resend.emails.send({ from: fromAddress, ...emailOpts });
-
-    // Domain not yet verified — retry with Resend shared domain fallback
-    if (error && fromAddress !== 'Jobsesame <onboarding@resend.dev>') {
-      ({ error } = await resend.emails.send({
-        from: 'Jobsesame <onboarding@resend.dev>',
-        ...emailOpts,
-      }));
-    }
+    });
 
     if (error) {
       console.error('Welcome email error:', JSON.stringify(error));

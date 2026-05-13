@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token');
   if (token) {
     try {
-      const payload = JSON.parse(Buffer.from(token, 'base64').toString('utf8'));
+      const payload = JSON.parse(Buffer.from(token, 'base64url').toString('utf8'));
       if (!payload.email || !payload.exp || Date.now() > payload.exp) {
         return NextResponse.json({ error: 'Invalid or expired unsubscribe link' }, { status: 400 });
       }

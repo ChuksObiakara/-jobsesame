@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const firstName = (name || email.split('@')[0]).split(' ')[0];
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co.za';
-    const unsubToken = Buffer.from(JSON.stringify({ userId: dbUser?.clerkId || '', email, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64');
+    const unsubToken = Buffer.from(JSON.stringify({ userId: dbUser?.clerkId || '', email, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64url');
     const unsubUrl = `${appUrl}/unsubscribe?token=${unsubToken}`;
     const isZAR = !currency || currency === 'ZAR';
     const price = isZAR ? 'R249/month' : '$14/month';
@@ -75,25 +75,14 @@ export async function POST(req: NextRequest) {
 </table></td></tr></table>
 </body></html>`;
 
-    const fromAddress = process.env.RESEND_FROM_EMAIL
-      ? `Jobsesame <${process.env.RESEND_FROM_EMAIL}>`
-      : 'Jobsesame <noreply@jobsesame.co.za>';
-    const emailOpts = {
+    const fromAddress = `Jobsesame <${process.env.EMAIL_FROM || 'onboarding@resend.dev'}>`;
+    const { error } = await resend.emails.send({
+      from: fromAddress,
       replyTo: 'support@jobsesame.co.za',
       to: email,
       subject: 'You have 1 free application left — upgrade before it runs out',
       html,
-    };
-
-    let { error } = await resend.emails.send({ from: fromAddress, ...emailOpts });
-
-    // Domain not yet verified — retry with Resend shared domain fallback
-    if (error && fromAddress !== 'Jobsesame <onboarding@resend.dev>') {
-      ({ error } = await resend.emails.send({
-        from: 'Jobsesame <onboarding@resend.dev>',
-        ...emailOpts,
-      }));
-    }
+    });
 
     if (error) {
       console.error('Upgrade-nudge email error:', JSON.stringify(error));
