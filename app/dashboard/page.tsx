@@ -146,9 +146,9 @@ export default function Dashboard() {
           if (stored) try { setApplications(JSON.parse(stored)); } catch (err) { console.error('[dashboard] applications parse failed:', err); }
         })
         .finally(() => setLoadingApplications(false));
-      // Fetch CV from database if not in localStorage
+      // Fetch CV from database — DB is primary source, localStorage is cache
       fetch('/api/user/cv').then(r => r.json()).then(d => {
-        if (d.cv && !localStorage.getItem('jobsesame_cv_data')) {
+        if (d.cv) {
           const cv = { ...d.cv, experience_years: d.cv.experienceYears };
           setCvData(cv);
           localStorage.setItem('jobsesame_cv_data', JSON.stringify(cv));

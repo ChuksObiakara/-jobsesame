@@ -215,12 +215,25 @@ export default function UKDashboard() {
       .catch(() => setAppsLoading(false));
   }, [isSignedIn]);
 
+  // Fast cache: show localStorage immediately while DB loads
   useEffect(() => {
     try {
       const s = localStorage.getItem('jobsesame_cv_data');
       if (s) setCvData(JSON.parse(s));
-    } catch (err) { console.error('[uk/dashboard] cv parse failed:', err); }
+    } catch (err) { console.error('[uk/dashboard] cv local parse failed:', err); }
   }, []);
+
+  // DB is primary — override localStorage cache once auth resolves
+  useEffect(() => {
+    if (!isSignedIn) return;
+    fetch('/api/user/cv').then(r => r.json()).then(d => {
+      if (d.cv) {
+        const cv = { ...d.cv, experience_years: d.cv.experienceYears };
+        setCvData(cv);
+        localStorage.setItem('jobsesame_cv_data', JSON.stringify(cv));
+      }
+    }).catch((err) => console.error('[uk/dashboard] cv fetch failed:', err));
+  }, [isSignedIn]);
 
   // Fetch UK jobs for matching whenever we have CV data
   useEffect(() => {
@@ -293,6 +306,12 @@ export default function UKDashboard() {
     const parsed = apiData?.cvData || apiData;
     setCvData(parsed);
     localStorage.setItem('jobsesame_cv_data', JSON.stringify(parsed));
+    // Persist to DB — DB is primary source
+    fetch('/api/user/cv', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cvData: parsed }),
+    }).catch((err) => console.error('[uk/dashboard] cv db save failed:', err));
   };
 
   const rewriteCV = async () => {
