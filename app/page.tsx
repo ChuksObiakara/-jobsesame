@@ -4,6 +4,7 @@ import { useAuth } from '@clerk/nextjs';
 import Image from 'next/image';
 import NavSA from './components/NavSA';
 import FooterSA from './components/FooterSA';
+import { JOB_BOARD_ENABLED } from './lib/flags';
 
 const PHOTOS = [
   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face',
@@ -146,11 +147,11 @@ export default function Home() {
     { q: "How does the AI rewrite my CV?", a: "You upload your CV once. When you click Quick Apply on any job our AI reads the full job description and rewrites your CV in 30 seconds to match exactly what that employer is looking for — adding the right keywords, restructuring your experience, and optimising for ATS systems." },
     { q: "What is an ATS system?", a: "ATS stands for Applicant Tracking System. It is software that most companies use to automatically screen CVs before a human ever sees them. 8 out of 10 CVs are rejected by ATS. Jobsesame rewrites your CV to pass these systems automatically." },
     { q: "Will my real experience and company names be changed?", a: "Never. We only rewrite how your experience is described — not the facts. Your real company names, job titles, dates and qualifications are always preserved. We just make them sound better and add the right keywords." },
-    { q: "What jobs does Jobsesame have?", a: "We aggregate jobs from multiple sources worldwide including remote jobs, relocation opportunities to London, Dubai, Toronto and Singapore, teaching jobs in Asia, and local jobs worldwide. New jobs are added daily." },
-    { q: "How is Jobsesame different from LinkedIn or Indeed?", a: "LinkedIn and Indeed are job boards — they just show you jobs. Jobsesame is an AI job application assistant. We help you actually get the job by rewriting your CV, applying automatically, and tracking everything. We also show jobs from multiple platforms in one place." },
+    { q: "What jobs does Jobsesame have?", a: "We aggregate jobs from multiple sources worldwide including remote jobs, relocation opportunities to London, Dubai, Toronto and Singapore, teaching jobs in Asia, and local jobs worldwide. New jobs are added daily.", jobBoardOnly: true },
+    { q: "How is Jobsesame different from LinkedIn or Indeed?", a: "LinkedIn and Indeed are job boards — they just show you jobs. Jobsesame is an AI job application assistant. We help you actually get the job by rewriting your CV, applying automatically, and tracking everything. We also show jobs from multiple platforms in one place.", jobBoardOnly: true },
     { q: "Is my CV data safe?", a: "Yes. Your CV is processed securely and never sold to third parties. We use it only to help you apply for jobs. You can delete your data at any time." },
-    { q: "Does Quick Apply actually submit my application?", a: "For jobs that accept direct applications yes — we submit automatically. For jobs on platforms like LinkedIn that require a login we download your rewritten CV and open the employer portal so you can upload it in one click." },
-  ];
+    { q: "Does Quick Apply actually submit my application?", a: "For jobs that accept direct applications yes — we submit automatically. For jobs on platforms like LinkedIn that require a login we download your rewritten CV and open the employer portal so you can upload it in one click.", jobBoardOnly: true },
+  ].filter(f => JOB_BOARD_ENABLED || !f.jobBoardOnly);
 
   const filteredFaqs = faqSearch
     ? faqs.filter(f => f.q.toLowerCase().includes(faqSearch.toLowerCase()) || f.a.toLowerCase().includes(faqSearch.toLowerCase()))
@@ -692,7 +693,7 @@ export default function Home() {
 
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 14, alignItems: 'start' }}>
             {[
-              { name: 'Free', price: 'R0', usdPrice: '$0', per: ' forever', features: ['3 Quick Apply credits', 'AI CV analysis', 'ATS score check', 'Browse all live jobs', 'No card needed'], popular: false, btn: 'Get started free' },
+              { name: 'Free', price: 'R0', usdPrice: '$0', per: ' forever', features: ['3 Quick Apply credits', 'AI CV analysis', 'ATS score check', ...(JOB_BOARD_ENABLED ? ['Browse all live jobs'] : []), 'No card needed'], popular: false, btn: 'Get started free' },
               { name: 'Credits', price: 'R99', usdPrice: '$5', per: ' per pack', features: ['10 Quick Apply credits', 'Credits never expire', 'AI CV rewrite per job', 'Cover letter generation', 'All job categories'], popular: false, btn: 'Buy credits' },
               { name: 'Pro', price: 'R249', usdPrice: '$14', per: ' /month', features: ['Unlimited Quick Apply', 'Unlimited CV rewrites', 'Priority support', 'Cover letters included', 'Application tracking'], popular: true, btn: 'Go Pro' },
             ].map(p => (

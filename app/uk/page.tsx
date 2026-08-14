@@ -4,6 +4,7 @@ import { useAuth } from '@clerk/nextjs';
 import Image from 'next/image';
 import NavUK from '../components/NavUK';
 import FooterUK from '../components/FooterUK';
+import { JOB_BOARD_ENABLED } from '../lib/flags';
 
 interface UKJob {
   id: string; title: string; company: string; location: string;
@@ -68,13 +69,13 @@ const SALARIES = [
 
 const FAQS = [
   { q: 'Does this work for people already living in the UK?', a: 'Absolutely. The majority of our UK users are already in the UK and struggling to get callbacks. The problem is rarely your experience — it\'s that your CV isn\'t passing ATS filters. We fix that in 30 seconds.' },
-  { q: 'Does auto-apply work for all UK employers?', a: 'For companies using Greenhouse-powered portals, applications are submitted automatically. For all other roles, we open the employer\'s application page with your AI-rewritten CV ready — you complete the submission in under 30 seconds. No blank forms, no copy-paste.' },
-  { q: 'How is Jobsesame different from Reed, Indeed, or LinkedIn?', a: 'Reed and Indeed are job boards — they show you listings. LinkedIn charges £30/month just for basic features. None of them rewrite your CV per role or help you apply faster. Jobsesame rewrites your CV for every role in 30 seconds and helps you apply in under a minute.' },
+  { q: 'Does auto-apply work for all UK employers?', a: 'For companies using Greenhouse-powered portals, applications are submitted automatically. For all other roles, we open the employer\'s application page with your AI-rewritten CV ready — you complete the submission in under 30 seconds. No blank forms, no copy-paste.', jobBoardOnly: true },
+  { q: 'How is Jobsesame different from Reed, Indeed, or LinkedIn?', a: 'Reed and Indeed are job boards — they show you listings. LinkedIn charges £30/month just for basic features. None of them rewrite your CV per role or help you apply faster. Jobsesame rewrites your CV for every role in 30 seconds and helps you apply in under a minute.', jobBoardOnly: true },
   { q: 'What exactly does the AI change in my CV?', a: 'It adds the keywords from the job description, restructures your bullet points to match what that employer is looking for, and rewrites your profile statement. Your facts — job titles, company names, dates, qualifications — are never changed or fabricated.' },
-  { q: 'How many applications can I send?', a: 'Free plan: browse and save jobs, no applications. Credits (£10 one-time): 20 AI-tailored applications. Pro (£21/month): unlimited applications with priority job matching and full dashboard.' },
+  { q: 'How many applications can I send?', a: 'Free plan: browse and save jobs, no applications. Credits (£10 one-time): 20 AI-tailored applications. Pro (£21/month): unlimited applications with priority job matching and full dashboard.', jobBoardOnly: true },
   { q: 'Is my CV data safe?', a: 'Yes. We are fully GDPR compliant for UK users. Your CV and personal data are processed securely, never sold to third parties, and you can request full data deletion at any time from your account.' },
   { q: 'Will employers know the CV was AI-written?', a: 'No. The AI rewrites your real experience in your own voice — it never fabricates anything. It ensures the right keywords are present and your achievements are framed for maximum impact. Thousands of UK professionals use AI tools to polish their CVs.' },
-  { q: 'Can I apply from outside the UK?', a: 'Yes. You do not need to be in the UK to apply. We handle the application on your behalf. Just make sure your CV mentions your visa status or right-to-work eligibility where relevant.' },
+  { q: 'Can I apply from outside the UK?', a: 'Yes. You do not need to be in the UK to apply. We handle the application on your behalf. Just make sure your CV mentions your visa status or right-to-work eligibility where relevant.', jobBoardOnly: true },
 ];
 
 const PHOTOS = [
@@ -551,7 +552,7 @@ export default function UKPage() {
       </section>
 
       {/* ── LIVE JOBS ─────────────────────────────────────────────────── */}
-      <section id="jobs" style={{ padding: isMobile ? '60px 22px' : '88px 40px', maxWidth:1200, margin:'0 auto' }}>
+      {JOB_BOARD_ENABLED && <section id="jobs" style={{ padding: isMobile ? '60px 22px' : '88px 40px', maxWidth:1200, margin:'0 auto' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap:16, marginBottom: isMobile ? 28 : 40 }}>
           <div>
             <p style={{ fontSize:11, fontWeight:700, color:'rgba(200,230,0,.6)', letterSpacing:'2px', textTransform:'uppercase', marginBottom:10 }}>Live jobs</p>
@@ -596,7 +597,7 @@ export default function UKPage() {
             See all UK jobs →
           </a>
         </div>
-      </section>
+      </section>}
 
       {/* ── SALARY INTELLIGENCE ──────────────────────────────────────── */}
       <section id="salaries" style={{ padding: isMobile ? '56px 22px' : '80px 40px', borderTop:DIVIDE, borderBottom:DIVIDE }}>
@@ -687,7 +688,7 @@ export default function UKPage() {
         <p style={{ fontSize:11, fontWeight:700, color:'rgba(200,230,0,.6)', letterSpacing:'2px', textTransform:'uppercase', marginBottom:14 }}>FAQ</p>
         <h2 style={{ fontSize: isMobile ? 26 : 38, fontWeight:800, color:'#fff', letterSpacing:-.8, marginBottom: isMobile ? 32 : 48 }}>Questions answered</h2>
         <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
-          {FAQS.map((faq, i) => (
+          {FAQS.filter(f => JOB_BOARD_ENABLED || !f.jobBoardOnly).map((faq, i) => (
             <div key={i} style={{ borderBottom:'1px solid rgba(255,255,255,.05)' }}>
               <button className="faq-btn" onClick={() => setOpenFaq(openFaq === i ? null : i)} style={{ width:'100%', background:'transparent', border:'none', padding:'18px 0', display:'flex', justifyContent:'space-between', alignItems:'center', gap:16, cursor:'pointer', textAlign:'left', borderRadius:4 }}>
                 <span style={{ fontSize: isMobile ? 14 : 15, fontWeight:700, color:'rgba(255,255,255,.88)', lineHeight:1.4 }}>{faq.q}</span>

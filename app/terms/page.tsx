@@ -1,3 +1,5 @@
+import { JOB_BOARD_ENABLED } from '../lib/flags';
+
 export default function TermsPage() {
   const nav = (
     <nav style={{ background: "#052A14", padding: "0 24px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #0D4A20", position: "sticky", top: 0, zIndex: 100 }}>
@@ -15,7 +17,7 @@ export default function TermsPage() {
         </span>
       </a>
       <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-        <a href="/jobs" style={{ fontSize: 13, color: "#A8D8B0", fontWeight: 500, textDecoration: "none" }}>Find jobs</a>
+        {JOB_BOARD_ENABLED && <a href="/jobs" style={{ fontSize: 13, color: "#A8D8B0", fontWeight: 500, textDecoration: "none" }}>Find jobs</a>}
         <a href="/dashboard" style={{ fontSize: 13, color: "#A8D8B0", fontWeight: 500, textDecoration: "none" }}>Dashboard</a>
       </div>
     </nav>

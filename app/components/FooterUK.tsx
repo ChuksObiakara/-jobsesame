@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { JOB_BOARD_ENABLED } from '../lib/flags';
 
 export default function FooterUK() {
   const [isMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
@@ -27,8 +28,8 @@ export default function FooterUK() {
             <a href="mailto:uk@jobsesame.co.za" className="footer-uk-link" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none', transition: 'color 0.15s' }}>uk@jobsesame.co.za</a>
           </div>
           {[
-            { h: 'Product', links: [['UK Jobs', '/uk/jobs'], ['Pricing', '/uk#pricing'], ['Dashboard', '/uk/dashboard'], ['CV Optimiser', '/optimise']] },
-            { h: 'Company', links: [['About', '/about'], ['Blog', '/blog'], ['Recruiters', '/recruiters'], ['Contact', 'mailto:uk@jobsesame.co.za']] },
+            { h: 'Product', links: [['UK Jobs', '/uk/jobs'], ['Pricing', '/uk#pricing'], ['Dashboard', '/uk/dashboard'], ['CV Optimiser', '/optimise']].filter(([, h]) => JOB_BOARD_ENABLED || h !== '/uk/jobs') },
+            { h: 'Company', links: [['About', '/about'], ['Blog', '/blog'], ['Recruiters', '/recruiters'], ['Contact', 'mailto:uk@jobsesame.co.za']].filter(([, h]) => JOB_BOARD_ENABLED || h !== '/recruiters') },
             { h: 'Legal',   links: [['Privacy Policy', '/privacy'], ['Terms', '/terms'], ['Refund Policy', '/refund'], ['Delete Data', '/delete-data']] },
           ].map(col => (
             <div key={col.h}>

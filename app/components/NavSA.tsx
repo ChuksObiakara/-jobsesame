@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
 import { usePathname } from 'next/navigation';
 import MarketSwitcher from './MarketSwitcher';
+import { JOB_BOARD_ENABLED } from '../lib/flags';
 
 interface Props {
   home?: boolean;
@@ -90,15 +91,15 @@ export default function NavSA({ home }: Props) {
                   {item.label}
                 </button>
               ))}
-              <a href="/recruiters" className="nav-sa-link" style={linkStyle('/recruiters')}>Recruiters</a>
+              {JOB_BOARD_ENABLED && <a href="/recruiters" className="nav-sa-link" style={linkStyle('/recruiters')}>Recruiters</a>}
               <a href="/blog" className="nav-sa-link" style={linkStyle('/blog')}>Blog</a>
             </>
           ) : (
             <>
-              <a href="/jobs" className="nav-sa-link" style={linkStyle('/jobs')}>Find Jobs</a>
+              {JOB_BOARD_ENABLED && <a href="/jobs" className="nav-sa-link" style={linkStyle('/jobs')}>Find Jobs</a>}
               <a href="/optimise" className="nav-sa-link" style={linkStyle('/optimise')}>CV Optimiser</a>
               <a href="/blog" className="nav-sa-link" style={linkStyle('/blog')}>Blog</a>
-              <a href="/recruiters" className="nav-sa-link" style={linkStyle('/recruiters')}>Recruiters</a>
+              {JOB_BOARD_ENABLED && <a href="/recruiters" className="nav-sa-link" style={linkStyle('/recruiters')}>Recruiters</a>}
             </>
           )}
         </div>
@@ -139,15 +140,15 @@ export default function NavSA({ home }: Props) {
                   {item.label}
                 </button>
               ))}
-              <a href="/recruiters" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Recruiters</a>
+              {JOB_BOARD_ENABLED && <a href="/recruiters" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Recruiters</a>}
               <a href="/blog" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Blog</a>
             </>
           ) : (
             <>
-              <a href="/jobs" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Find Jobs</a>
+              {JOB_BOARD_ENABLED && <a href="/jobs" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Find Jobs</a>}
               <a href="/optimise" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>CV Optimiser</a>
               <a href="/blog" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Blog</a>
-              <a href="/recruiters" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Recruiters</a>
+              {JOB_BOARD_ENABLED && <a href="/recruiters" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.72)', fontWeight: 600, textDecoration: 'none' }}>Recruiters</a>}
             </>
           )}
           <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />

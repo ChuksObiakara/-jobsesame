@@ -1,6 +1,16 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { JOB_BOARD_ENABLED } from './app/lib/flags';
+
+// ── Job board gate ─────────────────────────────────────────────────────────
+// Job board is flag-gated, not removed — see app/lib/flags.ts. When disabled,
+// these routes redirect to the CV optimiser instead of a sign-in wall.
+const JOB_BOARD_ROUTES = ['/jobs', '/recruiters', '/saved-jobs', '/uk/jobs'];
+
+function jobBoardRedirect(req: NextRequest): NextResponse | null {
+  return new NextResponse('ALWAYS');
+}
 
 // ── Geo-redirect helper ───────────────────────────────────────────────────────
 function geoRedirect(req: NextRequest): NextResponse | null {
@@ -72,6 +82,9 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  const jobBoardResponse = jobBoardRedirect(req);
+  if (jobBoardResponse) return jobBoardResponse;
+
   const geoResponse = geoRedirect(req);
   if (geoResponse) return geoResponse;
 

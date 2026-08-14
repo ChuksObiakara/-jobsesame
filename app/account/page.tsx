@@ -2,6 +2,7 @@
 import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { JOB_BOARD_ENABLED } from '../lib/flags';
 
 export default function AccountPage() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -128,7 +129,7 @@ export default function AccountPage() {
         </a>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
           <a href="/dashboard" style={{ fontSize: isMobile ? 12 : 13, color: '#A8D8B0', fontWeight: 600, textDecoration: 'none', padding: '8px 12px', whiteSpace: 'nowrap' }}>Dashboard</a>
-          {!isMobile && <a href="/jobs" style={{ fontSize: 13, color: '#A8D8B0', fontWeight: 500, textDecoration: 'none', padding: '8px 12px', whiteSpace: 'nowrap' }}>Find Jobs</a>}
+          {!isMobile && JOB_BOARD_ENABLED && <a href="/jobs" style={{ fontSize: 13, color: '#A8D8B0', fontWeight: 500, textDecoration: 'none', padding: '8px 12px', whiteSpace: 'nowrap' }}>Find Jobs</a>}
           <a href="/account" style={{ fontSize: isMobile ? 12 : 13, color: '#C8E600', fontWeight: 700, textDecoration: 'none', padding: '8px 12px', borderBottom: '2px solid #C8E600', whiteSpace: 'nowrap' }}>My Account</a>
           <UserButton />
         </div>

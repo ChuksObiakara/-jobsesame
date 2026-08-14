@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
 import MarketSwitcher from './MarketSwitcher';
+import { JOB_BOARD_ENABLED } from '../lib/flags';
 
 interface Props {
   home?: boolean;
@@ -63,12 +64,12 @@ export default function NavUK({ home, planBadge }: Props) {
         {/* Desktop nav links */}
         <div style={{ display: isMobile ? 'none' : 'flex', gap: 2, alignItems: 'center' }}>
           {home ? (
-            [['Features', 'features'], ['Jobs', 'jobs'], ['Pricing', 'pricing'], ['FAQ', 'faq']].map(([l, id]) => (
+            [['Features', 'features'], ['Jobs', 'jobs'], ['Pricing', 'pricing'], ['FAQ', 'faq']].filter(([l]) => JOB_BOARD_ENABLED || l !== 'Jobs').map(([l, id]) => (
               <button key={id} onClick={() => scrollTo(id)} className="nav-uk-btn" style={{ background: 'transparent', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', borderRadius: 6, cursor: 'pointer' }}>{l}</button>
             ))
           ) : (
             <>
-              <a href="/uk/jobs" className="nav-uk-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', textDecoration: 'none', display: 'inline-block' }}>UK Jobs</a>
+              {JOB_BOARD_ENABLED && <a href="/uk/jobs" className="nav-uk-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', textDecoration: 'none', display: 'inline-block' }}>UK Jobs</a>}
               <a href="/uk/dashboard" className="nav-uk-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', textDecoration: 'none', display: 'inline-block' }}>Dashboard</a>
               <a href="/uk/subscribe" className="nav-uk-link" style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500, padding: '8px 12px', textDecoration: 'none', display: 'inline-block' }}>Upgrade</a>
             </>
@@ -105,12 +106,12 @@ export default function NavUK({ home, planBadge }: Props) {
       {isMobile && menuOpen && (
         <div style={{ position: 'fixed', top: 64, left: 0, right: 0, background: 'rgba(6,18,8,0.99)', backdropFilter: 'blur(20px)', zIndex: 199, borderTop: '1px solid rgba(255,255,255,0.05)', padding: '24px 24px 32px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {home ? (
-            [['Features', 'features'], ['Jobs', 'jobs'], ['Pricing', 'pricing'], ['FAQ', 'faq']].map(([l, id]) => (
+            [['Features', 'features'], ['Jobs', 'jobs'], ['Pricing', 'pricing'], ['FAQ', 'faq']].filter(([l]) => JOB_BOARD_ENABLED || l !== 'Jobs').map(([l, id]) => (
               <button key={id} onClick={() => scrollTo(id)} style={{ background: 'transparent', border: 'none', fontSize: 16, color: 'rgba(255,255,255,0.7)', fontWeight: 600, textAlign: 'left', cursor: 'pointer', padding: '4px 0' }}>{l}</button>
             ))
           ) : (
             <>
-              <a href="/uk/jobs" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', fontWeight: 600, textDecoration: 'none' }}>UK Jobs</a>
+              {JOB_BOARD_ENABLED && <a href="/uk/jobs" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', fontWeight: 600, textDecoration: 'none' }}>UK Jobs</a>}
               <a href="/uk/dashboard" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', fontWeight: 600, textDecoration: 'none' }}>Dashboard</a>
               <a href="/uk/subscribe" onClick={() => setMenuOpen(false)} style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', fontWeight: 600, textDecoration: 'none' }}>Subscribe</a>
             </>

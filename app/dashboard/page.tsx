@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
 import CoverLetter from '../components/CoverLetter';
 import MarketSwitcher from '../components/MarketSwitcher';
+import { JOB_BOARD_ENABLED } from '../lib/flags';
 
 const SALARY_DATA: Record<string, { min: number; max: number }> = {
   'software engineer': { min: 480000, max: 720000 },
@@ -965,7 +966,7 @@ export default function Dashboard() {
           <button style={navBtnStyle('cv')} onClick={()=>setActiveSection('cv')}>My CV</button>
           {!isMobile && <button style={navBtnStyle('referral')} onClick={()=>setActiveSection('referral')}>Free rewrites</button>}
           <button style={navBtnStyle('applications')} onClick={()=>setActiveSection('applications')}>Applications</button>
-          {!isMobile && <a href="/jobs" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>Find Jobs</a>}
+          {!isMobile && JOB_BOARD_ENABLED && <a href="/jobs" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>Find Jobs</a>}
           {!isMobile && <a href="/optimise" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>CV Optimiser</a>}
           <a href="/account" style={{fontSize:isMobile?12:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}} title="My Account">
             {isMobile ? '⚙' : 'My Account'}
@@ -986,9 +987,9 @@ export default function Dashboard() {
               </h1>
               <p style={{fontSize:13,color:"#5A9A6A"}}>{today}</p>
             </div>
-            <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 22px",borderRadius:99,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
+            {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 22px",borderRadius:99,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
               Browse Jobs →
-            </a>
+            </a>}
           </div>
 
           {/* Quick stats row */}
@@ -1121,7 +1122,7 @@ export default function Dashboard() {
             </div>
 
             {/* D. Recommended Jobs */}
-            <div>
+            {JOB_BOARD_ENABLED && <div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
                 <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF"}}>
                   {cvData
@@ -1199,7 +1200,7 @@ export default function Dashboard() {
                   )}
                 </div>
               )}
-            </div>
+            </div>}
 
             {/* E. Quick Actions */}
             <div>
@@ -1212,7 +1213,7 @@ export default function Dashboard() {
                   {label:"🎁 Free rewrites",onClick:()=>setActiveSection('referral')},
                   {label:"📄 Edit CV",onClick:()=>setActiveSection('cv')},
                   {label:"⚡ CV Optimiser",href:"/optimise"},
-                ].map(a=>(
+                ].filter(a=>JOB_BOARD_ENABLED || (a.href!=="/jobs" && a.href!=="/saved-jobs")).map(a=>(
                   a.href
                     ? <a key={a.label} href={a.href} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:10,padding:"10px 18px",fontSize:13,color:"#A8D8B0",fontWeight:600,textDecoration:"none"}}>{a.label}</a>
                     : <button key={a.label} onClick={a.onClick} style={{background:"#072E16",borderRadius:10,padding:"10px 18px",fontSize:13,color:"#A8D8B0",fontWeight:600,cursor:"pointer",border:"1.5px solid #1A4A2A"} as React.CSSProperties}>{a.label}</button>
@@ -1376,7 +1377,7 @@ export default function Dashboard() {
                     </div>
                     <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                       <button onClick={()=>{setCvData(null);localStorage.removeItem('jobsesame_cv_data');}} style={{background:"transparent",color:"#5A9A6A",fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Upload new CV</button>
-                      <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"7px 16px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Find matching jobs</a>
+                      {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"7px 16px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Find matching jobs</a>}
                     </div>
                   </div>
                   {cvData.summary && <p style={{fontSize:13,color:"#A8D8B0",lineHeight:1.7,marginBottom:20,fontStyle:"italic"}}>&ldquo;{cvData.summary}&rdquo;</p>}
@@ -1533,8 +1534,8 @@ export default function Dashboard() {
               <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:48,textAlign:"center"}}>
                 <div style={{fontSize:40,marginBottom:16}}>📋</div>
                 <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>No applications yet</h3>
-                <p style={{fontSize:13,color:"#5A9A6A",marginBottom:24}}>Use Quick Apply on any job and it will appear here automatically.</p>
-                <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Browse jobs</a>
+                <p style={{fontSize:13,color:"#5A9A6A",marginBottom:24}}>{JOB_BOARD_ENABLED ? "Use Quick Apply on any job and it will appear here automatically." : "Applications you submit will appear here automatically."}</p>
+                {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Browse jobs</a>}
               </div>
             ) : (
               <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,overflow:"hidden"}}>

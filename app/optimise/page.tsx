@@ -398,7 +398,7 @@ export default function OptimisePage() {
             <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,marginTop:16,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
               <div>
                 <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Want unlimited CV optimisations?</div>
-                <div style={{fontSize:12,color:"#5A9A6A"}}>Go Pro for R370/month — unlimited optimisations, Quick Apply, auto-apply and more.</div>
+                <div style={{fontSize:12,color:"#5A9A6A"}}>Go Pro for R249/month — unlimited optimisations, Quick Apply, auto-apply and more.</div>
               </div>
               <a href="/sign-up" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,textDecoration:"none",whiteSpace:"nowrap"}}>
                 Unlock Pro
