@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
 import { usePathname } from 'next/navigation';
-import MarketSwitcher from './MarketSwitcher';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
 
 interface Props {
@@ -106,7 +105,6 @@ export default function NavSA({ home }: Props) {
 
         {/* Right controls */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <MarketSwitcher compact={isMobile} />
           {!isMobile && !isSignedIn && (
             <a href="/sign-in" style={{ fontSize: 13, color: 'rgba(255,255,255,0.48)', fontWeight: 500, textDecoration: 'none', padding: '8px 12px' }}>Sign in</a>
           )}

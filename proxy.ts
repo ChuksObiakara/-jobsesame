@@ -18,36 +18,14 @@ function jobBoardRedirect(req: NextRequest): NextResponse | null {
   return null;
 }
 
-// ── Geo-redirect helper ───────────────────────────────────────────────────────
-function geoRedirect(req: NextRequest): NextResponse | null {
-  const { pathname } = req.nextUrl;
-
-  // Never touch API routes, _next, or static assets
-  if (
-    pathname.startsWith('/api/') ||
-    pathname.startsWith('/_next/') ||
-    pathname.startsWith('/static/') ||
-    /\.(?:ico|png|jpg|jpeg|svg|webp|gif|css|js|woff2?)$/.test(pathname)
-  ) return null;
-
-  // Explicit cookie wins over geo detection
-  const marketCookie = req.cookies.get('jobsesame_market')?.value;
-  if (marketCookie) return null;
-
-  const country = req.headers.get('x-vercel-ip-country') || '';
-
-  if (country === 'GB' && pathname === '/') {
-    const res = NextResponse.redirect(new URL('/uk', req.url));
-    res.cookies.set('jobsesame_market', 'GB', { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' });
-    return res;
+// ── UK homepage redirect ────────────────────────────────────────────────────
+// The SA and UK marketing homepages were merged into one universal page at
+// "/" (currency is detected client-side instead). /uk/dashboard, /uk/subscribe
+// etc. are untouched — only the standalone UK marketing page redirects.
+function ukHomeRedirect(req: NextRequest): NextResponse | null {
+  if (req.nextUrl.pathname === '/uk') {
+    return NextResponse.redirect(new URL('/', req.url));
   }
-
-  if (country === 'ZA' && pathname === '/uk') {
-    const res = NextResponse.redirect(new URL('/', req.url));
-    res.cookies.set('jobsesame_market', 'ZA', { path: '/', maxAge: 60 * 60 * 24 * 30, sameSite: 'lax' });
-    return res;
-  }
-
   return null;
 }
 
@@ -91,8 +69,8 @@ export default clerkMiddleware(async (auth, req) => {
   const jobBoardResponse = jobBoardRedirect(req);
   if (jobBoardResponse) return jobBoardResponse;
 
-  const geoResponse = geoRedirect(req);
-  if (geoResponse) return geoResponse;
+  const ukResponse = ukHomeRedirect(req);
+  if (ukResponse) return ukResponse;
 
   if (!isPublicRoute(req)) {
     await auth.protect();

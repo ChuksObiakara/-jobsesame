@@ -17,7 +17,7 @@ const PHOTOS = [
 export default function Home() {
   const { isSignedIn } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
-  const [currency, setCurrency] = useState<'ZAR' | 'USD'>('ZAR');
+  const [currency, setCurrency] = useState<'ZAR' | 'GBP' | 'USD'>('ZAR');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [faqSearch, setFaqSearch] = useState('');
   const [demoStage, setDemoStage] = useState<'idle' | 'loading' | 'done'>('idle');
@@ -43,7 +43,10 @@ export default function Home() {
   useEffect(() => {
     fetch('https://ipapi.co/json/')
       .then(r => r.json())
-      .then(data => { if (data.country_code !== 'ZA') setCurrency('USD'); })
+      .then(data => {
+        if (data.country_code === 'GB') setCurrency('GBP');
+        else if (data.country_code !== 'ZA') setCurrency('USD');
+      })
       .catch((err) => console.error('[home] geo-detect failed:', err));
   }, []);
 
@@ -267,7 +270,7 @@ export default function Home() {
             </div>
             {/* Trust signals */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 18px', marginBottom: 28, alignItems: 'center' }}>
-              {['No credit card', '3 free rewrites', 'POPIA compliant', 'Cancel anytime'].map(t => (
+              {['No credit card', '3 free rewrites', 'GDPR & POPIA compliant', 'Cancel anytime'].map(t => (
                 <span key={t} style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="none" stroke="rgba(200,230,0,0.35)" strokeWidth="1"/><path d="M3 5l1.4 1.5L7 3.5" stroke="#C8E600" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   {t}
@@ -690,15 +693,15 @@ export default function Home() {
 
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 14, alignItems: 'start' }}>
             {[
-              { name: 'Free', price: 'R0', usdPrice: '$0', per: ' forever', features: ['3 free CV rewrites', 'AI CV analysis', 'ATS score check', 'No card needed'], popular: false, btn: 'Get started free' },
-              { name: 'Credits', price: 'R99', usdPrice: '$5', per: ' per pack', features: ['10 CV rewrite credits', 'Credits never expire', 'AI CV rewrite per job', 'Cover letter generation', 'ATS-optimised formatting'], popular: false, btn: 'Buy credits' },
-              { name: 'Pro', price: 'R249', usdPrice: '$14', per: ' /month', features: ['Unlimited CV rewrites', 'Unlimited cover letters', 'Priority support', 'Application tracking'], popular: true, btn: 'Go Pro' },
+              { name: 'Free', price: 'R0', gbpPrice: '£0', usdPrice: '$0', per: ' forever', features: ['3 free CV rewrites', 'AI CV analysis', 'ATS score check', 'No card needed'], popular: false, btn: 'Get started free' },
+              { name: 'Credits', price: 'R99', gbpPrice: '£10', usdPrice: '$5', per: ' per pack', features: ['10 CV rewrite credits', 'Credits never expire', 'AI CV rewrite per job', 'Cover letter generation', 'ATS-optimised formatting'], popular: false, btn: 'Buy credits' },
+              { name: 'Pro', price: 'R249', gbpPrice: '£21', usdPrice: '$14', per: ' /month', features: ['Unlimited CV rewrites', 'Unlimited cover letters', 'Priority support', 'Application tracking'], popular: true, btn: 'Go Pro' },
             ].map(p => (
               <div key={p.name} style={{ background: p.popular ? 'rgba(200,230,0,0.04)' : 'rgba(255,255,255,0.02)', border: `1.5px solid ${p.popular ? 'rgba(200,230,0,0.3)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 12, padding: '26px 22px', position: 'relative' }}>
                 {p.popular && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#C8E600', color: BG, fontSize: 10, fontWeight: 800, padding: '3px 14px', borderRadius: 4, whiteSpace: 'nowrap', letterSpacing: 0.5 }}>MOST POPULAR</div>}
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.32)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>{p.name}</div>
                 <div style={{ marginBottom: 4 }}>
-                  <span style={{ fontSize: 42, fontWeight: 800, color: p.popular ? '#C8E600' : '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{currency === 'ZAR' ? p.price : p.usdPrice}</span>
+                  <span style={{ fontSize: 42, fontWeight: 800, color: p.popular ? '#C8E600' : '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{currency === 'ZAR' ? p.price : currency === 'GBP' ? p.gbpPrice : p.usdPrice}</span>
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)' }}>{p.per}</span>
                 </div>
                 <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '18px 0' }} />

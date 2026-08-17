@@ -33,7 +33,7 @@ export default function FooterSA() {
             <a href="mailto:support@jobsesame.co.za" className="footer-link" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none', transition: 'color 0.15s' }}>support@jobsesame.co.za</a>
           </div>
           {[
-            { heading: 'Product', links: [['Find Jobs', '/jobs'], ['CV Optimiser', '/optimise'], ['UK Market', '/uk'], ['Dashboard', '/dashboard'], ['Saved Jobs', '/saved-jobs']].filter(([, h]) => JOB_BOARD_ENABLED || (h !== '/jobs' && h !== '/saved-jobs')) },
+            { heading: 'Product', links: [['Find Jobs', '/jobs'], ['CV Optimiser', '/optimise'], ['Dashboard', '/dashboard'], ['Saved Jobs', '/saved-jobs']].filter(([, h]) => JOB_BOARD_ENABLED || (h !== '/jobs' && h !== '/saved-jobs')) },
             { heading: 'Company', links: [['About', '/about'], ['Recruiters', '/recruiters'], ['Blog', '/blog'], ['Contact', 'mailto:hello@jobsesame.co.za']].filter(([, h]) => JOB_BOARD_ENABLED || h !== '/recruiters') },
             { heading: 'Legal',   links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Refund Policy', '/refund'], ['Delete My Data', '/delete-data']] },
           ].map(col => (
