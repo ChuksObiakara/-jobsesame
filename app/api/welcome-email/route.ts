@@ -36,7 +36,7 @@ function buildEmailHtml(name: string, email: string, userId: string): string {
                 </span>
               </div>
               <p style="margin:10px 0 0;font-size:12px;color:#3A7A4A;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">
-                AI Job Platform for Africa and the World
+                AI CV Optimiser for Africa and the World
               </p>
             </td>
           </tr>

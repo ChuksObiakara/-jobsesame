@@ -4,7 +4,6 @@ import { useAuth } from '@clerk/nextjs';
 import Image from 'next/image';
 import NavSA from './components/NavSA';
 import FooterSA from './components/FooterSA';
-import { JOB_BOARD_ENABLED } from './lib/flags';
 
 const PHOTOS = [
   'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face',
@@ -143,15 +142,13 @@ export default function Home() {
   };
 
   const faqs = [
-    { q: "Is Jobsesame really free?", a: "Yes — you get 3 free AI CV rewrites and Quick Apply credits with no credit card required. After your free credits you can buy a pack of 10 for R99 or go unlimited with Pro at R249 per month." },
-    { q: "How does the AI rewrite my CV?", a: "You upload your CV once. When you click Quick Apply on any job our AI reads the full job description and rewrites your CV in 30 seconds to match exactly what that employer is looking for — adding the right keywords, restructuring your experience, and optimising for ATS systems." },
+    { q: "Is Jobsesame really free?", a: "Yes — you get 3 free AI CV rewrites with no credit card required. After your free rewrites you can buy a pack of 10 for R99 or go unlimited with Pro at R249 per month." },
+    { q: "How does the AI rewrite my CV?", a: "You upload your CV once. Paste in the job description for any role you're applying to and our AI reads it and rewrites your CV in 30 seconds to match exactly what that employer is looking for — adding the right keywords, restructuring your experience, and optimising for ATS systems." },
+    { q: "Where do I find the job description to paste in?", a: "Anywhere — LinkedIn, Indeed, a company careers page, a recruiter email. Just copy the job description and paste it in. Jobsesame doesn't list jobs itself; it tailors your CV to whatever role you're applying for." },
     { q: "What is an ATS system?", a: "ATS stands for Applicant Tracking System. It is software that most companies use to automatically screen CVs before a human ever sees them. 8 out of 10 CVs are rejected by ATS. Jobsesame rewrites your CV to pass these systems automatically." },
     { q: "Will my real experience and company names be changed?", a: "Never. We only rewrite how your experience is described — not the facts. Your real company names, job titles, dates and qualifications are always preserved. We just make them sound better and add the right keywords." },
-    { q: "What jobs does Jobsesame have?", a: "We aggregate jobs from multiple sources worldwide including remote jobs, relocation opportunities to London, Dubai, Toronto and Singapore, teaching jobs in Asia, and local jobs worldwide. New jobs are added daily.", jobBoardOnly: true },
-    { q: "How is Jobsesame different from LinkedIn or Indeed?", a: "LinkedIn and Indeed are job boards — they just show you jobs. Jobsesame is an AI job application assistant. We help you actually get the job by rewriting your CV, applying automatically, and tracking everything. We also show jobs from multiple platforms in one place.", jobBoardOnly: true },
     { q: "Is my CV data safe?", a: "Yes. Your CV is processed securely and never sold to third parties. We use it only to help you apply for jobs. You can delete your data at any time." },
-    { q: "Does Quick Apply actually submit my application?", a: "For jobs that accept direct applications yes — we submit automatically. For jobs on platforms like LinkedIn that require a login we download your rewritten CV and open the employer portal so you can upload it in one click.", jobBoardOnly: true },
-  ].filter(f => JOB_BOARD_ENABLED || !f.jobBoardOnly);
+  ];
 
   const filteredFaqs = faqSearch
     ? faqs.filter(f => f.q.toLowerCase().includes(faqSearch.toLowerCase()) || f.a.toLowerCase().includes(faqSearch.toLowerCase()))
@@ -526,9 +523,9 @@ export default function Home() {
           <div style={{ borderTop: DIVIDE }}>
             {[
               { n: '01', title: 'Upload your CV once', body: 'Drop in your existing PDF. AI reads everything in seconds — your experience, skills, and achievements. You never have to do this again.' },
-              { n: '02', title: 'AI analyses and matches', body: 'When you find a job you want, AI reads the full description and rewrites your CV in 30 seconds to match exactly what that employer needs.' },
-              { n: '03', title: 'Apply in one click', body: 'Your tailored CV and a personalised cover letter go directly to the employer. No forms. No copy-paste. No wasted evenings.' },
-              { n: '04', title: 'Track and follow up', body: 'Every application, status update, and follow-up reminder in one clean dashboard. Know exactly where you stand at all times.' },
+              { n: '02', title: 'Paste any job description', body: 'Found a role on LinkedIn, Indeed, or a company site? Paste the job description in and AI rewrites your CV in 30 seconds to match exactly what that employer needs.' },
+              { n: '03', title: 'Download and send', body: 'Get your tailored CV and a personalised cover letter as polished, ATS-ready PDFs — ready to attach to any application, anywhere, in seconds.' },
+              { n: '04', title: 'Track and follow up', body: 'Every tailored CV, status update, and follow-up reminder in one clean dashboard. Know exactly where you stand at all times.' },
             ].map(step => (
               <div key={step.n} style={{ display: 'grid', gridTemplateColumns: '56px 1fr', gap: 20, padding: '28px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'start' }}>
                 <span style={{ fontSize: isMobile ? 36 : 44, fontWeight: 800, color: 'rgba(200,230,0,0.15)', lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: -2 }}>{step.n}</span>
@@ -561,8 +558,8 @@ export default function Home() {
             {[
               { n: '01', title: 'AI CV tailoring per job',       body: 'Your CV rewritten for every application in 30 seconds — keywords, tone, and structure matched to the exact role.' },
               { n: '02', title: 'ATS score optimisation',        body: 'Pass automated screening every time. Our AI knows exactly what filters look for and makes sure you clear them.' },
-              { n: '03', title: 'Jobs from multiple sources',     body: 'Remote, relocation, teaching, tech, finance, healthcare and more — all aggregated into one smart search.' },
-              { n: '04', title: 'Quick Apply',                   body: 'Apply to any job in under 10 seconds. AI writes the CV, the cover letter, and submits — you just click once.' },
+              { n: '03', title: 'AI cover letters',              body: 'Every rewrite comes with a personalised cover letter, matched to the same role and ready in seconds.' },
+              { n: '04', title: 'Instant PDF download',          body: 'Get a polished, ATS-friendly PDF of your tailored CV — ready to attach to any application, anywhere.' },
               { n: '05', title: 'Match scoring',                 body: 'See exactly how your CV fits each role before applying. Fix the gaps before the employer sees your name.' },
               { n: '06', title: 'Application tracker',           body: 'Track every application in one dashboard. Know what stage you are at, what to follow up, and what is next.' },
             ].map(f => (
@@ -693,9 +690,9 @@ export default function Home() {
 
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 14, alignItems: 'start' }}>
             {[
-              { name: 'Free', price: 'R0', usdPrice: '$0', per: ' forever', features: ['3 Quick Apply credits', 'AI CV analysis', 'ATS score check', ...(JOB_BOARD_ENABLED ? ['Browse all live jobs'] : []), 'No card needed'], popular: false, btn: 'Get started free' },
-              { name: 'Credits', price: 'R99', usdPrice: '$5', per: ' per pack', features: ['10 Quick Apply credits', 'Credits never expire', 'AI CV rewrite per job', 'Cover letter generation', 'All job categories'], popular: false, btn: 'Buy credits' },
-              { name: 'Pro', price: 'R249', usdPrice: '$14', per: ' /month', features: ['Unlimited Quick Apply', 'Unlimited CV rewrites', 'Priority support', 'Cover letters included', 'Application tracking'], popular: true, btn: 'Go Pro' },
+              { name: 'Free', price: 'R0', usdPrice: '$0', per: ' forever', features: ['3 free CV rewrites', 'AI CV analysis', 'ATS score check', 'No card needed'], popular: false, btn: 'Get started free' },
+              { name: 'Credits', price: 'R99', usdPrice: '$5', per: ' per pack', features: ['10 CV rewrite credits', 'Credits never expire', 'AI CV rewrite per job', 'Cover letter generation', 'ATS-optimised formatting'], popular: false, btn: 'Buy credits' },
+              { name: 'Pro', price: 'R249', usdPrice: '$14', per: ' /month', features: ['Unlimited CV rewrites', 'Unlimited cover letters', 'Priority support', 'Application tracking'], popular: true, btn: 'Go Pro' },
             ].map(p => (
               <div key={p.name} style={{ background: p.popular ? 'rgba(200,230,0,0.04)' : 'rgba(255,255,255,0.02)', border: `1.5px solid ${p.popular ? 'rgba(200,230,0,0.3)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 12, padding: '26px 22px', position: 'relative' }}>
                 {p.popular && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#C8E600', color: BG, fontSize: 10, fontWeight: 800, padding: '3px 14px', borderRadius: 4, whiteSpace: 'nowrap', letterSpacing: 0.5 }}>MOST POPULAR</div>}
