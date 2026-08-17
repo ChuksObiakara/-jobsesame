@@ -9,7 +9,13 @@ import { JOB_BOARD_ENABLED } from './app/lib/flags';
 const JOB_BOARD_ROUTES = ['/jobs', '/recruiters', '/saved-jobs', '/uk/jobs'];
 
 function jobBoardRedirect(req: NextRequest): NextResponse | null {
-  return new NextResponse('ALWAYS');
+  if (JOB_BOARD_ENABLED) return null;
+  const { pathname } = req.nextUrl;
+  if (JOB_BOARD_ROUTES.some(route => pathname === route || pathname.startsWith(`${route}/`))) {
+    const target = pathname.startsWith('/uk') ? '/uk' : '/optimise';
+    return NextResponse.redirect(new URL(target, req.url));
+  }
+  return null;
 }
 
 // ── Geo-redirect helper ───────────────────────────────────────────────────────
