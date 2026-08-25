@@ -1,12 +1,74 @@
 'use client';
 import { useState } from 'react';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
+import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, SERIF } from '../lib/theme';
 
 const DIVIDE = '1px solid rgba(255,255,255,0.05)';
 
-export default function FooterSA() {
+const LIGHT = {
+  ink: INK,
+  inkSoft: INK_SOFT,
+  inkFaint: INK_FAINT,
+  line: LINE,
+  paper: PAPER,
+  serif: SERIF,
+};
+
+interface Props {
+  theme?: 'light' | 'dark';
+}
+
+export default function Footer({ theme = 'dark' }: Props) {
   const [isMobile] = useState(() => typeof window !== 'undefined' ? window.innerWidth < 768 : false);
   const year = new Date().getFullYear();
+
+  const columns = [
+    { heading: 'Product', links: [['Find Jobs', '/jobs'], ['CV Optimiser', '/optimise'], ['Dashboard', '/dashboard'], ['Saved Jobs', '/saved-jobs']].filter(([, h]) => JOB_BOARD_ENABLED || (h !== '/jobs' && h !== '/saved-jobs')) },
+    { heading: 'Company', links: [['About', '/about'], ['Recruiters', '/recruiters'], ['Blog', '/blog'], ['Contact', 'mailto:hello@jobsesame.co.za']].filter(([, h]) => JOB_BOARD_ENABLED || h !== '/recruiters') },
+    { heading: 'Legal',   links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Refund Policy', '/refund'], ['Delete My Data', '/delete-data']] },
+  ];
+
+  if (theme === 'light') {
+    return (
+      <footer style={{ background: LIGHT.paper, borderTop: `1px solid ${LIGHT.line}`, padding: isMobile ? '48px 22px 40px' : '64px 40px 36px' }}>
+        <style>{`.footer-link-l:hover { color: #1C1A16 !important; }`}</style>
+        <div style={{ maxWidth: 1120, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1fr 1fr 1fr', gap: isMobile ? '32px 24px' : 40, marginBottom: 48 }}>
+            <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
+              <div style={{ fontFamily: LIGHT.serif, fontSize: 18, fontWeight: 500, color: LIGHT.ink, marginBottom: 14 }}>jobsesame</div>
+              <p style={{ fontSize: 13, color: LIGHT.inkFaint, lineHeight: 1.8, maxWidth: 240, marginBottom: 14 }}>AI CV rewriting and ATS optimisation for job seekers who refuse to be filtered out.</p>
+              <p style={{ fontSize: 11, color: LIGHT.inkFaint, marginBottom: 4 }}>Jobsesame (Pty) Ltd &middot; South Africa</p>
+              <a href="mailto:support@jobsesame.co.za" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>support@jobsesame.co.za</a>
+            </div>
+            {columns.map(col => (
+              <div key={col.heading}>
+                <div style={{ fontSize: 10, color: LIGHT.inkFaint, fontWeight: 700, letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: 16 }}>{col.heading}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {col.links.map(([l, h]) => (
+                    <a key={l} href={h} className="footer-link-l" style={{ fontSize: 13, color: LIGHT.inkSoft, textDecoration: 'none' }}>{l}</a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ borderTop: `1px solid ${LIGHT.line}`, paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: LIGHT.inkFaint }}>&copy; {year} Jobsesame (Pty) Ltd. All rights reserved.</span>
+              <div style={{ display: 'flex', gap: 16 }}>
+                <a href="https://twitter.com/jobsesame" target="_blank" rel="noopener noreferrer" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>Twitter / X</a>
+                <a href="https://linkedin.com/company/jobsesame" target="_blank" rel="noopener noreferrer" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>LinkedIn</a>
+                <a href="https://instagram.com/jobsesame" target="_blank" rel="noopener noreferrer" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>Instagram</a>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+              <span style={{ fontSize: 11, color: LIGHT.inkFaint }}>Registered with the South African Information Regulator under POPIA</span>
+              <a href="/unsubscribe" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>Unsubscribe from emails</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer style={{ background: '#040F07', borderTop: DIVIDE, padding: isMobile ? '48px 22px 96px' : '64px 40px 36px' }}>
@@ -32,11 +94,7 @@ export default function FooterSA() {
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.1)', marginBottom: 5 }}>Jobsesame (Pty) Ltd · South Africa</p>
             <a href="mailto:support@jobsesame.co.za" className="footer-link" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none', transition: 'color 0.15s' }}>support@jobsesame.co.za</a>
           </div>
-          {[
-            { heading: 'Product', links: [['Find Jobs', '/jobs'], ['CV Optimiser', '/optimise'], ['Dashboard', '/dashboard'], ['Saved Jobs', '/saved-jobs']].filter(([, h]) => JOB_BOARD_ENABLED || (h !== '/jobs' && h !== '/saved-jobs')) },
-            { heading: 'Company', links: [['About', '/about'], ['Recruiters', '/recruiters'], ['Blog', '/blog'], ['Contact', 'mailto:hello@jobsesame.co.za']].filter(([, h]) => JOB_BOARD_ENABLED || h !== '/recruiters') },
-            { heading: 'Legal',   links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Refund Policy', '/refund'], ['Delete My Data', '/delete-data']] },
-          ].map(col => (
+          {columns.map(col => (
             <div key={col.heading}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.22)', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 16 }}>{col.heading}</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

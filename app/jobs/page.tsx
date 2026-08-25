@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import NavSA from '../components/NavSA';
+import Nav from '../components/Nav';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
 
 // ── AI Search Assistant ───────────────────────────────────────────────────────
@@ -660,7 +660,7 @@ export default function JobsPage() {
         </div>
       )}
 
-      <NavSA />
+      <Nav />
 
       {/* PAGE HEADER */}
       <div style={{background:"#052A14",padding:isMobile?"12px 12px 0":"28px 28px 0",overflowX:"hidden"}}>

@@ -1,3 +1,5 @@
+import { ACCENT } from '../lib/theme';
+
 export interface Post {
   slug: string;
   title: string;
@@ -8,6 +10,15 @@ export interface Post {
   content: string;
   status?: 'published' | 'draft';
 }
+
+export const TAG_COLORS: Record<string, { bg: string; color: string }> = {
+  'CV Tips':       { bg: '#EEEDE6', color: ACCENT },
+  'Career Advice': { bg: '#F0EAE2', color: '#8A6A3E' },
+  'Relocation':    { bg: '#E8EEEE', color: '#3D6B7A' },
+  'Remote Work':   { bg: '#F3EAE0', color: '#A85C40' },
+  'Salary':        { bg: '#EFE8EF', color: '#7A5E8A' },
+};
+export const TAG_COLOR_FALLBACK = { bg: '#EEEDE6', color: ACCENT };
 
 export const POSTS: Post[] = [
   {

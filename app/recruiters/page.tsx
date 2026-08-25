@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
-import NavSA from '../components/NavSA';
+import Nav from '../components/Nav';
+import Footer from '../components/Footer';
+import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, SERIF, SANS } from '../lib/theme';
 
 const INDUSTRIES = [
   'Technology', 'Finance & Banking', 'Healthcare', 'Education', 'Engineering',
@@ -53,12 +55,12 @@ export default function RecruitersPage() {
 
   const inputStyle = (key: string): React.CSSProperties => ({
     width: '100%',
-    padding: '12px 16px',
-    border: `1.5px solid ${errors[key] ? '#A32D2D' : '#1A5A2A'}`,
-    borderRadius: 10,
+    padding: '11px 14px',
+    border: `1px solid ${errors[key] ? CLAY : LINE}`,
+    borderRadius: 3,
     fontSize: 14,
-    color: '#FFFFFF',
-    background: '#0D3A1A',
+    color: INK,
+    background: CARD,
     outline: 'none',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
@@ -66,53 +68,51 @@ export default function RecruitersPage() {
 
   const labelStyle: React.CSSProperties = {
     fontSize: 12,
-    color: '#5A9A6A',
+    color: INK_SOFT,
     fontWeight: 600,
     display: 'block',
     marginBottom: 6,
   };
 
   return (
-    <main style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#052A14', minHeight: '100vh', margin: 0 }}>
+    <main style={{ fontFamily: SANS, background: PAPER, color: INK, minHeight: '100vh', margin: 0 }}>
+      <Nav theme="light" />
 
-      <NavSA />
-
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 24px 80px' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '56px 24px 80px' }}>
 
         {/* HEADER */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <h1 style={{ fontSize: 'clamp(26px, 5vw, 40px)', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.15, marginBottom: 14 }}>
-            Post jobs. Find the<br /><span style={{ color: '#C8E600' }}>right talent.</span>
+          <h1 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(26px, 5vw, 36px)', lineHeight: 1.2, marginBottom: 14 }}>
+            Post jobs. Find the right talent.
           </h1>
-          <p style={{ fontSize: 15, color: '#90C898', lineHeight: 1.8, maxWidth: 480, margin: '0 auto' }}>
-            Join thousands of companies hiring smarter with Jobsesame. Tell us about your hiring needs and our team will be in touch within 24 hours.
+          <p style={{ fontSize: 15, color: INK_SOFT, lineHeight: 1.75, maxWidth: 460, margin: '0 auto' }}>
+            Join companies hiring smarter with Jobsesame. Tell us about your hiring needs and our team will be in touch within 24 hours.
           </p>
         </div>
 
         {submitted ? (
-          <div style={{ background: 'rgba(200,230,0,0.08)', border: '2px solid #C8E600', borderRadius: 20, padding: '48px 32px', textAlign: 'center' }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: '#FFFFFF', marginBottom: 12 }}>Request received!</h2>
-            <p style={{ fontSize: 15, color: '#90C898', lineHeight: 1.8 }}>
+          <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 4, padding: '48px 32px', textAlign: 'center' }}>
+            <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 22, marginBottom: 12 }}>Request received</h2>
+            <p style={{ fontSize: 15, color: INK_SOFT, lineHeight: 1.75 }}>
               Thank you. Our team will be in touch within 24 hours.
             </p>
-            <a href="/" style={{ display: 'inline-block', marginTop: 24, background: '#C8E600', color: '#052A14', fontSize: 14, fontWeight: 800, padding: '12px 28px', borderRadius: 99, textDecoration: 'none' }}>
+            <a href="/" style={{ display: 'inline-block', marginTop: 24, background: ACCENT, color: PAPER, fontSize: 14, fontWeight: 600, padding: '12px 28px', borderRadius: 3, textDecoration: 'none' }}>
               Back to home
             </a>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ background: '#072E16', border: '1.5px solid #1A4A2A', borderRadius: 20, padding: '36px 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <form onSubmit={handleSubmit} style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 4, padding: '32px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div>
                 <label style={labelStyle}>Company name *</label>
                 <input value={form.companyName} onChange={set('companyName')} placeholder="Acme Corp" style={inputStyle('companyName')} />
-                {errors.companyName && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.companyName}</div>}
+                {errors.companyName && <div style={{ fontSize: 11, color: CLAY, marginTop: 4 }}>{errors.companyName}</div>}
               </div>
               <div>
                 <label style={labelStyle}>Contact person full name *</label>
                 <input value={form.contactName} onChange={set('contactName')} placeholder="Jane Smith" style={inputStyle('contactName')} />
-                {errors.contactName && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.contactName}</div>}
+                {errors.contactName && <div style={{ fontSize: 11, color: CLAY, marginTop: 4 }}>{errors.contactName}</div>}
               </div>
             </div>
 
@@ -120,12 +120,12 @@ export default function RecruitersPage() {
               <div>
                 <label style={labelStyle}>Work email *</label>
                 <input type="email" value={form.workEmail} onChange={set('workEmail')} placeholder="jane@company.com" style={inputStyle('workEmail')} />
-                {errors.workEmail && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.workEmail}</div>}
+                {errors.workEmail && <div style={{ fontSize: 11, color: CLAY, marginTop: 4 }}>{errors.workEmail}</div>}
               </div>
               <div>
                 <label style={labelStyle}>Phone number *</label>
                 <input type="tel" value={form.phone} onChange={set('phone')} placeholder="+27 82 000 0000" style={inputStyle('phone')} />
-                {errors.phone && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.phone}</div>}
+                {errors.phone && <div style={{ fontSize: 11, color: CLAY, marginTop: 4 }}>{errors.phone}</div>}
               </div>
             </div>
 
@@ -136,7 +136,7 @@ export default function RecruitersPage() {
                   <option value="">Select size</option>
                   {COMPANY_SIZES.map(s => <option key={s} value={s}>{s} employees</option>)}
                 </select>
-                {errors.companySize && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.companySize}</div>}
+                {errors.companySize && <div style={{ fontSize: 11, color: CLAY, marginTop: 4 }}>{errors.companySize}</div>}
               </div>
               <div>
                 <label style={labelStyle}>Industry *</label>
@@ -144,7 +144,7 @@ export default function RecruitersPage() {
                   <option value="">Select industry</option>
                   {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
                 </select>
-                {errors.industry && <div style={{ fontSize: 11, color: '#F09595', marginTop: 4 }}>{errors.industry}</div>}
+                {errors.industry && <div style={{ fontSize: 11, color: CLAY, marginTop: 4 }}>{errors.industry}</div>}
               </div>
             </div>
 
@@ -173,25 +173,24 @@ export default function RecruitersPage() {
               />
             </div>
 
-            <button type="submit" style={{ background: '#C8E600', color: '#052A14', fontSize: 15, fontWeight: 800, padding: '14px 0', borderRadius: 12, border: 'none', cursor: 'pointer', width: '100%', marginTop: 4 }}>
-              Request recruiter access →
+            <button type="submit" style={{ background: ACCENT, color: PAPER, fontSize: 14.5, fontWeight: 600, padding: '14px 0', borderRadius: 3, border: 'none', cursor: 'pointer', width: '100%', marginTop: 4 }}>
+              Request recruiter access
             </button>
 
-            <p style={{ textAlign: 'center', fontSize: 12, color: '#3A7A4A', margin: 0 }}>
+            <p style={{ textAlign: 'center', fontSize: 12, color: INK_FAINT, margin: 0 }}>
               No commitment required. Our team will contact you within 24 hours.
             </p>
           </form>
         )}
 
         {/* TRUST SIGNALS */}
-        <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', marginTop: 40 }}>
+        <div style={{ display: 'flex', gap: 24, justifyContent: 'center', flexWrap: 'wrap', marginTop: 40, paddingTop: 32, borderTop: `1px solid ${LINE}` }}>
           {['AI-powered matching', 'Pre-screened candidates', 'Dedicated account manager', 'No placement fees'].map(t => (
-            <div key={t} style={{ fontSize: 12, color: '#3A7A4A', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ color: '#C8E600' }}>✓</span> {t}
-            </div>
+            <div key={t} style={{ fontSize: 12, color: INK_FAINT, fontWeight: 500 }}>{t}</div>
           ))}
         </div>
       </div>
+      <Footer theme="light" />
     </main>
   );
 }

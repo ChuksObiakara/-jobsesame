@@ -1,5 +1,7 @@
-import NavSA from '../components/NavSA';
+import Nav from '../components/Nav';
+import Footer from '../components/Footer';
 import BlogFilter from './BlogFilter';
+import { PAPER, INK, SANS } from '../lib/theme';
 
 export const metadata = {
   title: 'Career Insights | Jobsesame',
@@ -8,16 +10,10 @@ export const metadata = {
 
 export default function BlogPage() {
   return (
-    <main style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", background: '#F4FCF4', minHeight: '100vh', margin: 0 }}>
-      <NavSA />
+    <main style={{ fontFamily: SANS, background: PAPER, color: INK, minHeight: '100vh', margin: 0 }}>
+      <Nav theme="light" />
       <BlogFilter />
-      <footer style={{ background: '#052A14', borderTop: '1px solid #0D4A20', padding: '24px', textAlign: 'center' }}>
-        <span style={{ fontSize: 13, fontWeight: 800 }}>
-          <span style={{ color: '#FFFFFF' }}>job</span>
-          <span style={{ color: '#C8E600' }}>sesame</span>
-        </span>
-        <div style={{ fontSize: 11, color: '#1A4A2A', marginTop: 8 }}>© 2025 Jobsesame</div>
-      </footer>
+      <Footer theme="light" />
     </main>
   );
 }

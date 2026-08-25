@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
 import CoverLetter from '../components/CoverLetter';
-import MarketSwitcher from '../components/MarketSwitcher';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
+import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF, SANS } from '../lib/theme';
 
 const SALARY_DATA: Record<string, { min: number; max: number }> = {
   'software engineer': { min: 480000, max: 720000 },
@@ -74,7 +74,7 @@ export default function Dashboard() {
   const [loadingApplications, setLoadingApplications] = useState(true);
 
   // ── Payment state ─────────────────────────────────────────────
-  const [currency, setCurrency] = useState<'ZAR' | 'USD'>('USD');
+  const [currency, setCurrency] = useState<'ZAR' | 'GBP' | 'USD'>('USD');
   const [paying, setPaying] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   const [credits, setCredits] = useState(3);
@@ -132,7 +132,7 @@ export default function Dashboard() {
         if (typeof d.isPro === 'boolean') setIsPro(d.isPro);
       }).catch((err) => console.error('[dashboard] credits fetch failed:', err));
       // Fetch applications from database
-      fetch('/api/user/applications?market=ZA')
+      fetch('/api/user/applications')
         .then(r => r.json())
         .then(d => {
           const mapped = (d.applications || []).map((a: any) => ({
@@ -170,7 +170,10 @@ export default function Dashboard() {
   useEffect(() => {
     fetch('https://ipapi.co/json/')
       .then(r => r.json())
-      .then(data => { if (data.country_code === 'ZA') setCurrency('ZAR'); })
+      .then(data => {
+        if (data.country_code === 'ZA') setCurrency('ZAR');
+        else if (data.country_code === 'GB') setCurrency('GBP');
+      })
       .catch((err) => console.error('[dashboard] geo-detect failed:', err));
   }, []);
 
@@ -287,10 +290,10 @@ export default function Dashboard() {
   }, [cvData]);
 
   const matchBadge = (pct: number) => {
-    if (pct >= 80) return { bg: '#D4F5D4', color: '#1A5A2A' };
-    if (pct >= 60) return { bg: 'rgba(200,230,0,0.15)', color: '#8AAA00' };
-    if (pct >= 40) return { bg: 'rgba(255,165,0,0.12)', color: '#C87800' };
-    return { bg: 'rgba(150,150,150,0.15)', color: '#888' };
+    if (pct >= 80) return { bg: 'rgba(63,93,82,0.1)', color: ACCENT };
+    if (pct >= 60) return { bg: 'rgba(176,138,62,0.12)', color: AMBER };
+    if (pct >= 40) return { bg: 'rgba(168,92,64,0.1)', color: CLAY };
+    return { bg: LINE, color: INK_SOFT };
   };
 
   const updateApplicationStatus = (id: string, status: Application['status']) => {
@@ -424,18 +427,18 @@ export default function Dashboard() {
     const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
     const pageW = 210; const margin = 18; const contentW = pageW - margin * 2;
     let y = 0;
-    doc.setFillColor(5, 42, 20); doc.rect(0, 0, pageW, 44, 'F');
+    doc.setFillColor(28, 26, 22); doc.rect(0, 0, pageW, 44, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(255, 255, 255);
     doc.text(cv.name || '', margin, 17);
-    doc.setFontSize(12); doc.setTextColor(200, 230, 0);
+    doc.setFontSize(12); doc.setTextColor(200, 200, 195);
     doc.text(cv.title || '', margin, 27);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(160, 210, 170);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(210, 210, 205);
     doc.text([cv.location, cv.email, cv.phone].filter(Boolean).join('   ·   '), margin, 37);
     y = 54;
     const sectionHdr = (t: string) => {
       if (y > 268) { doc.addPage(); y = 18; }
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(5, 42, 20);
-      doc.text(t.toUpperCase(), margin, y); doc.setDrawColor(5, 42, 20);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(28, 26, 22);
+      doc.text(t.toUpperCase(), margin, y); doc.setDrawColor(28, 26, 22);
       doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 7;
     };
     if (cv.summary) {
@@ -454,7 +457,7 @@ export default function Dashboard() {
       sectionHdr('Experience');
       cv.experience.forEach((exp: any) => {
         if (y > 268) { doc.addPage(); y = 18; }
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(5, 42, 20);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(28, 26, 22);
         doc.text(exp.title || '', margin, y); y += 5.5;
         doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(80, 80, 80);
         doc.text(`${exp.company || ''}   ·   ${exp.duration || ''}`, margin, y); y += 5;
@@ -497,8 +500,8 @@ export default function Dashboard() {
     const contentW = pageW - margin * 2;
     let y = 0;
 
-    // Dark green header bar
-    doc.setFillColor(5, 42, 20);
+    // Header bar
+    doc.setFillColor(28, 26, 22);
     doc.rect(0, 0, pageW, 44, 'F');
 
     // Name — white
@@ -507,15 +510,15 @@ export default function Dashboard() {
     doc.setTextColor(255, 255, 255);
     doc.text(cv.name || '', margin, 17);
 
-    // Title — lemon yellow
+    // Title
     doc.setFontSize(12);
-    doc.setTextColor(200, 230, 0);
+    doc.setTextColor(200, 200, 195);
     doc.text(cv.title || '', margin, 27);
 
-    // Contact row — soft green
+    // Contact row
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(160, 210, 170);
+    doc.setTextColor(210, 210, 205);
     const contact = [cv.location, cv.email, cv.phone].filter(Boolean).join('   ·   ');
     doc.text(contact, margin, 37);
 
@@ -525,9 +528,9 @@ export default function Dashboard() {
       if (y > 268) { doc.addPage(); y = 18; }
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.5);
-      doc.setTextColor(5, 42, 20);
+      doc.setTextColor(28, 26, 22);
       doc.text(title.toUpperCase(), margin, y);
-      doc.setDrawColor(5, 42, 20);
+      doc.setDrawColor(28, 26, 22);
       doc.line(margin, y + 1.5, pageW - margin, y + 1.5);
       y += 7;
     };
@@ -561,7 +564,7 @@ export default function Dashboard() {
         if (y > 268) { doc.addPage(); y = 18; }
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        doc.setTextColor(5, 42, 20);
+        doc.setTextColor(28, 26, 22);
         doc.text(exp.title || '', margin, y);
         y += 5.5;
         doc.setFont('helvetica', 'normal');
@@ -573,7 +576,7 @@ export default function Dashboard() {
           if (y > 275) { doc.addPage(); y = 18; }
           doc.setFontSize(9);
           doc.setTextColor(50, 50, 50);
-          const bLines = doc.splitTextToSize(`\u2022  ${b}`, contentW - 4);
+          const bLines = doc.splitTextToSize(`•  ${b}`, contentW - 4);
           doc.text(bLines, margin + 2, y);
           y += (bLines as string[]).length * 4.6;
         });
@@ -651,42 +654,32 @@ export default function Dashboard() {
   // ── Loading skeleton — shows immediately, no layout shift ─────
   if (!isLoaded) {
     return (
-      <div style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#052A14",minHeight:"100vh"}}>
-        <style>{`@keyframes shimmer{0%{opacity:0.4}50%{opacity:0.8}100%{opacity:0.4}}`}</style>
+      <div style={{fontFamily:SANS,background:PAPER,minHeight:"100vh"}}>
+        <style>{`@keyframes shimmer{0%{opacity:0.5}50%{opacity:0.9}100%{opacity:0.5}}`}</style>
         {/* Nav skeleton */}
-        <div style={{background:"#052A14",borderBottom:"1px solid #0D4A20",height:64,display:"flex",alignItems:"center",padding:"0 20px",justifyContent:"space-between"}}>
+        <div style={{background:CARD,borderBottom:`1px solid ${LINE}`,height:64,display:"flex",alignItems:"center",padding:"0 20px",justifyContent:"space-between"}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:36,height:36,borderRadius:9,background:"#C8E600"}}/>
-            <div style={{width:100,height:16,borderRadius:6,background:"#1A4A2A",animation:"shimmer 1.5s ease infinite"}}/>
+            <div style={{width:100,height:16,borderRadius:3,background:LINE,animation:"shimmer 1.5s ease infinite"}}/>
           </div>
           <div style={{display:"flex",gap:8}}>
             {[80,90,100,36].map((w,i)=>(
-              <div key={i} style={{width:w,height:32,borderRadius:99,background:"#1A4A2A",animation:"shimmer 1.5s ease infinite"}}/>
+              <div key={i} style={{width:w,height:32,borderRadius:3,background:LINE,animation:"shimmer 1.5s ease infinite"}}/>
             ))}
           </div>
         </div>
         {/* Body skeleton */}
         <div style={{padding:isMobile?"16px 16px 32px":"32px 28px",maxWidth:960,margin:"0 auto"}}>
-          {/* Welcome + stats */}
-          <div style={{width:220,height:28,borderRadius:8,background:"#1A4A2A",marginBottom:8,animation:"shimmer 1.5s ease infinite"}}/>
-          <div style={{width:140,height:14,borderRadius:6,background:"#0D3A1A",marginBottom:20,animation:"shimmer 1.5s ease infinite"}}/>
+          <div style={{width:220,height:28,borderRadius:3,background:LINE,marginBottom:8,animation:"shimmer 1.5s ease infinite"}}/>
+          <div style={{width:140,height:14,borderRadius:3,background:LINE,marginBottom:20,animation:"shimmer 1.5s ease infinite"}}/>
           <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(4,1fr)",gap:10,marginBottom:24}}>
             {[1,2,3,4].map(i=>(
-              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px",height:72,animation:"shimmer 1.5s ease infinite"}}/>
+              <div key={i} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:"14px 16px",height:72,animation:"shimmer 1.5s ease infinite"}}/>
             ))}
           </div>
-          {/* CV panel */}
-          <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:24,marginBottom:20,height:160,animation:"shimmer 1.5s ease infinite"}}/>
-          {/* AI actions */}
+          <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:24,marginBottom:20,height:160,animation:"shimmer 1.5s ease infinite"}}/>
           <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(3,1fr)",gap:10,marginBottom:20}}>
             {[1,2,3].map(i=>(
-              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,height:90,animation:"shimmer 1.5s ease infinite"}}/>
-            ))}
-          </div>
-          {/* Job cards */}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))",gap:10,width:"100%",overflow:"hidden"}}>
-            {[1,2,3,4,5,6].map(i=>(
-              <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,height:130,animation:"shimmer 1.5s ease infinite"}}/>
+              <div key={i} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,height:90,animation:"shimmer 1.5s ease infinite"}}/>
             ))}
           </div>
         </div>
@@ -699,56 +692,61 @@ export default function Dashboard() {
   const today = new Date().toLocaleDateString('en-ZA', {weekday:'long',day:'numeric',month:'long'});
   const navBtnStyle = (s: string) => ({
     padding: '8px 16px',
-    borderRadius: 99,
+    borderRadius: 3,
     fontSize: isMobile ? 12 : 13,
-    fontWeight: 700,
+    fontWeight: 600,
     cursor: 'pointer',
     border: 'none',
-    background: activeSection === s ? '#C8E600' : 'transparent',
-    color: activeSection === s ? '#052A14' : '#A8D8B0',
+    background: activeSection === s ? INK : 'transparent',
+    color: activeSection === s ? PAPER : INK_SOFT,
     whiteSpace: 'nowrap',
   } as React.CSSProperties);
 
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '11px 14px', border: `1px solid ${LINE}`, borderRadius: 3, fontSize: 14, color: INK, background: PAPER, outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' };
+  const labelStyle: React.CSSProperties = { fontSize: 12, color: INK_SOFT, fontWeight: 600, display: 'block', marginBottom: 6 };
+  const errorBoxStyle: React.CSSProperties = { background: 'rgba(168,92,64,0.08)', border: `1px solid rgba(168,92,64,0.3)`, borderRadius: 3, padding: '10px 16px', fontSize: 13, color: CLAY };
+  const pillTag = (bg: string, color: string): React.CSSProperties => ({ background: bg, color, fontSize: 11, padding: '3px 10px', borderRadius: 99, fontWeight: 600 });
+
   return (
-    <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#052A14",minHeight:"100vh",overflowX:"hidden"}}>
+    <main style={{fontFamily:SANS,background:PAPER,color:INK,minHeight:"100vh",overflowX:"hidden"}}>
 
       {/* QUICK APPLY MODAL */}
       {selectedJob && (
-        <QuickApply job={selectedJob} onClose={() => setSelectedJob(null)} currency={currency} />
+        <QuickApply job={selectedJob} onClose={() => setSelectedJob(null)} currency={currency === 'ZAR' ? 'ZAR' : 'USD'} />
       )}
 
       {/* AI ACTIONS MODAL */}
       {showAiModal && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:18,padding:28,width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{position:"fixed",inset:0,background:"rgba(20,18,15,0.55)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:28,width:"100%",maxWidth:520,maxHeight:"90vh",overflowY:"auto"}}>
             {showAiModal === 'tailor' && (
               <div>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-                  <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF"}}>Tailor CV for a job</h3>
-                  <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",border:"none",color:"#5A9A6A",fontSize:20,cursor:"pointer"}}>✕</button>
+                  <h3 style={{fontFamily:SERIF,fontWeight:500,fontSize:19,color:INK}}>Tailor CV for a job</h3>
+                  <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",border:"none",color:INK_FAINT,fontSize:20,cursor:"pointer"}}>✕</button>
                 </div>
-                <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+                <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:20}}>
                   <div>
-                    <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job title *</label>
-                    <input value={jobTitle} onChange={e=>setJobTitle(e.target.value)} placeholder="e.g. Senior Product Manager" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+                    <label style={labelStyle}>Job title *</label>
+                    <input value={jobTitle} onChange={e=>setJobTitle(e.target.value)} placeholder="e.g. Senior Product Manager" style={inputStyle}/>
                   </div>
                   <div>
-                    <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Company</label>
-                    <input value={jobCompany} onChange={e=>setJobCompany(e.target.value)} placeholder="e.g. Standard Bank" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+                    <label style={labelStyle}>Company</label>
+                    <input value={jobCompany} onChange={e=>setJobCompany(e.target.value)} placeholder="e.g. Standard Bank" style={inputStyle}/>
                   </div>
                   <div>
-                    <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job description</label>
-                    <textarea value={jobDescription} onChange={e=>setJobDescription(e.target.value)} placeholder="Paste the job description..." rows={4} style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:13,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",resize:"vertical",boxSizing:"border-box"}}/>
+                    <label style={labelStyle}>Job description</label>
+                    <textarea value={jobDescription} onChange={e=>setJobDescription(e.target.value)} placeholder="Paste the job description..." rows={4} style={{...inputStyle,resize:"vertical"}}/>
                   </div>
                 </div>
-                {rewriteError && <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginBottom:16}}>{rewriteError}</div>}
+                {rewriteError && <div style={{...errorBoxStyle,marginBottom:16}}>{rewriteError}</div>}
                 <div style={{display:"flex",gap:10}}>
-                  <button onClick={handleRewrite} disabled={rewriting||!cvData} style={{flex:1,background:rewriting||!cvData?"#1A4A2A":"#C8E600",color:rewriting||!cvData?"#3A7A4A":"#052A14",fontSize:14,fontWeight:800,padding:"12px",borderRadius:99,border:"none",cursor:rewriting||!cvData?"default":"pointer"}}>
-                    {rewriting ? 'Rewriting...' : !cvData ? 'Upload CV first' : 'Rewrite my CV'}
+                  <button onClick={handleRewrite} disabled={rewriting||!cvData} style={{flex:1,background:rewriting||!cvData?LINE:ACCENT,color:rewriting||!cvData?INK_FAINT:PAPER,fontSize:14,fontWeight:600,padding:"12px",borderRadius:3,border:"none",cursor:rewriting||!cvData?"default":"pointer"}}>
+                    {rewriting ? 'Rewriting…' : !cvData ? 'Upload CV first' : 'Rewrite my CV'}
                   </button>
-                  <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"12px 20px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Cancel</button>
+                  <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",color:INK_SOFT,fontSize:13,fontWeight:600,padding:"12px 20px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>Cancel</button>
                 </div>
-                {rewriting && <div style={{marginTop:12,fontSize:13,color:"#5A9A6A",fontStyle:"italic"}}>AI is rewriting your CV... ~15 seconds</div>}
+                {rewriting && <div style={{marginTop:12,fontSize:13,color:INK_SOFT,fontStyle:"italic"}}>AI is rewriting your CV… ~15 seconds</div>}
               </div>
             )}
             {showAiModal === 'cover' && (
@@ -759,16 +757,15 @@ export default function Dashboard() {
                     onClose={() => setShowAiModal(null)}
                   />
                 : <div style={{textAlign:"center",padding:"32px 20px"}}>
-                    <div style={{fontSize:40,marginBottom:16}}>📄</div>
-                    <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV first</h3>
-                    <p style={{fontSize:13,color:"#5A9A6A",marginBottom:20,lineHeight:1.7}}>
+                    <h3 style={{fontFamily:SERIF,fontWeight:500,fontSize:18,marginBottom:8}}>Upload your CV first</h3>
+                    <p style={{fontSize:13,color:INK_SOFT,marginBottom:20,lineHeight:1.7}}>
                       To generate a cover letter, we need your CV so the AI can personalise it for you.
                     </p>
                     <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-                      <button onClick={()=>{ setShowAiModal(null); setActiveSection('cv'); }} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 24px",borderRadius:99,border:"none",cursor:"pointer"}}>
+                      <button onClick={()=>{ setShowAiModal(null); setActiveSection('cv'); }} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"11px 24px",borderRadius:3,border:"none",cursor:"pointer"}}>
                         Upload CV →
                       </button>
-                      <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"11px 20px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+                      <button onClick={()=>setShowAiModal(null)} style={{background:"transparent",color:INK_SOFT,fontSize:13,fontWeight:600,padding:"11px 20px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>
                         Cancel
                       </button>
                     </div>
@@ -780,31 +777,31 @@ export default function Dashboard() {
 
       {/* ATS SHOCK MODAL */}
       {showAtsShock && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#072E16",border:"1.5px solid #1A5A2A",borderRadius:20,padding:32,width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",textAlign:"center"}}>
-            <p style={{margin:"0 0 8px",fontSize:11,fontWeight:700,color:"#5A9A6A",letterSpacing:"2px",textTransform:"uppercase"}}>Your CV was just analysed</p>
+        <div style={{position:"fixed",inset:0,background:"rgba(20,18,15,0.7)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:32,width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",textAlign:"center"}}>
+            <p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,color:INK_FAINT,letterSpacing:"0.1em",textTransform:"uppercase"}}>Your CV was just analysed</p>
             {/* Circular gauge */}
-            <div style={{position:"relative",width:130,height:130,margin:"0 auto 16px"}}>
-              <svg width="130" height="130" style={{transform:"rotate(-90deg)"}}>
-                <circle cx="65" cy="65" r="55" fill="none" stroke="#1A4A2A" strokeWidth="11"/>
-                <circle cx="65" cy="65" r="55" fill="none"
-                  stroke={atsShockScore>=75?"#22C55E":atsShockScore>=60?"#F59E0B":"#EF4444"}
-                  strokeWidth="11"
-                  strokeDasharray={`${2*Math.PI*55}`}
-                  strokeDashoffset={`${2*Math.PI*55*(1-atsShockScore/100)}`}
+            <div style={{position:"relative",width:120,height:120,margin:"0 auto 16px"}}>
+              <svg width="120" height="120" style={{transform:"rotate(-90deg)"}}>
+                <circle cx="60" cy="60" r="50" fill="none" stroke={LINE} strokeWidth="9"/>
+                <circle cx="60" cy="60" r="50" fill="none"
+                  stroke={atsShockScore>=75?ACCENT:atsShockScore>=60?AMBER:CLAY}
+                  strokeWidth="9"
+                  strokeDasharray={`${2*Math.PI*50}`}
+                  strokeDashoffset={`${2*Math.PI*50*(1-atsShockScore/100)}`}
                   strokeLinecap="round"/>
               </svg>
               <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
-                <span style={{fontSize:32,fontWeight:900,color:atsShockScore>=75?"#22C55E":atsShockScore>=60?"#F59E0B":"#EF4444",lineHeight:1}}>{atsShockScore}%</span>
-                <span style={{fontSize:10,color:"#5A9A6A",marginTop:3}}>ATS score</span>
+                <span style={{fontFamily:SERIF,fontSize:28,color:atsShockScore>=75?ACCENT:atsShockScore>=60?AMBER:CLAY,lineHeight:1}}>{atsShockScore}%</span>
+                <span style={{fontSize:10,color:INK_FAINT,marginTop:4}}>ATS score</span>
               </div>
             </div>
-            <h2 style={{fontSize:20,fontWeight:900,color:"#FFFFFF",marginBottom:6,lineHeight:1.3}}>
+            <h2 style={{fontFamily:SERIF,fontWeight:500,fontSize:21,marginBottom:8,lineHeight:1.3}}>
               {atsShockScore>=75?"Your CV is performing well"
                :atsShockScore>=60?"Your CV needs improvement to compete"
                :"Your CV is failing automated screening"}
             </h2>
-            <p style={{fontSize:13,color:"#5A9A6A",marginBottom:20,lineHeight:1.6}}>
+            <p style={{fontSize:13,color:INK_SOFT,marginBottom:20,lineHeight:1.6}}>
               {atsShockScore>=75
                 ?"Most ATS systems will pass your CV. Use AI tailoring to push it above 85% for every role."
                 :atsShockScore>=60
@@ -814,31 +811,31 @@ export default function Dashboard() {
             {atsShockWeaknesses.length > 0 && (
               <div style={{marginBottom:20,textAlign:"left"}}>
                 {atsShockWeaknesses.map((w,i)=>(
-                  <div key={i} style={{background:"#0D3A1A",borderLeft:"3px solid #EF4444",borderRadius:"0 8px 8px 0",padding:"10px 14px",marginBottom:8,fontSize:13,color:"#F09595",lineHeight:1.5}}>
-                    ⚠️ {w}
+                  <div key={i} style={{background:PAPER,borderLeft:`2px solid ${CLAY}`,borderRadius:"0 3px 3px 0",padding:"10px 14px",marginBottom:8,fontSize:13,color:INK_SOFT,lineHeight:1.5}}>
+                    {w}
                   </div>
                 ))}
               </div>
             )}
             {/* Before / After */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:20,textAlign:"left"}}>
-              <div style={{background:"#0D1A0D",border:"1px solid #A32D2D",borderRadius:10,padding:12}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#F09595",textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>Before Jobsesame</div>
+              <div style={{background:PAPER,border:`1px solid ${LINE}`,borderRadius:3,padding:12}}>
+                <div style={{fontSize:10,fontWeight:700,color:CLAY,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Before Jobsesame</div>
                 {["Generic CV sent to every job","Filtered by ATS before human sees it","Ignored by recruiters","Weeks without a response"].map((t,i)=>(
-                  <div key={i} style={{fontSize:12,color:"#8A5A5A",marginBottom:4}}>✗ {t}</div>
+                  <div key={i} style={{fontSize:12,color:INK_FAINT,marginBottom:4}}>{t}</div>
                 ))}
               </div>
-              <div style={{background:"#0D2A0D",border:"1px solid #1A6A2A",borderRadius:10,padding:12}}>
-                <div style={{fontSize:10,fontWeight:700,color:"#C8E600",textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>After Jobsesame</div>
+              <div style={{background:PAPER,border:`1px solid ${LINE}`,borderRadius:3,padding:12}}>
+                <div style={{fontSize:10,fontWeight:700,color:ACCENT,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>After Jobsesame</div>
                 {["CV tailored for each job in 30s","Passes ATS with 80%+ score","Seen by real recruiters","Interviews within 2 weeks"].map((t,i)=>(
-                  <div key={i} style={{fontSize:12,color:"#90C898",marginBottom:4}}>✓ {t}</div>
+                  <div key={i} style={{fontSize:12,color:INK_SOFT,marginBottom:4}}>{t}</div>
                 ))}
               </div>
             </div>
-            <a href="/optimise" style={{display:"block",background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:900,padding:"14px 0",borderRadius:99,textDecoration:"none",marginBottom:12}}>
-              Fix my CV with AI — free →
+            <a href="/optimise" style={{display:"block",background:ACCENT,color:PAPER,fontSize:14.5,fontWeight:600,padding:"14px 0",borderRadius:3,textDecoration:"none",marginBottom:12}}>
+              Fix my CV with AI — free
             </a>
-            <button onClick={()=>setShowAtsShock(false)} style={{background:"transparent",color:"#3A7A4A",fontSize:12,fontWeight:600,border:"none",cursor:"pointer",padding:"8px"}}>
+            <button onClick={()=>setShowAtsShock(false)} style={{background:"transparent",color:INK_FAINT,fontSize:12,fontWeight:600,border:"none",cursor:"pointer",padding:"8px"}}>
               View my dashboard
             </button>
           </div>
@@ -848,36 +845,32 @@ export default function Dashboard() {
 
       {/* CV OPTIMIZE MODAL */}
       {cvOptimizeJob && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:"'Plus Jakarta Sans',sans-serif"}}>
-          <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:18,padding:isMobile?20:28,width:"100%",maxWidth:540,maxHeight:"90vh",overflowY:"auto"}}>
+        <div style={{position:"fixed",inset:0,background:"rgba(20,18,15,0.7)",zIndex:400,display:"flex",alignItems:"center",justifyContent:"center",padding:16,fontFamily:SANS}}>
+          <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:isMobile?20:28,width:"100%",maxWidth:540,maxHeight:"90vh",overflowY:"auto"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
               <div>
-                <h3 style={{fontSize:17,fontWeight:800,color:"#FFFFFF",margin:"0 0 4px"}}>Optimise CV for this job</h3>
-                <div style={{fontSize:12,color:"#5A9A6A"}}>{cvOptimizeJob.title} · {cvOptimizeJob.company}</div>
+                <h3 style={{fontFamily:SERIF,fontWeight:500,fontSize:18,margin:"0 0 4px"}}>Optimise CV for this job</h3>
+                <div style={{fontSize:12,color:INK_SOFT}}>{cvOptimizeJob.title} · {cvOptimizeJob.company}</div>
               </div>
-              <button onClick={()=>{setCvOptimizeJob(null);setCvOptimizedResult(null);setCvOptimizeError('');}} style={{background:"transparent",border:"none",color:"#5A9A6A",fontSize:22,cursor:"pointer",lineHeight:1}}>✕</button>
+              <button onClick={()=>{setCvOptimizeJob(null);setCvOptimizedResult(null);setCvOptimizeError('');}} style={{background:"transparent",border:"none",color:INK_FAINT,fontSize:22,cursor:"pointer",lineHeight:1}}>✕</button>
             </div>
 
             {!cvOptimizedResult && !cvOptimizing && (
               <div>
-                <div style={{background:"#0D3A1A",border:"1px solid #1A5A2A",borderRadius:12,padding:16,marginBottom:18}}>
-                  <div style={{fontSize:12,color:"#5A9A6A",marginBottom:8,fontWeight:600}}>AI will rewrite your CV for:</div>
-                  <div style={{fontSize:14,fontWeight:700,color:"#FFFFFF",marginBottom:4}}>{cvOptimizeJob.title}</div>
-                  <div style={{fontSize:12,color:"#C8E600"}}>{cvOptimizeJob.company}</div>
+                <div style={{background:PAPER,border:`1px solid ${LINE}`,borderRadius:3,padding:16,marginBottom:18}}>
+                  <div style={{fontSize:12,color:INK_SOFT,marginBottom:8,fontWeight:600}}>AI will rewrite your CV for:</div>
+                  <div style={{fontSize:14,fontWeight:600,marginBottom:4}}>{cvOptimizeJob.title}</div>
+                  <div style={{fontSize:12,color:ACCENT}}>{cvOptimizeJob.company}</div>
                   {cvOptimizeJob.description && (
-                    <p style={{fontSize:12,color:"#5A9A6A",marginTop:8,lineHeight:1.6}}>{cvOptimizeJob.description.substring(0,200)}...</p>
+                    <p style={{fontSize:12,color:INK_SOFT,marginTop:8,lineHeight:1.6}}>{cvOptimizeJob.description.substring(0,200)}...</p>
                   )}
                 </div>
-                {cvOptimizeError && (
-                  <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 14px",fontSize:13,color:"#F09595",marginBottom:14}}>
-                    {cvOptimizeError}
-                  </div>
-                )}
+                {cvOptimizeError && <div style={{...errorBoxStyle,marginBottom:14}}>{cvOptimizeError}</div>}
                 <div style={{display:"flex",gap:10}}>
-                  <button onClick={()=>optimizeCVForJob(cvOptimizeJob)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px",borderRadius:99,border:"none",cursor:"pointer"}}>
-                    ✦ Rewrite my CV for this job
+                  <button onClick={()=>optimizeCVForJob(cvOptimizeJob)} style={{flex:1,background:ACCENT,color:PAPER,fontSize:14,fontWeight:600,padding:"12px",borderRadius:3,border:"none",cursor:"pointer"}}>
+                    Rewrite my CV for this job
                   </button>
-                  <button onClick={()=>{setCvOptimizeJob(null);setCvOptimizeError('');}} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"12px 16px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+                  <button onClick={()=>{setCvOptimizeJob(null);setCvOptimizeError('');}} style={{background:"transparent",color:INK_SOFT,fontSize:13,fontWeight:600,padding:"12px 16px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>
                     Cancel
                   </button>
                 </div>
@@ -886,57 +879,53 @@ export default function Dashboard() {
 
             {cvOptimizing && (
               <div style={{textAlign:"center",padding:"32px 0"}}>
-                <div style={{width:40,height:40,border:"3px solid rgba(200,230,0,0.2)",borderTopColor:"#C8E600",borderRadius:"50%",animation:"dashSpin 0.8s linear infinite",margin:"0 auto 16px"}}/>
-                <div style={{fontSize:14,color:"#A8D8B0",fontStyle:"italic"}}>AI is rewriting your CV... ~15 seconds</div>
+                <div style={{width:32,height:32,border:`2px solid ${LINE}`,borderTopColor:ACCENT,borderRadius:"50%",animation:"dashSpin 0.8s linear infinite",margin:"0 auto 16px"}}/>
+                <div style={{fontSize:14,color:INK_SOFT,fontStyle:"italic"}}>AI is rewriting your CV… ~15 seconds</div>
                 <style>{`@keyframes dashSpin{to{transform:rotate(360deg)}}`}</style>
               </div>
             )}
 
             {cvOptimizedResult && (
               <div>
-                <div style={{background:"#0D4A20",borderRadius:12,padding:14,marginBottom:18,display:"flex",alignItems:"center",gap:12}}>
-                  <span style={{fontSize:20}}>✅</span>
-                  <div>
-                    <div style={{fontSize:14,fontWeight:800,color:"#C8E600"}}>CV optimised successfully!</div>
-                    <div style={{fontSize:12,color:"#5A9A6A"}}>Match score: {cvOptimizedResult.match_score}% · ATS: {cvOptimizedResult.ats_score}%</div>
-                  </div>
+                <div style={{background:PAPER,border:`1px solid ${LINE}`,borderRadius:3,padding:14,marginBottom:18}}>
+                  <div style={{fontSize:14,fontWeight:600,color:ACCENT}}>CV optimised successfully</div>
+                  <div style={{fontSize:12,color:INK_SOFT,marginTop:2}}>Match score: {cvOptimizedResult.match_score}% · ATS: {cvOptimizedResult.ats_score}%</div>
                 </div>
-                <div style={{background:"#0D3A1A",border:"1px solid #1A5A2A",borderRadius:12,padding:16,marginBottom:16}}>
-                  <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Optimised Summary</div>
-                  <p style={{fontSize:13,color:"#A8D8B0",lineHeight:1.7,fontStyle:"italic",margin:0}}>&ldquo;{cvOptimizedResult.summary}&rdquo;</p>
+                <div style={{background:PAPER,border:`1px solid ${LINE}`,borderRadius:3,padding:16,marginBottom:16}}>
+                  <div style={{fontSize:11,color:INK_FAINT,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Optimised Summary</div>
+                  <p style={{fontSize:13,color:INK_SOFT,lineHeight:1.7,fontStyle:"italic",margin:0}}>&ldquo;{cvOptimizedResult.summary}&rdquo;</p>
                 </div>
                 {cvOptimizedResult.skills?.length > 0 && (
                   <div style={{marginBottom:16}}>
-                    <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Matched skills</div>
+                    <div style={{fontSize:11,color:INK_FAINT,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Matched skills</div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                       {cvOptimizedResult.skills.map((s: string) => (
-                        <span key={s} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{s}</span>
+                        <span key={s} style={pillTag(LINE,INK_SOFT)}>{s}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 {cvOptimizedResult.keywords_added?.length > 0 && (
                   <div style={{marginBottom:16}}>
-                    <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Keywords added for ATS</div>
+                    <div style={{fontSize:11,color:INK_FAINT,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Keywords added for ATS</div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                       {cvOptimizedResult.keywords_added.map((kw: string) => (
-                        <span key={kw} style={{background:"rgba(200,230,0,0.1)",color:"#C8E600",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600,border:"1px solid rgba(200,230,0,0.3)"}}>{kw}</span>
+                        <span key={kw} style={{...pillTag('rgba(63,93,82,0.07)',ACCENT),border:'1px solid rgba(63,93,82,0.2)'}}>{kw}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 <div style={{display:"flex",gap:10,flexWrap:"wrap",marginTop:4}}>
                   {isPro ? (
-                    <button onClick={downloadOptimizedCV} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 0",borderRadius:99,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="#052A14" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <button onClick={downloadOptimizedCV} style={{flex:1,background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"11px 0",borderRadius:3,border:"none",cursor:"pointer"}}>
                       Download PDF
                     </button>
                   ) : (
-                    <button onClick={()=>handlePayment('pro')} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 0",borderRadius:99,border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                      🔒 Subscribe to download
+                    <button onClick={()=>handlePayment('pro')} style={{flex:1,background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"11px 0",borderRadius:3,border:"none",cursor:"pointer"}}>
+                      Subscribe to download
                     </button>
                   )}
-                  <button onClick={()=>window.open(cvOptimizeJob.url,'_blank')} style={{flex:1,background:"transparent",color:"#FFFFFF",fontSize:13,fontWeight:700,padding:"11px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer"}}>
+                  <button onClick={()=>window.open(cvOptimizeJob.url,'_blank')} style={{flex:1,background:"transparent",color:INK,fontSize:13,fontWeight:600,padding:"11px 0",borderRadius:3,border:`1px solid ${INK}`,cursor:"pointer"}}>
                     Apply now →
                   </button>
                 </div>
@@ -947,31 +936,18 @@ export default function Dashboard() {
       )}
 
       {/* NAV */}
-      <nav style={{background:"#052A14",padding:"0 20px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #0D4A20",position:"sticky",top:0,zIndex:100}}>
-        <a href="/" style={{display:"flex",alignItems:"center",gap:10,textDecoration:"none"}}>
-          <div style={{width:36,height:36,background:"#C8E600",borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
-              <circle cx="9" cy="9" r="5.5" stroke="#052A14" strokeWidth="2.2"/>
-              <circle cx="9" cy="9" r="2.5" fill="#052A14" opacity="0.4"/>
-              <line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#052A14" strokeWidth="2.8" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <span style={{fontSize:18,fontWeight:800}}>
-            <span style={{color:"#FFFFFF"}}>job</span>
-            <span style={{color:"#C8E600"}}>sesame</span>
-          </span>
-        </a>
+      <nav style={{background:CARD,padding:"0 20px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${LINE}`,position:"sticky",top:0,zIndex:100}}>
+        <a href="/" style={{textDecoration:"none",fontFamily:SERIF,fontSize:18,fontWeight:500,color:INK}}>jobsesame</a>
         <div style={{display:"flex",alignItems:"center",gap:isMobile?6:10,overflowX:"auto"}}>
           <button style={navBtnStyle('overview')} onClick={()=>setActiveSection('overview')}>Dashboard</button>
           <button style={navBtnStyle('cv')} onClick={()=>setActiveSection('cv')}>My CV</button>
           {!isMobile && <button style={navBtnStyle('referral')} onClick={()=>setActiveSection('referral')}>Free rewrites</button>}
           <button style={navBtnStyle('applications')} onClick={()=>setActiveSection('applications')}>Applications</button>
-          {!isMobile && JOB_BOARD_ENABLED && <a href="/jobs" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>Find Jobs</a>}
-          {!isMobile && <a href="/optimise" style={{fontSize:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>CV Optimiser</a>}
-          <a href="/account" style={{fontSize:isMobile?12:13,color:"#A8D8B0",fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}} title="My Account">
+          {!isMobile && JOB_BOARD_ENABLED && <a href="/jobs" style={{fontSize:13,color:INK_SOFT,fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>Find Jobs</a>}
+          {!isMobile && <a href="/optimise" style={{fontSize:13,color:INK_SOFT,fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>CV Optimiser</a>}
+          <a href="/account" style={{fontSize:isMobile?12:13,color:INK_SOFT,fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}} title="My Account">
             {isMobile ? '⚙' : 'My Account'}
           </a>
-          <MarketSwitcher compact={isMobile} />
           <UserButton />
         </div>
       </nav>
@@ -982,12 +958,12 @@ export default function Dashboard() {
         <div style={{marginBottom:24}}>
           <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16}}>
             <div>
-              <h1 style={{fontSize:isMobile?20:26,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>
-                Welcome back, <span style={{color:"#C8E600"}}>{firstName}</span> 👋
+              <h1 style={{fontFamily:SERIF,fontWeight:500,fontSize:isMobile?22:28,marginBottom:4}}>
+                Welcome back, <span style={{color:ACCENT}}>{firstName}</span>
               </h1>
-              <p style={{fontSize:13,color:"#5A9A6A"}}>{today}</p>
+              <p style={{fontSize:13,color:INK_FAINT}}>{today}</p>
             </div>
-            {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 22px",borderRadius:99,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
+            {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 22px",borderRadius:3,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
               Browse Jobs →
             </a>}
           </div>
@@ -995,14 +971,14 @@ export default function Dashboard() {
           {/* Quick stats row */}
           <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:10}}>
             {[
-              {label:"CVs tailored",value:applications.length,color:"#C8E600",icon:"✨"},
-              {label:"Applications sent",value:applications.length,color:"#90C898",icon:"📤"},
-              {label:"Time saved",value:`${(applications.length * 0.5).toFixed(1)}h`,color:"#FFA500",icon:"⏱️"},
-              {label:"CV score",value:cvData?`${displayAts}%`:"—",color:"#C8E600",icon:"📊"},
+              {label:"CVs tailored",value:applications.length},
+              {label:"Applications sent",value:applications.length},
+              {label:"Time saved",value:`${(applications.length * 0.5).toFixed(1)}h`},
+              {label:"CV score",value:cvData?`${displayAts}%`:"—"},
             ].map(s=>(
-              <div key={s.label} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 16px"}}>
-                <div style={{fontSize:10,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:6}}>{s.icon} {s.label}</div>
-                <div style={{fontSize:24,fontWeight:800,color:s.color,lineHeight:1}}>{s.value}</div>
+              <div key={s.label} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:"14px 16px"}}>
+                <div style={{fontSize:10,color:INK_FAINT,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>{s.label}</div>
+                <div style={{fontFamily:SERIF,fontSize:22,lineHeight:1}}>{s.value}</div>
               </div>
             ))}
           </div>
@@ -1016,54 +992,51 @@ export default function Dashboard() {
 
             {/* B. CV Analysis Panel */}
             {cvData ? (
-              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:isMobile?20:24}}>
+              <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:isMobile?20:24}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18,flexWrap:"wrap",gap:10}}>
-                  <h2 style={{fontSize:16,fontWeight:800,color:"#FFFFFF"}}>CV Analysis</h2>
-                  <button onClick={()=>setActiveSection('cv')} style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"7px 16px",borderRadius:99,border:"none",cursor:"pointer"}}>Improve my CV</button>
+                  <h2 style={{fontSize:15.5,fontWeight:600}}>CV Analysis</h2>
+                  <button onClick={()=>setActiveSection('cv')} style={{background:ACCENT,color:PAPER,fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:3,border:"none",cursor:"pointer"}}>Improve my CV</button>
                 </div>
                 <div style={{display:"flex",gap:20,alignItems:"flex-start",flexWrap:"wrap"}}>
                   {/* Circular ATS score */}
                   <div style={{textAlign:"center",flexShrink:0}}>
-                    <div style={{position:"relative",width:100,height:100,margin:"0 auto 8px"}}>
-                      <svg width="100" height="100" style={{transform:"rotate(-90deg)"}}>
-                        <circle cx="50" cy="50" r="40" fill="none" stroke="#1A4A2A" strokeWidth="9"/>
-                        <circle cx="50" cy="50" r="40" fill="none" stroke={atsScore>=80?"#C8E600":atsScore>=60?"#FFA500":"#F09595"} strokeWidth="9"
-                          strokeDasharray={`${2*Math.PI*40}`}
-                          strokeDashoffset={`${2*Math.PI*40*(1-displayAts/100)}`}
+                    <div style={{position:"relative",width:92,height:92,margin:"0 auto 8px"}}>
+                      <svg width="92" height="92" style={{transform:"rotate(-90deg)"}}>
+                        <circle cx="46" cy="46" r="38" fill="none" stroke={LINE} strokeWidth="7"/>
+                        <circle cx="46" cy="46" r="38" fill="none" stroke={atsScore>=80?ACCENT:atsScore>=60?AMBER:CLAY} strokeWidth="7"
+                          strokeDasharray={`${2*Math.PI*38}`}
+                          strokeDashoffset={`${2*Math.PI*38*(1-displayAts/100)}`}
                           strokeLinecap="round"/>
                       </svg>
                       <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
-                        <span style={{fontSize:20,fontWeight:800,color:"#C8E600",lineHeight:1}}>{displayAts}%</span>
-                        <span style={{fontSize:9,color:"#5A9A6A",lineHeight:1.3,marginTop:2}}>ATS score</span>
+                        <span style={{fontFamily:SERIF,fontSize:19,lineHeight:1}}>{displayAts}%</span>
+                        <span style={{fontSize:9,color:INK_FAINT,lineHeight:1.3,marginTop:2}}>ATS score</span>
                       </div>
                     </div>
-                    <div style={{fontSize:11,color:atsScore>=80?"#C8E600":atsScore>=60?"#FFA500":"#F09595",fontWeight:700}}>
+                    <div style={{fontSize:11,color:atsScore>=80?ACCENT:atsScore>=60?AMBER:CLAY,fontWeight:700}}>
                       {atsScore>=80?"Excellent":atsScore>=60?"Good":"Needs work"}
                     </div>
                   </div>
                   <div style={{flex:1,minWidth:200}}>
                     <div style={{marginBottom:12}}>
-                      <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:2}}>{cvData.name}</div>
-                      <div style={{fontSize:13,color:"#C8E600",fontWeight:600}}>{cvData.title}</div>
+                      <div style={{fontSize:14,fontWeight:600,marginBottom:2}}>{cvData.name}</div>
+                      <div style={{fontSize:13,color:ACCENT,fontWeight:600}}>{cvData.title}</div>
                     </div>
-                    <div style={{fontSize:12,color:"#5A9A6A",marginBottom:10}}>
-                      <strong style={{color:"#A8D8B0"}}>Suggestions:</strong>
+                    <div style={{fontSize:12,color:INK_FAINT,marginBottom:10}}>
+                      <strong style={{color:INK_SOFT}}>Suggestions:</strong>
                     </div>
                     <div style={{display:"flex",flexDirection:"column",gap:6}}>
                       {atsScore < 90 && (
-                        <div style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:12,color:"#90C898"}}>
-                          <span style={{color:"#FFA500",flexShrink:0}}>•</span>
+                        <div style={{fontSize:12,color:INK_SOFT}}>
                           Add more measurable achievements (numbers, percentages)
                         </div>
                       )}
                       {(!cvData.skills || cvData.skills.length < 5) && (
-                        <div style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:12,color:"#90C898"}}>
-                          <span style={{color:"#FFA500",flexShrink:0}}>•</span>
+                        <div style={{fontSize:12,color:INK_SOFT}}>
                           Expand your skills section with relevant keywords
                         </div>
                       )}
-                      <div style={{display:"flex",gap:8,alignItems:"flex-start",fontSize:12,color:"#90C898"}}>
-                        <span style={{color:"#C8E600",flexShrink:0}}>✓</span>
+                      <div style={{fontSize:12,color:INK_SOFT}}>
                         Use &ldquo;Tailor CV for a job&rdquo; to boost your score for each role
                       </div>
                     </div>
@@ -1071,51 +1044,49 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div style={{background:"linear-gradient(135deg,#072E16 0%,#0D3A1A 100%)",border:"2px dashed #C8E600",borderRadius:16,padding:"32px 28px",textAlign:"center"}}>
-                <div style={{fontSize:48,marginBottom:16}}>📄</div>
-                <h3 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV to get started</h3>
-                <p style={{fontSize:14,color:"#5A9A6A",marginBottom:8,maxWidth:400,margin:"0 auto 8px",lineHeight:1.7}}>
-                  Upload your CV once. AI reads everything, builds your career profile, and matches you to the best jobs worldwide.
+              <div style={{background:CARD,border:`1px dashed rgba(28,26,22,0.22)`,borderRadius:4,padding:"32px 28px",textAlign:"center"}}>
+                <h3 style={{fontFamily:SERIF,fontWeight:500,fontSize:20,marginBottom:8}}>Upload your CV to get started</h3>
+                <p style={{fontSize:14,color:INK_SOFT,marginBottom:8,maxWidth:400,margin:"0 auto 8px",lineHeight:1.7}}>
+                  Upload your CV once. AI reads everything and builds your career profile.
                 </p>
-                <p style={{fontSize:12,color:"#3A7A4A",marginBottom:24,fontStyle:"italic"}}>Takes about 15 seconds. Free.</p>
+                <p style={{fontSize:12,color:INK_FAINT,marginBottom:24,fontStyle:"italic"}}>Takes about 15 seconds. Free.</p>
                 <button
                   onClick={()=>setActiveSection('cv')}
-                  style={{background:"#C8E600",color:"#052A14",fontSize:15,fontWeight:800,padding:"14px 36px",borderRadius:99,border:"none",cursor:"pointer",boxShadow:"0 4px 20px rgba(200,230,0,0.25)"}}>
+                  style={{background:ACCENT,color:PAPER,fontSize:14.5,fontWeight:600,padding:"14px 32px",borderRadius:3,border:"none",cursor:"pointer"}}>
                   Upload my CV →
                 </button>
               </div>
             )}
 
-            {/* C. Salary Intelligence */}
-            {cvData && matchedSalary && (
-              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:isMobile?20:24}}>
+            {/* C. Salary Intelligence — ZAR salary bands only, not meaningful for other currencies */}
+            {cvData && matchedSalary && currency === 'ZAR' && (
+              <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:isMobile?20:24}}>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16,flexWrap:"wrap",gap:8}}>
-                  <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF",margin:0}}>Salary Intelligence</h2>
-                  <span style={{fontSize:10,fontWeight:700,color:"#3A7A4A",background:"#0D3A1A",padding:"3px 10px",borderRadius:99,border:"1px solid #1A5A2A"}}>ZAR · Annual</span>
+                  <h2 style={{fontSize:15,fontWeight:600,margin:0}}>Salary Intelligence</h2>
+                  <span style={{fontSize:10,fontWeight:700,color:INK_FAINT,background:PAPER,padding:"3px 10px",borderRadius:99,border:`1px solid ${LINE}`}}>ZAR · Annual</span>
                 </div>
-                <div style={{fontSize:12,color:"#5A9A6A",textTransform:"capitalize",marginBottom:12}}>{matchedSalary.role}</div>
-                <div style={{fontSize:26,fontWeight:900,color:"#C8E600",marginBottom:8}}>
+                <div style={{fontSize:12,color:INK_SOFT,textTransform:"capitalize",marginBottom:12}}>{matchedSalary.role}</div>
+                <div style={{fontFamily:SERIF,fontSize:24,marginBottom:8}}>
                   R{(matchedSalary.min/1000).toFixed(0)}k – R{(matchedSalary.max/1000).toFixed(0)}k per year
                 </div>
-                <div style={{fontSize:11,color:"#3A7A4A"}}>Based on South African market data 2025</div>
+                <div style={{fontSize:11,color:INK_FAINT}}>Based on South African market data</div>
               </div>
             )}
 
             {/* D. AI Actions Row */}
             <div>
-              <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF",marginBottom:12}}>AI actions</h2>
+              <h2 style={{fontSize:15,fontWeight:600,marginBottom:12}}>AI actions</h2>
               <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
                 {[
-                  {icon:"🧬",title:"Tailor CV for a job",desc:"AI rewrites your CV for any role in 30 seconds",action:()=>setShowAiModal('tailor'),color:"#C8E600"},
-                  {icon:"✉️",title:"Generate cover letter",desc:"Personalised cover letter in seconds",action:()=>setShowAiModal('cover'),color:"#90C898"},
-                  {icon:"⚡",title:"Optimise my CV",desc:"Full AI optimisation on the CV Optimiser tool",action:()=>window.location.href='/optimise',color:"#A8D8B0"},
+                  {title:"Tailor CV for a job",desc:"AI rewrites your CV for any role in 30 seconds",action:()=>setShowAiModal('tailor')},
+                  {title:"Generate cover letter",desc:"Personalised cover letter in seconds",action:()=>setShowAiModal('cover')},
+                  {title:"Optimise my CV",desc:"Full AI optimisation on the CV Optimiser tool",action:()=>window.location.href='/optimise'},
                 ].map(a=>(
-                  <button key={a.title} onClick={a.action} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:18,textAlign:"left",cursor:"pointer",transition:"border-color 0.15s"}}
-                    onMouseEnter={e=>(e.currentTarget.style.borderColor="#C8E600")}
-                    onMouseLeave={e=>(e.currentTarget.style.borderColor="#1A4A2A")}>
-                    <div style={{fontSize:24,marginBottom:8}}>{a.icon}</div>
-                    <div style={{fontSize:13,fontWeight:800,color:a.color,marginBottom:4}}>{a.title}</div>
-                    <div style={{fontSize:11,color:"#3A7A4A",lineHeight:1.5}}>{a.desc}</div>
+                  <button key={a.title} onClick={a.action} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:18,textAlign:"left",cursor:"pointer",transition:"border-color 0.15s"}}
+                    onMouseEnter={e=>(e.currentTarget.style.borderColor=ACCENT)}
+                    onMouseLeave={e=>(e.currentTarget.style.borderColor=LINE)}>
+                    <div style={{fontSize:13,fontWeight:600,marginBottom:4}}>{a.title}</div>
+                    <div style={{fontSize:11.5,color:INK_FAINT,lineHeight:1.5}}>{a.desc}</div>
                   </button>
                 ))}
               </div>
@@ -1124,17 +1095,17 @@ export default function Dashboard() {
             {/* D. Recommended Jobs */}
             {JOB_BOARD_ENABLED && <div>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF"}}>
+                <h2 style={{fontSize:15,fontWeight:600}}>
                   {cvData
                     ? `Recommended for you based on your CV${cvData.title ? ` — ${cvData.title} roles` : ''}`
                     : 'Recommended jobs'}
                 </h2>
-                <a href="/jobs" style={{fontSize:12,color:"#C8E600",fontWeight:700,textDecoration:"none"}}>View all jobs →</a>
+                <a href="/jobs" style={{fontSize:12,color:ACCENT,fontWeight:600,textDecoration:"none"}}>View all jobs →</a>
               </div>
               {loadingJobs ? (
                 <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(260px, 1fr))",gap:10,width:"100%",overflow:"hidden"}}>
                   {[1,2,3,4,5,6].map(i=>(
-                    <div key={i} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:16,height:130}}/>
+                    <div key={i} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:16,height:130}}/>
                   ))}
                 </div>
               ) : (
@@ -1142,39 +1113,39 @@ export default function Dashboard() {
                   {recommendedJobs.map(job=>{
                     const matchPct = calcJobMatch(job);
                     return (
-                      <div key={job.id} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:16,display:"flex",flexDirection:"column",minHeight:130}}>
+                      <div key={job.id} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:16,display:"flex",flexDirection:"column",minHeight:130}}>
                         <div style={{display:"flex",gap:10,alignItems:"flex-start",marginBottom:10}}>
-                          <div style={{width:36,height:36,borderRadius:8,background:"#0D3A1A",color:"#C8E600",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:800,flexShrink:0}}>
+                          <div style={{width:36,height:36,borderRadius:3,background:PAPER,color:ACCENT,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,flexShrink:0}}>
                             {job.company.charAt(0).toUpperCase()}
                           </div>
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
-                              <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,minWidth:0}}>{job.title}</div>
+                              <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,minWidth:0}}>{job.title}</div>
                               {matchPct !== null && (() => { const b = matchBadge(matchPct); return (
-                                <span style={{fontSize:9,fontWeight:800,color:b.color,background:b.bg,padding:"1px 6px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{matchPct}%</span>
+                                <span style={{fontSize:9,fontWeight:700,color:b.color,background:b.bg,padding:"1px 6px",borderRadius:99,whiteSpace:"nowrap",flexShrink:0}}>{matchPct}%</span>
                               ); })()}
                             </div>
-                            <div style={{fontSize:11,color:"#5A9A6A",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{job.company} · {job.location}</div>
+                            <div style={{fontSize:11,color:INK_FAINT,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{job.company} · {job.location}</div>
                           </div>
                         </div>
                         <div style={{display:"flex",flexDirection:"column",gap:6,marginTop:"auto"}}>
                           <div style={{display:"flex",gap:6}}>
                             {isAutoApply(job.url, job.type) ? (
-                              <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"7px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
-                                ⚡ Quick Apply
+                              <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:ACCENT,color:PAPER,fontSize:11,fontWeight:600,padding:"7px 0",borderRadius:3,border:"none",cursor:"pointer"}}>
+                                Quick Apply
                               </button>
                             ) : (
-                              <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:"#C8E600",color:"#052A14",fontSize:11,fontWeight:800,padding:"7px 0",borderRadius:99,border:"none",cursor:"pointer"}}>
+                              <button onClick={()=>setSelectedJob(job)} style={{flex:1,background:ACCENT,color:PAPER,fontSize:11,fontWeight:600,padding:"7px 0",borderRadius:3,border:"none",cursor:"pointer"}}>
                                 Apply
                               </button>
                             )}
-                            <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:"#FFFFFF",fontSize:11,fontWeight:700,padding:"7px 0",borderRadius:99,border:"1.5px solid #1A5A2A",cursor:"pointer"}}>
+                            <button onClick={()=>window.open(job.url,'_blank')} style={{flex:1,background:"transparent",color:INK,fontSize:11,fontWeight:600,padding:"7px 0",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>
                               View
                             </button>
                           </div>
                           {cvData && (
-                            <button onClick={()=>{setCvOptimizeJob(job);setCvOptimizedResult(null);setCvOptimizeError('');}} style={{width:"100%",background:"rgba(200,230,0,0.07)",color:"#C8E600",fontSize:11,fontWeight:700,padding:"7px 0",borderRadius:99,border:"1px solid rgba(200,230,0,0.25)",cursor:"pointer"}}>
-                              ✦ Optimise CV for this job
+                            <button onClick={()=>{setCvOptimizeJob(job);setCvOptimizedResult(null);setCvOptimizeError('');}} style={{width:"100%",background:'rgba(63,93,82,0.07)',color:ACCENT,fontSize:11,fontWeight:600,padding:"7px 0",borderRadius:3,border:'1px solid rgba(63,93,82,0.2)',cursor:"pointer"}}>
+                              Optimise CV for this job
                             </button>
                           )}
                         </div>
@@ -1185,15 +1156,14 @@ export default function Dashboard() {
                     <div style={{gridColumn:"1/-1",textAlign:"center",padding:"32px 0"}}>
                       {cvData ? (
                         <>
-                          <div style={{fontSize:13,color:"#5A9A6A",marginBottom:12}}>No recommended jobs yet</div>
-                          <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"9px 22px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Browse all jobs</a>
+                          <div style={{fontSize:13,color:INK_SOFT,marginBottom:12}}>No recommended jobs yet</div>
+                          <a href="/jobs" style={{background:ACCENT,color:PAPER,fontSize:12,fontWeight:600,padding:"9px 22px",borderRadius:3,textDecoration:"none",display:"inline-block"}}>Browse all jobs</a>
                         </>
                       ) : (
                         <>
-                          <div style={{fontSize:40,marginBottom:12}}>📄</div>
-                          <div style={{fontSize:14,fontWeight:700,color:"#FFFFFF",marginBottom:6}}>Upload your CV to see personalised job recommendations</div>
-                          <div style={{fontSize:12,color:"#5A9A6A",marginBottom:16}}>AI matches jobs to your exact skills and experience</div>
-                          <button onClick={()=>setActiveSection('cv')} style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"9px 22px",borderRadius:99,border:"none",cursor:"pointer",display:"inline-block"}}>Upload CV →</button>
+                          <div style={{fontSize:14,fontWeight:600,marginBottom:6}}>Upload your CV to see personalised job recommendations</div>
+                          <div style={{fontSize:12,color:INK_SOFT,marginBottom:16}}>AI matches jobs to your exact skills and experience</div>
+                          <button onClick={()=>setActiveSection('cv')} style={{background:ACCENT,color:PAPER,fontSize:12,fontWeight:600,padding:"9px 22px",borderRadius:3,border:"none",cursor:"pointer",display:"inline-block"}}>Upload CV →</button>
                         </>
                       )}
                     </div>
@@ -1204,19 +1174,19 @@ export default function Dashboard() {
 
             {/* E. Quick Actions */}
             <div>
-              <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF",marginBottom:12}}>Quick actions</h2>
+              <h2 style={{fontSize:15,fontWeight:600,marginBottom:12}}>Quick actions</h2>
               <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                 {[
-                  {label:"🌍 View all jobs",href:"/jobs"},
-                  {label:"📋 My Applications",onClick:()=>setActiveSection('applications')},
-                  {label:"🔖 Saved Jobs",href:"/saved-jobs"},
-                  {label:"🎁 Free rewrites",onClick:()=>setActiveSection('referral')},
-                  {label:"📄 Edit CV",onClick:()=>setActiveSection('cv')},
-                  {label:"⚡ CV Optimiser",href:"/optimise"},
+                  {label:"View all jobs",href:"/jobs"},
+                  {label:"My Applications",onClick:()=>setActiveSection('applications')},
+                  {label:"Saved Jobs",href:"/saved-jobs"},
+                  {label:"Free rewrites",onClick:()=>setActiveSection('referral')},
+                  {label:"Edit CV",onClick:()=>setActiveSection('cv')},
+                  {label:"CV Optimiser",href:"/optimise"},
                 ].filter(a=>JOB_BOARD_ENABLED || (a.href!=="/jobs" && a.href!=="/saved-jobs")).map(a=>(
                   a.href
-                    ? <a key={a.label} href={a.href} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:10,padding:"10px 18px",fontSize:13,color:"#A8D8B0",fontWeight:600,textDecoration:"none"}}>{a.label}</a>
-                    : <button key={a.label} onClick={a.onClick} style={{background:"#072E16",borderRadius:10,padding:"10px 18px",fontSize:13,color:"#A8D8B0",fontWeight:600,cursor:"pointer",border:"1.5px solid #1A4A2A"} as React.CSSProperties}>{a.label}</button>
+                    ? <a key={a.label} href={a.href} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:3,padding:"10px 18px",fontSize:13,color:INK_SOFT,fontWeight:600,textDecoration:"none"}}>{a.label}</a>
+                    : <button key={a.label} onClick={a.onClick} style={{background:CARD,borderRadius:3,padding:"10px 18px",fontSize:13,color:INK_SOFT,fontWeight:600,cursor:"pointer",border:`1px solid ${LINE}`} as React.CSSProperties}>{a.label}</button>
                 ))}
               </div>
             </div>
@@ -1225,20 +1195,20 @@ export default function Dashboard() {
             {applications.length > 0 && (
               <div>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-                  <h2 style={{fontSize:15,fontWeight:800,color:"#FFFFFF"}}>Recent applications</h2>
-                  <button onClick={()=>setActiveSection('applications')} style={{background:"transparent",border:"none",fontSize:12,color:"#C8E600",fontWeight:700,cursor:"pointer"}}>View all →</button>
+                  <h2 style={{fontSize:15,fontWeight:600}}>Recent applications</h2>
+                  <button onClick={()=>setActiveSection('applications')} style={{background:"transparent",border:"none",fontSize:12,color:ACCENT,fontWeight:600,cursor:"pointer"}}>View all →</button>
                 </div>
-                <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,overflow:"hidden"}}>
+                <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,overflow:"hidden"}}>
                   {applications.slice(0,4).map((app,i)=>(
-                    <div key={app.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderBottom:i<Math.min(3,applications.length-1)?"1px solid #0D3A1A":"none",flexWrap:"wrap"}}>
+                    <div key={app.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 16px",borderBottom:i<Math.min(3,applications.length-1)?`1px solid ${LINE}`:"none",flexWrap:"wrap"}}>
                       <div style={{flex:1,minWidth:140}}>
-                        <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",marginBottom:1}}>{app.jobTitle}</div>
-                        <div style={{fontSize:11,color:"#5A9A6A"}}>{app.company} · {new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
+                        <div style={{fontSize:13,fontWeight:600,marginBottom:1}}>{app.jobTitle}</div>
+                        <div style={{fontSize:11,color:INK_FAINT}}>{app.company} · {new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
                       </div>
                       <select
                         value={app.status}
                         onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])}
-                        style={{padding:"4px 10px",borderRadius:99,border:"1.5px solid",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none",background:"#0D3A1A",borderColor:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#A32D2D':'#1A5A2A',color:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#F09595':'#90C898'}}>
+                        style={{padding:"4px 10px",borderRadius:99,border:"1px solid",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none",background:PAPER,borderColor:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:LINE,color:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:INK_SOFT}}>
                         <option value="Applied">Applied</option>
                         <option value="Interview">Interview</option>
                         <option value="Offer">Offer</option>
@@ -1259,19 +1229,17 @@ export default function Dashboard() {
         {activeSection === 'cv' && (
           <div>
             {!cvData ? (
-              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:32,textAlign:"center"}}>
-                <div style={{fontSize:40,marginBottom:16}}>📄</div>
-                <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>Upload your CV</h2>
-                <p style={{fontSize:14,color:"#5A9A6A",marginBottom:24,maxWidth:400,margin:"0 auto 24px"}}>
+              <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:32,textAlign:"center"}}>
+                <h2 style={{fontFamily:SERIF,fontWeight:500,fontSize:22,marginBottom:8}}>Upload your CV</h2>
+                <p style={{fontSize:14,color:INK_SOFT,marginBottom:24,maxWidth:400,margin:"0 auto 24px"}}>
                   Upload your CV once. AI reads everything and builds your complete career profile in seconds.
                 </p>
                 {uploading ? (
-                  <div style={{border:"2px dashed #C8E600",borderRadius:14,padding:"48px 24px",marginBottom:16,background:"rgba(200,230,0,0.03)",textAlign:"center"}}>
-                    <div style={{fontSize:36,marginBottom:16}}>🤖</div>
-                    <div style={{fontSize:16,fontWeight:800,color:"#C8E600",marginBottom:8}}>AI is reading your CV...</div>
-                    <div style={{fontSize:13,color:"#5A9A6A",marginBottom:20}}>Extracting skills, experience and achievements — about 15 seconds</div>
-                    <div style={{width:200,height:4,background:"#1A4A2A",borderRadius:99,margin:"0 auto",overflow:"hidden"}}>
-                      <div style={{height:4,background:"#C8E600",borderRadius:99,animation:"cvprogress 2s ease-in-out infinite"}}/>
+                  <div style={{border:`1px dashed rgba(28,26,22,0.22)`,borderRadius:4,padding:"48px 24px",marginBottom:16,background:PAPER,textAlign:"center"}}>
+                    <div style={{fontSize:15,fontWeight:600,marginBottom:8}}>AI is reading your CV…</div>
+                    <div style={{fontSize:13,color:INK_SOFT,marginBottom:20}}>Extracting skills, experience and achievements — about 15 seconds</div>
+                    <div style={{width:200,height:3,background:LINE,borderRadius:99,margin:"0 auto",overflow:"hidden"}}>
+                      <div style={{height:3,background:ACCENT,borderRadius:99,animation:"cvprogress 2s ease-in-out infinite"}}/>
                     </div>
                     <style>{`@keyframes cvprogress{0%{width:5%}50%{width:75%}100%{width:95%}}`}</style>
                   </div>
@@ -1280,69 +1248,68 @@ export default function Dashboard() {
                     onDrop={handleDrop}
                     onDragOver={e=>{e.preventDefault();setDragOver(true);}}
                     onDragLeave={()=>setDragOver(false)}
-                    style={{border:`2px dashed ${dragOver?'#C8E600':'#1A5A2A'}`,borderRadius:14,padding:"40px 24px",marginBottom:16,background:dragOver?'rgba(200,230,0,0.05)':'transparent',transition:"all 0.2s",cursor:"pointer"}}>
-                    <div style={{fontSize:32,marginBottom:12}}>📄</div>
-                    <div style={{fontSize:14,fontWeight:700,color:"#FFFFFF",marginBottom:6}}>Drag your PDF CV here</div>
-                    <div style={{fontSize:12,color:"#3A7A4A",marginBottom:16}}>or</div>
+                    style={{border:`1px dashed ${dragOver?ACCENT:'rgba(28,26,22,0.22)'}`,borderRadius:4,padding:"40px 24px",marginBottom:16,background:dragOver?'rgba(63,93,82,0.04)':PAPER,transition:"all 0.2s",cursor:"pointer"}}>
+                    <div style={{fontSize:14,fontWeight:600,marginBottom:6}}>Drag your PDF CV here</div>
+                    <div style={{fontSize:12,color:INK_FAINT,marginBottom:16}}>or</div>
                     <label style={{cursor:"pointer",display:"inline-block"}}>
                       <input type="file" accept=".pdf" onChange={handleFileInput} style={{display:"none"}}/>
-                      <span style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,cursor:"pointer",display:"inline-block"}}>
+                      <span style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 24px",borderRadius:3,cursor:"pointer",display:"inline-block"}}>
                         Choose PDF file
                       </span>
                     </label>
                   </div>
                 )}
                 {error && (
-                  <div style={{background:"rgba(163,45,45,0.2)",border:"1.5px solid #A32D2D",borderRadius:10,padding:"12px 16px",fontSize:13,color:"#F09595",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
-                    <span>⚠️ {error}</span>
-                    <button onClick={()=>setError('')} style={{background:"#A32D2D",color:"#fff",fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                  <div style={{...errorBoxStyle,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",gap:12}}>
+                    <span>{error}</span>
+                    <button onClick={()=>setError('')} style={{background:CLAY,color:PAPER,fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
                       Retry
                     </button>
                   </div>
                 )}
-                <div style={{fontSize:11,color:"#3A7A4A"}}>PDF only · Maximum 10MB · Processed securely by AI</div>
+                <div style={{fontSize:11,color:INK_FAINT}}>PDF only · Maximum 10MB · Processed securely by AI</div>
               </div>
             ) : rewrittenCV ? (
               <div>
-                <div style={{background:"#C8E600",borderRadius:14,padding:16,marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+                <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:16,marginBottom:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
                   <div>
-                    <div style={{fontSize:15,fontWeight:800,color:"#052A14"}}>CV rewritten for {jobTitle}</div>
-                    <div style={{fontSize:12,color:"#2A5A14"}}>Match: {rewrittenCV.match_score}% · ATS: {rewrittenCV.ats_score}%</div>
+                    <div style={{fontSize:14.5,fontWeight:600}}>CV rewritten for {jobTitle}</div>
+                    <div style={{fontSize:12,color:INK_SOFT,marginTop:2}}>Match: {rewrittenCV.match_score}% · ATS: {rewrittenCV.ats_score}%</div>
                   </div>
-                  <button onClick={()=>setRewrittenCV(null)} style={{background:"#052A14",color:"#C8E600",fontSize:12,fontWeight:700,padding:"7px 16px",borderRadius:99,border:"none",cursor:"pointer"}}>
+                  <button onClick={()=>setRewrittenCV(null)} style={{background:"transparent",color:INK,fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:3,border:`1px solid ${INK}`,cursor:"pointer"}}>
                     Rewrite for another job
                   </button>
                 </div>
-                <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:16,padding:28,marginBottom:20}}>
-                  <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>{rewrittenCV.name}</h2>
-                  <div style={{fontSize:14,color:"#C8E600",fontWeight:600,marginBottom:2}}>{rewrittenCV.title}</div>
-                  <div style={{fontSize:12,color:"#5A9A6A",marginBottom:16}}>{rewrittenCV.location}</div>
-                  <p style={{fontSize:13,color:"#A8D8B0",lineHeight:1.7,marginBottom:20,fontStyle:"italic"}}>&ldquo;{rewrittenCV.summary}&rdquo;</p>
+                <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:28,marginBottom:20}}>
+                  <h2 style={{fontFamily:SERIF,fontWeight:500,fontSize:21,marginBottom:4}}>{rewrittenCV.name}</h2>
+                  <div style={{fontSize:14,color:ACCENT,fontWeight:600,marginBottom:2}}>{rewrittenCV.title}</div>
+                  <div style={{fontSize:12,color:INK_FAINT,marginBottom:16}}>{rewrittenCV.location}</div>
+                  <p style={{fontSize:13,color:INK_SOFT,lineHeight:1.7,marginBottom:20,fontStyle:"italic"}}>&ldquo;{rewrittenCV.summary}&rdquo;</p>
                   <div style={{marginBottom:16}}>
-                    <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:8}}>Skills matched</div>
+                    <div style={{fontSize:11,color:INK_FAINT,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>Skills matched</div>
                     <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                       {rewrittenCV.skills?.map((s: string) => (
-                        <span key={s} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{s}</span>
+                        <span key={s} style={pillTag(LINE,INK_SOFT)}>{s}</span>
                       ))}
                     </div>
                   </div>
                   {rewrittenCV.keywords_added?.length > 0 && (
                     <div style={{marginBottom:16}}>
-                      <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:8}}>Keywords added for ATS</div>
+                      <div style={{fontSize:11,color:INK_FAINT,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>Keywords added for ATS</div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                         {rewrittenCV.keywords_added?.map((kw: string) => (
-                          <span key={kw} style={{background:"rgba(200,230,0,0.1)",color:"#C8E600",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600,border:"1px solid rgba(200,230,0,0.3)"}}>{kw}</span>
+                          <span key={kw} style={{...pillTag('rgba(63,93,82,0.07)',ACCENT),border:'1px solid rgba(63,93,82,0.2)'}}>{kw}</span>
                         ))}
                       </div>
                     </div>
                   )}
                   {rewrittenCV.experience?.map((exp: any, i: number) => (
-                    <div key={i} style={{marginBottom:12,padding:14,background:"#0D3A1A",borderRadius:10}}>
-                      <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",marginBottom:2}}>{exp.title}</div>
-                      <div style={{fontSize:12,color:"#C8E600",marginBottom:8}}>{exp.company} · {exp.duration}</div>
+                    <div key={i} style={{marginBottom:12,padding:14,background:PAPER,borderRadius:3}}>
+                      <div style={{fontSize:13,fontWeight:600,marginBottom:2}}>{exp.title}</div>
+                      <div style={{fontSize:12,color:ACCENT,marginBottom:8}}>{exp.company} · {exp.duration}</div>
                       {exp.bullets?.map((b: string, j: number) => (
-                        <div key={j} style={{fontSize:12,color:"#90C898",lineHeight:1.7,paddingLeft:12,position:"relative"}}>
-                          <span style={{position:"absolute",left:0,color:"#C8E600"}}>·</span>{b}
+                        <div key={j} style={{fontSize:12,color:INK_SOFT,lineHeight:1.7,paddingLeft:12,position:"relative"}}>
+                          <span style={{position:"absolute",left:0,color:ACCENT}}>·</span>{b}
                         </div>
                       ))}
                     </div>
@@ -1350,49 +1317,48 @@ export default function Dashboard() {
                 </div>
                 <div style={{display:"flex",gap:12,flexWrap:"wrap"}}>
                   {isPro ? (
-                    <button onClick={downloadCV} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 12v1a1 1 0 001 1h10a1 1 0 001-1v-1" stroke="#052A14" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <button onClick={downloadCV} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"11px 28px",borderRadius:3,border:"none",cursor:"pointer"}}>
                       Download PDF
                     </button>
                   ) : (
-                    <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",display:"flex",alignItems:"center",gap:8,opacity:paying?0.7:1}}>
-                      🔒 Subscribe to download PDF
+                    <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"11px 28px",borderRadius:3,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                      Subscribe to download PDF
                     </button>
                   )}
                   {!isPro && (
-                    <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"11px 24px",borderRadius:99,border:"1px solid #1A5A2A",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
-                      {paying?'Loading...':'Upgrade to Pro'}
+                    <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"transparent",color:INK_SOFT,fontSize:13,fontWeight:600,padding:"11px 24px",borderRadius:3,border:`1px solid ${LINE}`,cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                      {paying?'Loading…':'Upgrade to Pro'}
                     </button>
                   )}
                 </div>
               </div>
             ) : (
               <div>
-                <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:16,padding:28,marginBottom:20}}>
+                <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:28,marginBottom:20}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,flexWrap:"wrap",gap:12}}>
                     <div>
-                      <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>{cvData.name}</h2>
-                      <div style={{fontSize:13,color:"#C8E600",fontWeight:600}}>{cvData.title}</div>
-                      <div style={{fontSize:12,color:"#5A9A6A",marginTop:2}}>{cvData.location}</div>
+                      <h2 style={{fontFamily:SERIF,fontWeight:500,fontSize:21,marginBottom:4}}>{cvData.name}</h2>
+                      <div style={{fontSize:13,color:ACCENT,fontWeight:600}}>{cvData.title}</div>
+                      <div style={{fontSize:12,color:INK_FAINT,marginTop:2}}>{cvData.location}</div>
                     </div>
                     <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                      <button onClick={()=>{setCvData(null);localStorage.removeItem('jobsesame_cv_data');}} style={{background:"transparent",color:"#5A9A6A",fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Upload new CV</button>
-                      {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:12,fontWeight:800,padding:"7px 16px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Find matching jobs</a>}
+                      <button onClick={()=>{setCvData(null);localStorage.removeItem('jobsesame_cv_data');}} style={{background:"transparent",color:INK_SOFT,fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>Upload new CV</button>
+                      {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:ACCENT,color:PAPER,fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:3,textDecoration:"none",display:"inline-block"}}>Find matching jobs</a>}
                     </div>
                   </div>
-                  {cvData.summary && <p style={{fontSize:13,color:"#A8D8B0",lineHeight:1.7,marginBottom:20,fontStyle:"italic"}}>&ldquo;{cvData.summary}&rdquo;</p>}
+                  {cvData.summary && <p style={{fontSize:13,color:INK_SOFT,lineHeight:1.7,marginBottom:20,fontStyle:"italic"}}>&ldquo;{cvData.summary}&rdquo;</p>}
                   <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:16}}>
                     <div>
-                      <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:8}}>Skills</div>
+                      <div style={{fontSize:11,color:INK_FAINT,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>Skills</div>
                       <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                         {cvData.skills?.map((s: string) => (
-                          <span key={s} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{s}</span>
+                          <span key={s} style={pillTag(LINE,INK_SOFT)}>{s}</span>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase",marginBottom:8}}>Details</div>
-                      <div style={{fontSize:12,color:"#90C898",lineHeight:1.8}}>
+                      <div style={{fontSize:11,color:INK_FAINT,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>Details</div>
+                      <div style={{fontSize:12,color:INK_SOFT,lineHeight:1.8}}>
                         {cvData.experience_years && <div>Experience: {cvData.experience_years} years</div>}
                         {cvData.education && <div>Education: {cvData.education}</div>}
                         {cvData.languages?.length > 0 && <div>Languages: {cvData.languages.join(', ')}</div>}
@@ -1402,53 +1368,53 @@ export default function Dashboard() {
                 </div>
 
                 {showRewrite ? (
-                  <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:16,padding:28,marginBottom:20}}>
-                    <h3 style={{fontSize:16,fontWeight:800,color:"#FFFFFF",marginBottom:20}}>Rewrite CV for a specific job</h3>
-                    <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+                  <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:28,marginBottom:20}}>
+                    <h3 style={{fontFamily:SERIF,fontWeight:500,fontSize:17,marginBottom:20}}>Rewrite CV for a specific job</h3>
+                    <div style={{display:"flex",flexDirection:"column",gap:14,marginBottom:20}}>
                       <div>
-                        <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job title *</label>
-                        <input value={jobTitle} onChange={e=>setJobTitle(e.target.value)} placeholder="e.g. Senior Project Manager" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+                        <label style={labelStyle}>Job title *</label>
+                        <input value={jobTitle} onChange={e=>setJobTitle(e.target.value)} placeholder="e.g. Senior Project Manager" style={inputStyle}/>
                       </div>
                       <div>
-                        <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Company name</label>
-                        <input value={jobCompany} onChange={e=>setJobCompany(e.target.value)} placeholder="e.g. Standard Bank" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:14,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",boxSizing:"border-box"}}/>
+                        <label style={labelStyle}>Company name</label>
+                        <input value={jobCompany} onChange={e=>setJobCompany(e.target.value)} placeholder="e.g. Standard Bank" style={inputStyle}/>
                       </div>
                       <div>
-                        <label style={{fontSize:12,color:"#5A9A6A",fontWeight:600,display:"block",marginBottom:6}}>Job description (paste for best results)</label>
-                        <textarea value={jobDescription} onChange={e=>setJobDescription(e.target.value)} placeholder="Paste the job description here..." rows={5} style={{width:"100%",padding:"11px 14px",border:"1.5px solid #1A5A2A",borderRadius:10,fontSize:13,color:"#FFFFFF",background:"#0D3A1A",outline:"none",fontFamily:"inherit",resize:"vertical",boxSizing:"border-box"}}/>
+                        <label style={labelStyle}>Job description (paste for best results)</label>
+                        <textarea value={jobDescription} onChange={e=>setJobDescription(e.target.value)} placeholder="Paste the job description here..." rows={5} style={{...inputStyle,resize:"vertical"}}/>
                       </div>
                     </div>
-                    {rewriteError && <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginBottom:16}}>{rewriteError}</div>}
+                    {rewriteError && <div style={{...errorBoxStyle,marginBottom:16}}>{rewriteError}</div>}
                     <div style={{display:"flex",gap:10}}>
-                      <button onClick={handleRewrite} disabled={rewriting} style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px 28px",borderRadius:99,border:"none",cursor:rewriting?"default":"pointer",opacity:rewriting?0.7:1}}>
-                        {rewriting?'Rewriting...':'Rewrite my CV now'}
+                      <button onClick={handleRewrite} disabled={rewriting} style={{background:ACCENT,color:PAPER,fontSize:14,fontWeight:600,padding:"12px 28px",borderRadius:3,border:"none",cursor:rewriting?"default":"pointer",opacity:rewriting?0.7:1}}>
+                        {rewriting?'Rewriting…':'Rewrite my CV now'}
                       </button>
-                      <button onClick={()=>setShowRewrite(false)} style={{background:"transparent",color:"#5A9A6A",fontSize:13,fontWeight:600,padding:"12px 20px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Cancel</button>
+                      <button onClick={()=>setShowRewrite(false)} style={{background:"transparent",color:INK_SOFT,fontSize:13,fontWeight:600,padding:"12px 20px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>Cancel</button>
                     </div>
-                    {rewriting && <div style={{marginTop:16,fontSize:13,color:"#5A9A6A",fontStyle:"italic"}}>AI is rewriting your CV... about 15 seconds.</div>}
+                    {rewriting && <div style={{marginTop:16,fontSize:13,color:INK_SOFT,fontStyle:"italic"}}>AI is rewriting your CV… about 15 seconds.</div>}
                   </div>
                 ) : (
-                  <div style={{background:"#C8E600",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16}}>
+                  <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12,marginBottom:16}}>
                     <div>
-                      <div style={{fontSize:15,fontWeight:800,color:"#052A14",marginBottom:4}}>Ready to rewrite for any job</div>
-                      <div style={{fontSize:12,color:"#2A5A14"}}>AI rewrites in 30 seconds. You have {freeRewrites} free rewrites.</div>
+                      <div style={{fontSize:14.5,fontWeight:600,marginBottom:4}}>Ready to rewrite for any job</div>
+                      <div style={{fontSize:12,color:INK_SOFT}}>AI rewrites in 30 seconds. You have {freeRewrites} free rewrites.</div>
                     </div>
-                    <button onClick={()=>setShowRewrite(true)} style={{background:"#052A14",color:"#C8E600",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                    <button onClick={()=>setShowRewrite(true)} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 24px",borderRadius:3,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
                       Rewrite my CV — free
                     </button>
                   </div>
                 )}
 
-                <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+                <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
                   <div>
-                    <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Unlock Pro — all doors open</div>
-                    <div style={{fontSize:12,color:"#5A9A6A"}}>Unlimited rewrites. Auto-apply. Cover letters. {currency==='ZAR'?'R249':'$14'}/month.</div>
+                    <div style={{fontSize:14,fontWeight:600,marginBottom:4}}>Unlock Pro — all doors open</div>
+                    <div style={{fontSize:12,color:INK_SOFT}}>Unlimited rewrites. Cover letters. {currency==='ZAR'?'R249':currency==='GBP'?'£21':'$14'}/month.</div>
                   </div>
-                  <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
-                    {paying?'Loading...':'Upgrade to Pro'}
+                  <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 24px",borderRadius:3,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                    {paying?'Loading…':'Upgrade to Pro'}
                   </button>
                 </div>
-                {paymentError && <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginTop:12}}>{paymentError}</div>}
+                {paymentError && <div style={{...errorBoxStyle,marginTop:12}}>{paymentError}</div>}
               </div>
             )}
           </div>
@@ -1459,42 +1425,41 @@ export default function Dashboard() {
         {/* ──────────────────────────────────────────────────────────── */}
         {activeSection === 'referral' && (
           <div>
-            <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:16,padding:28,marginBottom:20}}>
-              <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:6}}>Unlock 10 free CV rewrites</h2>
-              <p style={{fontSize:14,color:"#5A9A6A",marginBottom:24,lineHeight:1.7}}>
+            <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:28,marginBottom:20}}>
+              <h2 style={{fontFamily:SERIF,fontWeight:500,fontSize:22,marginBottom:6}}>Unlock 10 free CV rewrites</h2>
+              <p style={{fontSize:14,color:INK_SOFT,marginBottom:24,lineHeight:1.7}}>
                 Share Jobsesame with 3 friends. When they sign up using your link you unlock 10 free AI CV rewrites — permanently.
               </p>
-              <div style={{display:"flex",gap:0,marginBottom:24,border:"1px solid #1A5A2A",borderRadius:12,overflow:"hidden"}}>
+              <div style={{display:"flex",gap:0,marginBottom:24,border:`1px solid ${LINE}`,borderRadius:3,overflow:"hidden"}}>
                 {[1,2,3].map(n=>(
-                  <div key={n} style={{flex:1,padding:"16px 10px",textAlign:"center",borderRight:n<3?"1px solid #1A5A2A":"none",background:referralsCount>=n?"rgba(200,230,0,0.1)":"transparent"}}>
-                    <div style={{fontSize:24,marginBottom:4}}>{referralsCount>=n?"✅":"👤"}</div>
-                    <div style={{fontSize:11,color:referralsCount>=n?"#C8E600":"#3A7A4A",fontWeight:600}}>Friend {n}</div>
+                  <div key={n} style={{flex:1,padding:"16px 10px",textAlign:"center",borderRight:n<3?`1px solid ${LINE}`:"none",background:referralsCount>=n?"rgba(63,93,82,0.06)":"transparent"}}>
+                    <div style={{fontSize:11,color:referralsCount>=n?ACCENT:INK_FAINT,fontWeight:600}}>Friend {n}</div>
                   </div>
                 ))}
               </div>
-              <div style={{background:"#0D3A1A",borderRadius:12,padding:16,marginBottom:20}}>
-                <div style={{fontSize:11,color:"#3A7A4A",fontWeight:700,marginBottom:8,letterSpacing:"1px",textTransform:"uppercase"}}>Your referral link</div>
+              <div style={{background:PAPER,borderRadius:3,padding:16,marginBottom:20}}>
+                <div style={{fontSize:11,color:INK_FAINT,fontWeight:700,marginBottom:8,letterSpacing:"0.06em",textTransform:"uppercase"}}>Your referral link</div>
                 <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                  <div style={{flex:1,background:"#072E16",border:"1px solid #1A5A2A",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#90C898",fontFamily:"monospace",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                  <div style={{flex:1,background:CARD,border:`1px solid ${LINE}`,borderRadius:3,padding:"10px 14px",fontSize:12,color:INK_SOFT,fontFamily:"monospace",minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                     {referralLink || 'Generating your link...'}
                   </div>
-                  <button onClick={copyReferralLink} style={{background:copied?"#1A6A2A":"#C8E600",color:copied?"#C8E600":"#052A14",fontSize:12,fontWeight:800,padding:"10px 18px",borderRadius:8,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
+                  <button onClick={copyReferralLink} style={{background:copied?INK:ACCENT,color:PAPER,fontSize:12,fontWeight:600,padding:"10px 18px",borderRadius:3,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>
                     {copied?'Copied!':'Copy link'}
                   </button>
                 </div>
               </div>
               <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                <button onClick={shareWhatsApp} style={{background:"#25D366",color:"#fff",fontSize:13,fontWeight:700,padding:"11px 22px",borderRadius:99,border:"none",cursor:"pointer"}}>Share on WhatsApp</button>
-                <button onClick={shareEmail} style={{background:"#072E16",color:"#C8E600",fontSize:13,fontWeight:700,padding:"11px 22px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>Share via Email</button>
+                <button onClick={shareWhatsApp} style={{background:"#25D366",color:"#fff",fontSize:13,fontWeight:600,padding:"11px 22px",borderRadius:3,border:"none",cursor:"pointer"}}>Share on WhatsApp</button>
+                <button onClick={shareEmail} style={{background:CARD,color:INK,fontSize:13,fontWeight:600,padding:"11px 22px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>Share via Email</button>
               </div>
             </div>
-            <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:14,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
+            <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
               <div>
-                <div style={{fontSize:14,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>Want unlimited rewrites now?</div>
-                <div style={{fontSize:12,color:"#5A9A6A"}}>Upgrade to Pro for {currency==='ZAR'?'R249':'$14'}/month — unlimited everything.</div>
+                <div style={{fontSize:14,fontWeight:600,marginBottom:4}}>Want unlimited rewrites now?</div>
+                <div style={{fontSize:12,color:INK_SOFT}}>Upgrade to Pro for {currency==='ZAR'?'R249':currency==='GBP'?'£21':'$14'}/month — unlimited everything.</div>
               </div>
-              <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"10px 24px",borderRadius:99,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
-                {paying?'Loading...':'Upgrade to Pro'}
+              <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 24px",borderRadius:3,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
+                {paying?'Loading…':'Upgrade to Pro'}
               </button>
             </div>
           </div>
@@ -1506,71 +1471,71 @@ export default function Dashboard() {
         {activeSection === 'applications' && (
           <div>
             <div style={{marginBottom:20}}>
-              <h2 style={{fontSize:20,fontWeight:800,color:"#FFFFFF",marginBottom:4}}>My Applications</h2>
-              <p style={{fontSize:13,color:"#5A9A6A"}}>Every job you applied to — tracked automatically.</p>
+              <h2 style={{fontFamily:SERIF,fontWeight:500,fontSize:22,marginBottom:4}}>My Applications</h2>
+              <p style={{fontSize:13,color:INK_SOFT}}>Every job you applied to — tracked automatically.</p>
             </div>
 
             {/* Stats */}
             <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
               {[
-                {label:"Total applied",value:applications.length,color:"#90C898"},
-                {label:"Interviews",value:applications.filter(a=>a.status==='Interview').length,color:"#FFA500"},
-                {label:"Offers",value:applications.filter(a=>a.status==='Offer').length,color:"#C8E600"},
-                {label:"Rejected",value:applications.filter(a=>a.status==='Rejected').length,color:"#F09595"},
+                {label:"Total applied",value:applications.length,color:INK},
+                {label:"Interviews",value:applications.filter(a=>a.status==='Interview').length,color:AMBER},
+                {label:"Offers",value:applications.filter(a=>a.status==='Offer').length,color:ACCENT},
+                {label:"Rejected",value:applications.filter(a=>a.status==='Rejected').length,color:CLAY},
               ].map(s=>(
-                <div key={s.label} style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:12,padding:"14px 20px",flex:1,minWidth:100}}>
-                  <div style={{fontSize:22,fontWeight:800,color:s.color,marginBottom:2}}>{s.value}</div>
-                  <div style={{fontSize:11,color:"#5A9A6A",fontWeight:600}}>{s.label}</div>
+                <div key={s.label} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:"14px 20px",flex:1,minWidth:100}}>
+                  <div style={{fontFamily:SERIF,fontSize:20,color:s.color,marginBottom:2}}>{s.value}</div>
+                  <div style={{fontSize:11,color:INK_FAINT,fontWeight:600}}>{s.label}</div>
                 </div>
               ))}
             </div>
 
             {loadingApplications ? (
-              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:48,textAlign:"center"}}>
-                <div style={{fontSize:13,color:"#5A9A6A",fontStyle:"italic",marginBottom:8}}>Syncing applications from database...</div>
-                <div style={{width:32,height:32,border:"3px solid #1A4A2A",borderTopColor:"#C8E600",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto"}}/>
+              <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:48,textAlign:"center"}}>
+                <div style={{fontSize:13,color:INK_SOFT,fontStyle:"italic",marginBottom:8}}>Syncing applications from database...</div>
+                <div style={{width:28,height:28,border:`2px solid ${LINE}`,borderTopColor:ACCENT,borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto"}}/>
+                <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
               </div>
             ) : applications.length === 0 ? (
-              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,padding:48,textAlign:"center"}}>
-                <div style={{fontSize:40,marginBottom:16}}>📋</div>
-                <h3 style={{fontSize:18,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>No applications yet</h3>
-                <p style={{fontSize:13,color:"#5A9A6A",marginBottom:24}}>{JOB_BOARD_ENABLED ? "Use Quick Apply on any job and it will appear here automatically." : "Applications you submit will appear here automatically."}</p>
-                {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:"#C8E600",color:"#052A14",fontSize:13,fontWeight:800,padding:"11px 28px",borderRadius:99,textDecoration:"none",display:"inline-block"}}>Browse jobs</a>}
+              <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:48,textAlign:"center"}}>
+                <h3 style={{fontFamily:SERIF,fontWeight:500,fontSize:19,marginBottom:8}}>No applications yet</h3>
+                <p style={{fontSize:13,color:INK_SOFT,marginBottom:24}}>{JOB_BOARD_ENABLED ? "Use Quick Apply on any job and it will appear here automatically." : "Applications you submit will appear here automatically."}</p>
+                {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"11px 28px",borderRadius:3,textDecoration:"none",display:"inline-block"}}>Browse jobs</a>}
               </div>
             ) : (
-              <div style={{background:"#072E16",border:"1.5px solid #1A4A2A",borderRadius:16,overflow:"hidden"}}>
+              <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,overflow:"hidden"}}>
                 {!isMobile && (
-                  <div style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"12px 20px",borderBottom:"1px solid #1A4A2A",background:"#0D3A1A"}}>
+                  <div style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"12px 20px",borderBottom:`1px solid ${LINE}`,background:PAPER}}>
                     {["Job","Company","Location","Date","Status"].map(h=>(
-                      <div key={h} style={{fontSize:10,color:"#5A9A6A",fontWeight:700,letterSpacing:"1px",textTransform:"uppercase"}}>{h}</div>
+                      <div key={h} style={{fontSize:10,color:INK_FAINT,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase"}}>{h}</div>
                     ))}
                   </div>
                 )}
                 {applications.map((app,i)=>(
                   isMobile ? (
-                    <div key={app.id} style={{padding:"14px 16px",borderBottom:i<applications.length-1?"1px solid #0D3A1A":"none"}}>
+                    <div key={app.id} style={{padding:"14px 16px",borderBottom:i<applications.length-1?`1px solid ${LINE}`:"none"}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-                        <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF"}}>{app.jobTitle}</div>
-                        <select value={app.status} onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])} style={{padding:"4px 8px",borderRadius:99,border:"1.5px solid",fontSize:10,fontWeight:700,cursor:"pointer",outline:"none",background:"#0D3A1A",borderColor:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#A32D2D':'#1A5A2A',color:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#F09595':'#90C898'}}>
+                        <div style={{fontSize:13,fontWeight:600}}>{app.jobTitle}</div>
+                        <select value={app.status} onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])} style={{padding:"4px 8px",borderRadius:99,border:"1px solid",fontSize:10,fontWeight:700,cursor:"pointer",outline:"none",background:PAPER,borderColor:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:LINE,color:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:INK_SOFT}}>
                           <option value="Applied">Applied</option>
                           <option value="Interview">Interview</option>
                           <option value="Offer">Offer</option>
                           <option value="Rejected">Rejected</option>
                         </select>
                       </div>
-                      <div style={{fontSize:11,color:"#5A9A6A"}}>{app.company} · {app.location} · {new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
+                      <div style={{fontSize:11,color:INK_FAINT}}>{app.company} · {app.location} · {new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
                     </div>
                   ) : (
-                    <div key={app.id} style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"14px 20px",borderBottom:i<applications.length-1?"1px solid #0D3A1A":"none",alignItems:"center"}}>
+                    <div key={app.id} style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"14px 20px",borderBottom:i<applications.length-1?`1px solid ${LINE}`:"none",alignItems:"center"}}>
                       <div>
-                        <div style={{fontSize:13,fontWeight:700,color:"#FFFFFF",marginBottom:2}}>{app.jobTitle}</div>
-                        {app.jobUrl && <a href={app.jobUrl} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#3A7A4A",textDecoration:"none"}}>View posting ↗</a>}
+                        <div style={{fontSize:13,fontWeight:600,marginBottom:2}}>{app.jobTitle}</div>
+                        {app.jobUrl && <a href={app.jobUrl} target="_blank" rel="noreferrer" style={{fontSize:11,color:INK_FAINT,textDecoration:"none"}}>View posting ↗</a>}
                       </div>
-                      <div style={{fontSize:12,color:"#90C898"}}>{app.company}</div>
-                      <div style={{fontSize:12,color:"#5A9A6A"}}>{app.location}</div>
-                      <div style={{fontSize:11,color:"#3A7A4A"}}>{new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
+                      <div style={{fontSize:12,color:INK_SOFT}}>{app.company}</div>
+                      <div style={{fontSize:12,color:INK_SOFT}}>{app.location}</div>
+                      <div style={{fontSize:11,color:INK_FAINT}}>{new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
                       <div>
-                        <select value={app.status} onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])} style={{padding:"5px 10px",borderRadius:99,border:"1.5px solid",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none",background:"#0D3A1A",borderColor:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#A32D2D':'#1A5A2A',color:app.status==='Offer'?'#C8E600':app.status==='Interview'?'#FFA500':app.status==='Rejected'?'#F09595':'#90C898'}}>
+                        <select value={app.status} onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])} style={{padding:"5px 10px",borderRadius:99,border:"1px solid",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none",background:PAPER,borderColor:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:LINE,color:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:INK_SOFT}}>
                           <option value="Applied">Applied</option>
                           <option value="Interview">Interview</option>
                           <option value="Offer">Offer</option>

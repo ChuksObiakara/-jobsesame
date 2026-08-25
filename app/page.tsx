@@ -1,37 +1,20 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import Image from 'next/image';
-import NavSA from './components/NavSA';
-import FooterSA from './components/FooterSA';
-
-const PHOTOS = [
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face',
-  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face',
-  'https://images.unsplash.com/photo-1531384441138-2736e62e0919?w=80&h=80&fit=crop&crop=face',
-];
+import Nav from './components/Nav';
+import Footer from './components/Footer';
+import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF } from './lib/theme';
 
 export default function Home() {
   const { isSignedIn } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
   const [currency, setCurrency] = useState<'ZAR' | 'GBP' | 'USD'>('ZAR');
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [faqSearch, setFaqSearch] = useState('');
-  const [demoStage, setDemoStage] = useState<'idle' | 'loading' | 'done'>('idle');
-  const [demoAts, setDemoAts] = useState(42);
-  const [notifVisible, setNotifVisible] = useState(false);
-  const [exitIntent, setExitIntent] = useState(false);
-  const [exitDismissed, setExitDismissed] = useState(false);
-  const [signupCount, setSignupCount] = useState(0);
   const [cvAnalysisState, setCvAnalysisState] = useState<'idle' | 'uploading' | 'done'>('idle');
   const [cvAnalysisScore, setCvAnalysisScore] = useState(0);
   const [cvAnalysisWeaknesses, setCvAnalysisWeaknesses] = useState<string[]>([]);
   const [cvAnalysisDragOver, setCvAnalysisDragOver] = useState(false);
-  const [scrollPct, setScrollPct] = useState(0);
-  const exitReadyRef = useRef(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -49,54 +32,6 @@ export default function Home() {
       })
       .catch((err) => console.error('[home] geo-detect failed:', err));
   }, []);
-
-  useEffect(() => {
-    const t = setTimeout(() => setNotifVisible(true), 2800);
-    return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    const onScroll = () => {
-      const doc = document.documentElement;
-      const pct = (window.scrollY / (doc.scrollHeight - doc.clientHeight)) * 100;
-      setScrollPct(pct);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  useEffect(() => {
-    const t = setTimeout(() => { exitReadyRef.current = true; }, 3000);
-    const onMove = (e: MouseEvent) => {
-      if (e.clientY < 5 && exitReadyRef.current && !exitDismissed) {
-        setExitIntent(true);
-        exitReadyRef.current = false;
-      }
-    };
-    window.addEventListener('mousemove', onMove);
-    return () => { clearTimeout(t); window.removeEventListener('mousemove', onMove); };
-  }, [exitDismissed]);
-
-  useEffect(() => {
-    const start = Math.floor(Math.random() * 21) + 40;
-    setSignupCount(start);
-    const iv = setInterval(() => setSignupCount(c => c + 1), 30000);
-    return () => clearInterval(iv);
-  }, []);
-
-  const handleDemoTransform = () => {
-    if (demoStage !== 'idle') { setDemoStage('idle'); setDemoAts(42); return; }
-    setDemoStage('loading');
-    setTimeout(() => {
-      setDemoStage('done');
-      let n = 42;
-      const iv = setInterval(() => {
-        n += 2;
-        if (n >= 94) { setDemoAts(94); clearInterval(iv); return; }
-        setDemoAts(n);
-      }, 25);
-    }, 1500);
-  };
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
@@ -144,291 +79,189 @@ export default function Home() {
     }
   };
 
+  const stats = [
+    { n: '8/10', l: 'CVs never reach a human — filtered by ATS before anyone reads them' },
+    { n: '90%+', l: 'Average ATS pass rate after a rewrite' },
+    { n: '30s', l: 'Time to tailor a CV to a new role' },
+    { n: '11×', l: 'More interviews than a generic CV' },
+  ];
+
+  const steps = [
+    { n: '01', title: 'Upload your CV once', body: 'Drop in your existing PDF. The AI reads your experience, skills and achievements in seconds — you never have to retype it.' },
+    { n: '02', title: 'Paste the job description', body: 'Found a role on LinkedIn, Indeed, or a company site? Paste the description in. Jobsesame doesn’t list jobs — it tailors your CV to whatever you’re applying for.' },
+    { n: '03', title: 'Get a tailored CV and cover letter', body: 'The AI rewrites your CV to match the role in about 30 seconds, with a personalised cover letter to match.' },
+    { n: '04', title: 'Download and track', body: 'Get an ATS-ready PDF and follow every application, status and follow-up from one dashboard.' },
+  ];
+
+  const features = [
+    { n: '01', title: 'AI CV tailoring per job', body: 'Your CV rewritten for every application — keywords, tone and structure matched to the exact role.' },
+    { n: '02', title: 'ATS score optimisation', body: 'Built to pass automated screening, not just to look good to a person reading it after the fact.' },
+    { n: '03', title: 'Matching cover letters', body: 'Every rewrite comes with a personalised cover letter for the same role, ready in seconds.' },
+    { n: '04', title: 'ATS-ready PDF', body: 'A polished, correctly formatted PDF ready to attach to any application, anywhere.' },
+    { n: '05', title: 'Role match scoring', body: 'See how well your CV fits a role before you apply, so you can fix the gaps first.' },
+    { n: '06', title: 'Application tracker', body: 'Every version and every application in one place, so you always know where you stand.' },
+  ];
+
+  const testimonials = [
+    { quote: 'I’d sent out forty CVs with no replies. After rewriting with Jobsesame I had four interviews in ten days.', name: 'Thabo N.', role: 'Software developer, Johannesburg', initials: 'TN' },
+    { quote: 'My ATS score went from 38% to 91%. I had a callback within two days of applying.', name: 'Amara D.', role: 'Financial analyst, Cape Town', initials: 'AD' },
+    { quote: 'I was relocating abroad and needed my CV rewritten for a different market. It worked.', name: 'James K.', role: 'Project manager, London', initials: 'JK' },
+  ];
+
+  const pricing = [
+    { name: 'Free', price: { ZAR: 'R0', GBP: '£0', USD: '$0' }, per: '', desc: '3 free AI CV rewrites, no card required.', items: ['3 AI CV rewrites', 'ATS score on every rewrite', 'Matching cover letter'], highlight: false, cta: 'Start free' },
+    { name: 'Credit pack', price: { ZAR: 'R99', GBP: '£10', USD: '$5' }, per: 'one-time', desc: '10 credits, use anytime.', items: ['10 AI CV rewrites', 'ATS score on every rewrite', 'Matching cover letters', 'Priority processing'], highlight: true, cta: 'Buy credits' },
+    { name: 'Pro', price: { ZAR: 'R249', GBP: '£21', USD: '$14' }, per: '/ month', desc: 'Unlimited rewrites while you’re job hunting.', items: ['Unlimited AI CV rewrites', 'ATS score on every rewrite', 'Matching cover letters', 'Application tracker'], highlight: false, cta: 'Go Pro' },
+  ];
+
   const faqs = [
-    { q: "Is Jobsesame really free?", a: "Yes — you get 3 free AI CV rewrites with no credit card required. After your free rewrites you can buy a pack of 10 for R99 or go unlimited with Pro at R249 per month." },
-    { q: "How does the AI rewrite my CV?", a: "You upload your CV once. Paste in the job description for any role you're applying to and our AI reads it and rewrites your CV in 30 seconds to match exactly what that employer is looking for — adding the right keywords, restructuring your experience, and optimising for ATS systems." },
-    { q: "Where do I find the job description to paste in?", a: "Anywhere — LinkedIn, Indeed, a company careers page, a recruiter email. Just copy the job description and paste it in. Jobsesame doesn't list jobs itself; it tailors your CV to whatever role you're applying for." },
-    { q: "What is an ATS system?", a: "ATS stands for Applicant Tracking System. It is software that most companies use to automatically screen CVs before a human ever sees them. 8 out of 10 CVs are rejected by ATS. Jobsesame rewrites your CV to pass these systems automatically." },
-    { q: "Will my real experience and company names be changed?", a: "Never. We only rewrite how your experience is described — not the facts. Your real company names, job titles, dates and qualifications are always preserved. We just make them sound better and add the right keywords." },
-    { q: "Is my CV data safe?", a: "Yes. Your CV is processed securely and never sold to third parties. We use it only to help you apply for jobs. You can delete your data at any time." },
+    { q: 'Is it really free to start?', a: 'Yes — you get 3 AI CV rewrites with no credit card required. After that you can buy a 10-credit pack or go unlimited with Pro.' },
+    { q: 'How does the rewrite work?', a: 'Upload your CV once, then paste the job description for any role you’re applying to. The AI rewrites your CV to match it in about 30 seconds.' },
+    { q: 'Where do I find the job description?', a: 'Anywhere — LinkedIn, Indeed, a company careers page, a recruiter email. Jobsesame doesn’t list jobs itself; it tailors your CV to whatever role you’re applying for.' },
+    { q: 'Will my real experience be changed?', a: 'No. We only rewrite how your experience is described, never the facts — your real companies, titles, dates and qualifications always stay as they are.' },
+    { q: 'Is my CV data safe?', a: 'Yes. It’s processed securely and never sold to third parties. You can delete your data at any time.' },
   ];
 
   const filteredFaqs = faqSearch
     ? faqs.filter(f => f.q.toLowerCase().includes(faqSearch.toLowerCase()) || f.a.toLowerCase().includes(faqSearch.toLowerCase()))
     : faqs;
 
-  const BG = '#061A0C';
-  const DIVIDE = '1px solid rgba(255,255,255,0.05)';
-
   return (
-    <main style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", background: BG, margin: 0, padding: 0, overflowX: 'hidden' }}>
+    <main style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", background: PAPER, color: INK, margin: 0, padding: 0, overflowX: 'hidden' }}>
       <style>{`
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        @keyframes pulse      { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(1.5)} }
-        @keyframes fadeInUp   { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes notifIn    { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes ctaGlow    { 0%,100%{box-shadow:0 4px 24px rgba(200,230,0,0.32)} 50%{box-shadow:0 4px 44px rgba(200,230,0,0.58)} }
-        @keyframes spinAI     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes slideRight { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes modalIn    { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
-        @keyframes shimmer    { 0%,100%{opacity:0.3} 50%{opacity:0.55} }
-        .nav-link { transition: color 0.15s; }
-        .nav-link:hover { color: #FFFFFF !important; }
-        .row-feat { border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s; }
-        .row-feat:hover { background: rgba(200,230,0,0.025) !important; }
-        .row-feat:last-child { border-bottom: none; }
-        input::placeholder { color: rgba(255,255,255,0.22); }
-        input:focus { border-color: rgba(200,230,0,0.38) !important; outline: none; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(200,230,0,0.35); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(200,230,0,0.55); }
-        @media(max-width:767px) {
-          .hide-mobile { display:none !important; }
-          .mob-col { flex-direction:column !important; }
+        *, *::before, *::after { box-sizing: border-box; }
+        a { color: inherit; }
+        .cta-primary:hover { opacity: 0.9; }
+        .cta-secondary { border-bottom: 1px solid rgba(28,26,22,0.12); }
+        .cta-secondary:hover { color: ${INK}; border-color: rgba(28,26,22,0.4); }
+        .faq-row { border-bottom: 1px solid ${LINE}; }
+        .faq-row:last-child { border-bottom: none; }
+        input::placeholder { color: ${INK_FAINT}; }
+        input:focus { border-color: rgba(63,93,82,0.4) !important; outline: none; }
+        @media (max-width: 767px) {
+          .hide-mobile { display: none !important; }
+          .stack-mobile { flex-direction: column !important; align-items: flex-start !important; }
+          .grid-2 { grid-template-columns: 1fr !important; }
+          .grid-3 { grid-template-columns: 1fr !important; }
+          .grid-4 { grid-template-columns: 1fr 1fr !important; }
+          .hero-grid { grid-template-columns: 1fr !important; }
+          .feature-row { grid-template-columns: 1fr !important; gap: 6px !important; }
         }
       `}</style>
 
-      {/* EXIT INTENT */}
-      {exitIntent && !exitDismissed && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: '#071E0E', border: '1.5px solid rgba(200,230,0,0.35)', borderRadius: 16, padding: isMobile ? '28px 22px' : '40px 36px', maxWidth: 420, width: '100%', textAlign: 'center', position: 'relative', animation: 'modalIn 0.22s ease-out' }}>
-            <button onClick={() => { setExitIntent(false); setExitDismissed(true); }} style={{ position: 'absolute', top: 14, right: 16, background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.25)', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>✕</button>
-            <div style={{ width: 44, height: 44, background: 'rgba(200,230,0,0.1)', border: '1px solid rgba(200,230,0,0.22)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, margin: '0 auto 18px' }}>⚡</div>
-            <h3 style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.18, marginBottom: 10 }}>Get 3 free CV rewrites before you go</h3>
-            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.42)', lineHeight: 1.7, marginBottom: 24 }}>No credit card. No commitment. AI rewrites your CV in 30 seconds and gets you more interviews.</p>
-            <a href="/sign-up" onClick={() => setExitDismissed(true)} style={{ display: 'block', background: '#C8E600', color: BG, fontSize: 15, fontWeight: 800, padding: '14px 32px', borderRadius: 8, textDecoration: 'none', marginBottom: 10, animation: 'ctaGlow 2s ease-in-out infinite' }}>
-              Claim my 3 free rewrites →
-            </a>
-            <button onClick={() => { setExitIntent(false); setExitDismissed(true); }} style={{ background: 'transparent', border: 'none', fontSize: 12, color: 'rgba(255,255,255,0.18)', cursor: 'pointer' }}>No thanks, I&apos;ll keep struggling</button>
-          </div>
-        </div>
-      )}
-
-      {/* NOTIFICATION */}
-      {notifVisible && (
-        <div style={{ position: 'fixed', bottom: isMobile ? 88 : 28, left: 16, zIndex: 400, animation: 'notifIn 0.4s ease-out', background: 'rgba(6,18,8,0.97)', backdropFilter: 'blur(18px)', border: '1px solid rgba(74,222,128,0.18)', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, maxWidth: 260, boxShadow: '0 8px 40px rgba(0,0,0,0.5)' }}>
-          <span style={{ width: 7, height: 7, background: '#4ADE80', borderRadius: '50%', flexShrink: 0, animation: 'pulse 2s infinite' }} />
-          <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.7)', fontWeight: 600, lineHeight: 1.4 }}>Member just landed 3 interviews this week</span>
-          <button onClick={() => setNotifVisible(false)} style={{ background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.18)', fontSize: 13, cursor: 'pointer', flexShrink: 0, padding: 0, lineHeight: 1 }}>✕</button>
-        </div>
-      )}
-
-      {/* DESKTOP STICKY SCROLL CTA */}
-      {!isMobile && !isSignedIn && scrollPct > 20 && (
-        <div style={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 150, background: 'rgba(4,12,6,0.96)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(200,230,0,0.12)', padding: '10px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', animation: 'fadeInUp 0.25s ease-out' }}>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', fontWeight: 500 }}>8 out of 10 CVs never reach a human — fix yours in 30 seconds</span>
-          <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '9px 24px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>Start free →</a>
-        </div>
-      )}
-
-      <NavSA home />
+      <Nav home theme="light" />
 
       {/* ── HERO ─────────────────────────────────────────────── */}
-      <section style={{ padding: isMobile ? '80px 22px 72px' : '100px 40px 80px', maxWidth: 1240, margin: '0 auto', animation: 'fadeInUp 0.6s ease-out' }}>
-        <div style={{ display: isMobile ? 'flex' : 'grid', gridTemplateColumns: isMobile ? undefined : '1fr 1fr', flexDirection: isMobile ? 'column' : undefined, gap: isMobile ? 52 : 80, alignItems: 'center' }}>
-
-          {/* LEFT */}
+      <section style={{ padding: isMobile ? '64px 22px 56px' : '96px 40px 80px', maxWidth: 1120, margin: '0 auto' }}>
+        <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1.05fr 0.95fr', gap: isMobile ? 48 : 72, alignItems: 'center' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28 }}>
-              <span style={{ width: 7, height: 7, background: '#FF4444', borderRadius: '50%', animation: 'pulse 1.6s ease-in-out infinite', flexShrink: 0 }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', letterSpacing: 0.2 }}>{signupCount} people signed up today</span>
-            </div>
-
-            <h1 style={{ fontSize: isMobile ? 'clamp(36px,9vw,44px)' : 'clamp(48px,5vw,68px)', fontWeight: 800, color: '#fff', lineHeight: 1.03, letterSpacing: -2.5, marginBottom: 22 }}>
-              Your CV is being<br />
-              <span style={{ color: 'rgba(255,100,100,0.75)', textDecoration: 'line-through', textDecorationColor: '#FF6B6B', textDecorationThickness: 3 }}>ignored.</span><br />
-              <span style={{ color: '#C8E600' }}>We fix that.</span>
+            <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 24 }}>AI CV rewriting &amp; ATS optimisation</p>
+            <h1 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: isMobile ? 38 : 56, lineHeight: 1.1, letterSpacing: '-0.01em', marginBottom: 24 }}>
+              Your CV is being filtered out before anyone reads it.
             </h1>
-
-            <p style={{ fontSize: isMobile ? 16 : 18, color: 'rgba(255,255,255,0.48)', lineHeight: 1.75, marginBottom: 32, maxWidth: 480 }}>
-              8 out of 10 CVs never reach a human. Our AI rewrites yours for every job in 30 seconds — so yours always gets through.
+            <p style={{ fontSize: isMobile ? 15.5 : 17, color: INK_SOFT, lineHeight: 1.7, maxWidth: 460, marginBottom: 32 }}>
+              Most applications never reach a human — automated screening rejects them first. Jobsesame rewrites your CV for every role in about 30 seconds, so it gets through.
             </p>
+            <div className="stack-mobile" style={{ display: 'flex', alignItems: 'center', gap: 28, marginBottom: 40 }}>
+              <a href="/sign-up" className="cta-primary" style={{ background: ACCENT, color: PAPER, fontSize: 14.5, fontWeight: 600, padding: '14px 28px', borderRadius: 3, textDecoration: 'none' }}>Start free — 3 rewrites</a>
+              <button onClick={() => scrollTo('how')} className="cta-secondary" style={{ background: 'transparent', border: 'none', padding: '13px 0', fontSize: 14.5, fontWeight: 500, color: INK_SOFT, cursor: 'pointer' }}>See how it works</button>
+            </div>
+            <div className="stack-mobile" style={{ display: 'flex', alignItems: 'center', gap: 28, paddingTop: 28, borderTop: `1px solid ${LINE}` }}>
+              {[['90%+', 'ATS pass rate'], ['30s', 'per rewrite'], ['11×', 'more interviews']].map(([n, l], i) => (
+                <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+                  {i > 0 && <div className="hide-mobile" style={{ width: 1, height: 32, background: LINE }} />}
+                  <div>
+                    <div style={{ fontFamily: SERIF, fontSize: 22 }}>{n}</div>
+                    <div style={{ fontSize: 12, color: INK_FAINT, marginTop: 2 }}>{l}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-            {/* Avatars + count */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
-              <div style={{ display: 'flex' }}>
-                {PHOTOS.map((src, i) => (
-                  <Image key={i} src={src} loading="lazy" width={34} height={34} alt=""
-                    style={{ borderRadius: '50%', border: `2.5px solid ${BG}`, marginLeft: i === 0 ? 0 : -9, zIndex: 6 - i, position: 'relative', objectFit: 'cover', background: '#1A4A2A' }} />
-                ))}
-              </div>
+          <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 4, padding: isMobile ? 24 : 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: INK_FAINT }}>Before → after</span>
+              <span className="hide-mobile" style={{ fontSize: 11, color: INK_FAINT }}>Same experience, rewritten</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>+2,400</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.32)' }}>joined this week</div>
-              </div>
-            </div>
-
-            {/* CTAs */}
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
-              <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: isMobile ? 14 : 15, fontWeight: 800, padding: isMobile ? '15px 28px' : '16px 36px', borderRadius: 8, textDecoration: 'none', display: 'inline-block', animation: 'ctaGlow 2.5s ease-in-out infinite', whiteSpace: 'nowrap' }}>
-                Start free — no card needed →
-              </a>
-              <button onClick={() => scrollTo('cv-check')} style={{ background: 'transparent', color: 'rgba(255,255,255,0.62)', fontSize: isMobile ? 14 : 15, fontWeight: 600, padding: isMobile ? '15px 20px' : '16px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                Check my CV score →
-              </button>
-            </div>
-            {/* Trust signals */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 18px', marginBottom: 28, alignItems: 'center' }}>
-              {['No credit card', '3 free rewrites', 'GDPR & POPIA compliant', 'Cancel anytime'].map(t => (
-                <span key={t} style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4.5" fill="none" stroke="rgba(200,230,0,0.35)" strokeWidth="1"/><path d="M3 5l1.4 1.5L7 3.5" stroke="#C8E600" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  {t}
-                </span>
-              ))}
-            </div>
-
-            {/* Stats inline */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 28px', paddingTop: 24, borderTop: DIVIDE }}>
-              {[['30s', 'CV rewrite'], ['90%+', 'ATS pass rate'], ['3 free', 'applications'], ['11×', 'more interviews']].map(([n, l]) => (
-                <div key={l} style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                  <span style={{ fontSize: isMobile ? 19 : 23, fontWeight: 800, color: '#C8E600', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{n}</span>
-                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{l}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* RIGHT — CV transform visual */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, position: 'relative' }}>
-            <div style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: isMobile ? 20 : 24, width: '100%', maxWidth: 400, boxShadow: '0 32px 80px rgba(0,0,0,0.5)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 18 }}>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(200,230,0,0.08)', border: '1px solid rgba(200,230,0,0.18)', borderRadius: 6, padding: '4px 12px' }}>
-                  <span style={{ width: 5, height: 5, background: '#C8E600', borderRadius: '50%', animation: 'pulse 1.5s infinite' }} />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#C8E600', letterSpacing: '0.8px' }}>AI TRANSFORMING</span>
-                </div>
-                <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 28px 1fr', gap: 8, alignItems: 'start' }}>
-                <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: '#FF6B6B', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>Before</div>
-                  {['Responsible for managing team', 'Worked on various projects', 'Helped with strategy'].map(t => (
-                    <div key={t} style={{ background: 'rgba(255,80,80,0.06)', border: '1px solid rgba(255,80,80,0.1)', borderRadius: 6, padding: '6px 8px', fontSize: 10, color: 'rgba(255,255,255,0.32)', lineHeight: 1.4, marginBottom: 5, display: 'flex', gap: 5 }}>
-                      <span style={{ color: '#FF6B6B', flexShrink: 0 }}>✕</span><span>{t}</span>
-                    </div>
-                  ))}
-                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,80,80,0.07)', border: '1px solid rgba(255,80,80,0.14)', borderRadius: 6, padding: '5px 8px' }}>
-                    <span style={{ fontSize: 9, color: 'rgba(255,107,107,0.65)', fontWeight: 600 }}>ATS Score</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#FF6B6B', fontVariantNumeric: 'tabular-nums' }}>42%</span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 18, gap: 4 }}>
-                  <div style={{ width: 22, height: 22, background: 'linear-gradient(135deg,#C8E600,#88AA00)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, boxShadow: '0 0 10px rgba(200,230,0,0.38)' }}>✦</div>
-                  <div style={{ width: 1, height: 32, background: 'linear-gradient(to bottom,rgba(200,230,0,0.3),transparent)' }} />
-                </div>
-
-                <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: '#4ADE80', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>After</div>
-                  {['Led 12-person team, +40% efficiency', '5 projects on time, 15% under budget', 'Strategy driving $2.4M new revenue'].map(t => (
-                    <div key={t} style={{ background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.1)', borderRadius: 6, padding: '6px 8px', fontSize: 10, color: 'rgba(255,255,255,0.68)', lineHeight: 1.4, marginBottom: 5, display: 'flex', gap: 5 }}>
-                      <span style={{ color: '#4ADE80', flexShrink: 0 }}>✓</span><span>{t}</span>
-                    </div>
-                  ))}
-                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(200,230,0,0.06)', border: '1px solid rgba(200,230,0,0.14)', borderRadius: 6, padding: '5px 8px' }}>
-                    <span style={{ fontSize: 9, color: 'rgba(200,230,0,0.55)', fontWeight: 600 }}>ATS Score</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#C8E600', fontVariantNumeric: 'tabular-nums' }}>94%</span>
-                  </div>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: CLAY, marginBottom: 10 }}>Before</div>
+                {['Responsible for managing a team', 'Worked on various projects', 'Helped with strategy'].map((t, i) => (
+                  <div key={i} style={{ fontSize: 13, color: INK_FAINT, lineHeight: 1.6, paddingBottom: 8, borderBottom: `1px solid ${LINE}`, marginBottom: 8 }}>{t}</div>
+                ))}
+                <div style={{ marginTop: 16, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, color: INK_FAINT }}>ATS score</span>
+                  <span style={{ fontFamily: SERIF, fontSize: 20, color: CLAY }}>42%</span>
                 </div>
               </div>
-
-              <a href="/sign-up" style={{ display: 'block', marginTop: 16, background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '12px', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>
-                Try it free now →
-              </a>
+              <div style={{ borderLeft: `1px solid ${LINE}`, paddingLeft: 18 }}>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: ACCENT, marginBottom: 10 }}>After</div>
+                {['Led a 12-person team, +40% efficiency', 'Delivered 5 projects, 15% under budget', 'Drove strategy behind $2.4M new revenue'].map((t, i) => (
+                  <div key={i} style={{ fontSize: 13, color: INK, lineHeight: 1.6, paddingBottom: 8, borderBottom: `1px solid ${LINE}`, marginBottom: 8 }}>{t}</div>
+                ))}
+                <div style={{ marginTop: 16, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, color: INK_FAINT }}>ATS score</span>
+                  <span style={{ fontFamily: SERIF, fontSize: 20, color: ACCENT }}>94%</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── NUMBERS BAR ─────────────────────────────────────── */}
-      <div style={{ borderTop: DIVIDE, borderBottom: DIVIDE, padding: isMobile ? '24px 20px' : '28px 40px' }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto', display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap: isMobile ? '20px 16px' : 0 }}>
-          {[
-            { n: '30s',    l: 'AI rewrites your CV' },
-            { n: '90%+',  l: 'ATS pass rate' },
-            { n: '11×',   l: 'More callbacks vs generic CV' },
-            { n: '11 days', l: 'Avg. time to first interview' },
-          ].map(({ n, l }, i) => (
-            <div key={l} style={{ textAlign: 'center', padding: isMobile ? 0 : '0 32px', borderRight: !isMobile && i < 3 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-              <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 800, color: '#C8E600', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{n}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginTop: 6 }}>{l}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── SOCIAL PROOF STRIP ───────────────────────────────── */}
-      <div style={{ padding: isMobile ? '32px 20px' : '44px 40px', background: 'rgba(200,230,0,0.03)', borderBottom: DIVIDE }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.5)', letterSpacing: '2px', textTransform: 'uppercase', textAlign: 'center', marginBottom: 28 }}>What our users say</p>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: isMobile ? 16 : 24 }}>
-            {[
-              { quote: 'Sent 40 CVs manually, zero replies. After Jobsesame I had 4 interviews in 10 days.', name: 'Thabo N.', role: 'Software developer · Johannesburg', stat: '4 interviews in 10 days' },
-              { quote: 'My ATS score went from 38% to 91%. Got a callback within 48 hours of applying.', name: 'Amara D.', role: 'Financial analyst · Cape Town', stat: 'ATS 38% → 91%' },
-              { quote: 'Was relocating abroad. Jobsesame rewrote my CV for the international market. I got the job.', name: 'James K.', role: 'Project manager · London', stat: 'Hired internationally' },
-            ].map(t => (
-              <div key={t.name} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: isMobile ? '20px 18px' : '24px' }}>
-                <div style={{ display: 'flex', gap: 2, marginBottom: 12 }}>
-                  {[1,2,3,4,5].map(n => <span key={n} style={{ color: '#C8E600', fontSize: 11 }}>★</span>)}
-                  <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 700, color: '#C8E600', background: 'rgba(200,230,0,0.08)', border: '1px solid rgba(200,230,0,0.2)', borderRadius: 99, padding: '1px 8px' }}>{t.stat}</span>
-                </div>
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: 14 }}>&ldquo;{t.quote}&rdquo;</p>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{t.name}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{t.role}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div style={{ textAlign: 'center', marginTop: 28 }}>
-            <a href="/sign-up" style={{ display: 'inline-block', background: '#C8E600', color: BG, fontSize: 14, fontWeight: 800, padding: '13px 32px', borderRadius: 8, textDecoration: 'none', animation: 'ctaGlow 2.5s ease-in-out infinite' }}>
-              Start free — get 3 rewrites →
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* ── THE PROBLEM ─────────────────────────────────────── */}
-      <section style={{ padding: isMobile ? '72px 22px' : '96px 40px', maxWidth: 1240, margin: '0 auto' }}>
-        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start' }}>
-          <div style={{ marginBottom: isMobile ? 40 : 0 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,80,80,0.65)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 18 }}>Why you&apos;re not hearing back</p>
-            <h2 style={{ fontSize: isMobile ? 30 : 46, fontWeight: 800, color: '#fff', lineHeight: 1.06, letterSpacing: -1.5, marginBottom: 22 }}>
-              The job market<br />is <span style={{ color: '#FF6B6B' }}>filtering you out</span><br />before they even<br />read your name.
-            </h2>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', lineHeight: 1.78, maxWidth: 480 }}>
-              It is not your qualifications. It is not your experience. ATS software is automatically rejecting 8 out of 10 CVs before any human sees them. One wrong keyword and you disappear from the entire process.
+      {/* ── PROBLEM / STATS ─────────────────────────────────── */}
+      <section style={{ borderTop: `1px solid ${LINE}`, borderBottom: `1px solid ${LINE}`, background: CARD }}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: isMobile ? '56px 22px' : '88px 40px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '0.85fr 1.15fr', gap: isMobile ? 40 : 72, alignItems: 'start' }}>
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 18 }}>Why good candidates get skipped</p>
+            <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: isMobile ? 28 : 34, lineHeight: 1.2, marginBottom: 18 }}>It isn’t your experience. It’s the filter standing in front of it.</h2>
+            <p style={{ fontSize: 15, color: INK_SOFT, lineHeight: 1.75, maxWidth: 420 }}>
+              Applicant Tracking Systems scan for keywords and structure before any person opens your CV. One mismatch and a qualified candidate disappears from the process entirely.
             </p>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderTop: DIVIDE }}>
-            {[
-              { stat: '80%', label: 'CVs auto-rejected before a human reads them', color: '#FF6B6B' },
-              { stat: '6 mo', label: 'Average job hunt without the right tools', color: '#FFAA44' },
-              { stat: '2%',  label: 'Average CV-to-interview rate without AI', color: '#FFD700' },
-              { stat: '11×', label: 'More interviews with an AI-optimised CV', color: '#C8E600' },
-            ].map(({ stat, label, color }) => (
-              <div key={stat} style={{ display: 'flex', alignItems: 'center', gap: 24, padding: '24px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <span style={{ fontSize: isMobile ? 34 : 44, fontWeight: 800, color, lineHeight: 1, minWidth: isMobile ? 80 : 100, fontVariantNumeric: 'tabular-nums' }}>{stat}</span>
-                <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)', lineHeight: 1.55 }}>{label}</span>
+          <div className="grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: isMobile ? '24px 16px' : 0, borderTop: `1px solid ${LINE}` }}>
+            {stats.map((s, i) => (
+              <div key={s.n} style={{ padding: '24px 20px 0 0', borderRight: !isMobile && i < 3 ? `1px solid ${LINE}` : 'none' }}>
+                <div style={{ fontFamily: SERIF, fontSize: isMobile ? 26 : 32, marginBottom: 10 }}>{s.n}</div>
+                <div style={{ fontSize: 13, color: INK_SOFT, lineHeight: 1.55 }}>{s.l}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── FREE CV ANALYSIS (moved up for conversion) ──────── */}
-      <section id="cv-check" style={{ padding: isMobile ? '72px 22px' : '96px 40px', borderTop: DIVIDE, borderBottom: DIVIDE }}>
-        <div style={{ maxWidth: 780, margin: '0 auto' }}>
-          <div style={{ marginBottom: 44 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 14 }}>Free — no signup required</p>
-            <h2 style={{ fontSize: isMobile ? 28 : 44, fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: -1.2, marginBottom: 14 }}>
-              See your ATS score<br />in 15 seconds
-            </h2>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.38)', maxWidth: 460 }}>
-              Drop your CV below. AI analyses it instantly and shows you exactly why recruiters aren&apos;t calling back.
+      {/* ── HOW IT WORKS ─────────────────────────────────────── */}
+      <section id="how" style={{ padding: isMobile ? '56px 22px' : '96px 40px', maxWidth: 1120, margin: '0 auto' }}>
+        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '340px 1fr', gap: 80, alignItems: 'start' }}>
+          <div style={{ marginBottom: isMobile ? 36 : 0 }}>
+            <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 18 }}>How it works</p>
+            <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: isMobile ? 28 : 34, lineHeight: 1.2, marginBottom: 18 }}>One CV. Rewritten for every role you apply to.</h2>
+            <p style={{ fontSize: 15, color: INK_SOFT, lineHeight: 1.75, marginBottom: 26 }}>Upload once. Let the AI handle every application from there.</p>
+            <a href="/sign-up" style={{ display: 'inline-block', background: ACCENT, color: PAPER, fontSize: 13.5, fontWeight: 600, padding: '12px 24px', borderRadius: 3, textDecoration: 'none' }}>Start free</a>
+          </div>
+          <div style={{ borderTop: `1px solid ${LINE}` }}>
+            {steps.map(step => (
+              <div key={step.n} className="feature-row" style={{ display: 'grid', gridTemplateColumns: '48px 1fr', gap: 24, padding: '28px 0', borderBottom: `1px solid ${LINE}` }}>
+                <span style={{ fontFamily: SERIF, fontSize: 15, color: INK_FAINT }}>{step.n}</span>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{step.title}</div>
+                  <p style={{ fontSize: 14, color: INK_SOFT, lineHeight: 1.7, maxWidth: 520 }}>{step.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FREE CV ANALYSIS ─────────────────────────────────── */}
+      <section id="cv-check" style={{ borderTop: `1px solid ${LINE}`, borderBottom: `1px solid ${LINE}`, background: CARD }}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: isMobile ? '56px 22px' : '88px 40px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 32 : 72, alignItems: 'center' }}>
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 18 }}>Free — no signup required</p>
+            <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: isMobile ? 28 : 34, lineHeight: 1.2, marginBottom: 18 }}>See your ATS score in seconds.</h2>
+            <p style={{ fontSize: 15, color: INK_SOFT, lineHeight: 1.75, maxWidth: 420 }}>
+              Drop your CV in as a PDF. It’s analysed instantly and never stored — you’ll see exactly what’s holding your applications back.
             </p>
           </div>
 
@@ -437,241 +270,98 @@ export default function Home() {
               onDrop={e => { e.preventDefault(); setCvAnalysisDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleCvAnalysis(f); }}
               onDragOver={e => { e.preventDefault(); setCvAnalysisDragOver(true); }}
               onDragLeave={() => setCvAnalysisDragOver(false)}
-              style={{ border: `2px dashed ${cvAnalysisDragOver ? '#C8E600' : 'rgba(200,230,0,0.28)'}`, borderRadius: 12, padding: isMobile ? '44px 22px' : '52px 32px', textAlign: 'center', background: cvAnalysisDragOver ? 'rgba(200,230,0,0.03)' : 'transparent', transition: 'all 0.2s', cursor: 'pointer' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.55)', marginBottom: 8 }}>Drop your CV here</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginBottom: 22 }}>PDF format · analysed instantly · never stored</div>
+              style={{ border: `1px dashed ${cvAnalysisDragOver ? ACCENT : 'rgba(28,26,22,0.22)'}`, borderRadius: 4, padding: isMobile ? '40px 24px' : '56px 32px', textAlign: 'center', background: cvAnalysisDragOver ? 'rgba(63,93,82,0.04)' : PAPER, transition: 'all 0.2s' }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={INK_FAINT} strokeWidth="1.4" style={{ marginBottom: 16 }}><path d="M12 3v12" strokeLinecap="round" /><path d="M7 8l5-5 5 5" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" strokeLinecap="round" /></svg>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Drop your CV here</div>
+              <div style={{ fontSize: 12.5, color: INK_FAINT, marginBottom: 22 }}>PDF format &middot; analysed instantly &middot; never stored</div>
               <label style={{ cursor: 'pointer' }}>
                 <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleCvAnalysis(f); }} />
-                <span style={{ background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '12px 28px', borderRadius: 8, display: 'inline-block' }}>Choose PDF</span>
+                <span style={{ display: 'inline-block', padding: '11px 24px', border: `1px solid ${INK}`, borderRadius: 3, fontSize: 13.5, fontWeight: 600 }}>Choose PDF</span>
               </label>
             </div>
           )}
 
           {cvAnalysisState === 'uploading' && (
-            <div style={{ textAlign: 'center', padding: '52px 28px', border: '1px solid rgba(200,230,0,0.18)', borderRadius: 12 }}>
-              <div style={{ width: 44, height: 44, border: '3px solid rgba(200,230,0,0.18)', borderTop: '3px solid #C8E600', borderRadius: '50%', animation: 'spinAI 0.8s linear infinite', margin: '0 auto 16px' }} />
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 6 }}>Reading your CV...</div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>Analysing skills, experience and ATS compatibility</div>
+            <div style={{ textAlign: 'center', padding: '56px 28px', border: `1px solid ${LINE}`, borderRadius: 4, background: PAPER }}>
+              <div style={{ width: 32, height: 32, border: `2px solid ${LINE}`, borderTop: `2px solid ${ACCENT}`, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Reading your CV…</div>
+              <div style={{ fontSize: 13, color: INK_FAINT }}>Analysing skills, experience and ATS compatibility</div>
             </div>
           )}
 
           {cvAnalysisState === 'done' && (
-            <div style={{ border: '1.5px solid rgba(200,230,0,0.18)', borderRadius: 12, padding: isMobile ? '26px 20px' : '36px 40px' }}>
-              <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 28 }}>
+            <div style={{ border: `1px solid ${LINE}`, borderRadius: 4, padding: isMobile ? '24px 20px' : '32px 36px', background: PAPER }}>
+              <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 24 }}>
                 <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                  <div style={{ position: 'relative', width: 108, height: 108, margin: '0 auto 10px' }}>
-                    <svg width="108" height="108" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="54" cy="54" r="43" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="9" />
-                      <circle cx="54" cy="54" r="43" fill="none"
-                        stroke={cvAnalysisScore >= 75 ? '#22C55E' : cvAnalysisScore >= 60 ? '#F59E0B' : '#EF4444'}
-                        strokeWidth="9" strokeDasharray={`${2 * Math.PI * 43}`}
-                        strokeDashoffset={`${2 * Math.PI * 43 * (1 - cvAnalysisScore / 100)}`}
+                  <div style={{ position: 'relative', width: 92, height: 92, margin: '0 auto 8px' }}>
+                    <svg width="92" height="92" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx="46" cy="46" r="38" fill="none" stroke={LINE} strokeWidth="7" />
+                      <circle cx="46" cy="46" r="38" fill="none"
+                        stroke={cvAnalysisScore >= 75 ? ACCENT : cvAnalysisScore >= 60 ? AMBER : CLAY}
+                        strokeWidth="7" strokeDasharray={`${2 * Math.PI * 38}`}
+                        strokeDashoffset={`${2 * Math.PI * 38 * (1 - cvAnalysisScore / 100)}`}
                         strokeLinecap="round" />
                     </svg>
                     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                      <span style={{ fontSize: 26, fontWeight: 900, color: cvAnalysisScore >= 75 ? '#22C55E' : cvAnalysisScore >= 60 ? '#F59E0B' : '#EF4444', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{cvAnalysisScore}%</span>
-                      <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)', marginTop: 3 }}>ATS score</span>
+                      <span style={{ fontFamily: SERIF, fontSize: 22, color: cvAnalysisScore >= 75 ? ACCENT : cvAnalysisScore >= 60 ? AMBER : CLAY }}>{cvAnalysisScore}%</span>
+                      <span style={{ fontSize: 9, color: INK_FAINT, marginTop: 2 }}>ATS score</span>
                     </div>
-                  </div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: cvAnalysisScore >= 75 ? '#22C55E' : cvAnalysisScore >= 60 ? '#F59E0B' : '#EF4444' }}>
-                    {cvAnalysisScore >= 75 ? 'Performing well' : cvAnalysisScore >= 60 ? 'Needs work' : 'Failing screening'}
                   </div>
                 </div>
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 14, lineHeight: 1.4 }}>
-                    {cvAnalysisScore >= 75 ? 'Solid CV — AI tailoring can push every application above 90%.' : 'Most employers will never see your CV. Here is exactly why:'}
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14, lineHeight: 1.4 }}>
+                    {cvAnalysisScore >= 75 ? 'Solid CV — tailoring per role can push it above 90%.' : 'Here is exactly what’s holding your CV back:'}
                   </div>
                   {cvAnalysisWeaknesses.map((w, i) => (
-                    <div key={i} style={{ borderLeft: '3px solid #EF4444', padding: '9px 0 9px 14px', marginBottom: 10, fontSize: 13, color: 'rgba(255,160,160,0.9)', lineHeight: 1.5 }}>
-                      {w}
-                    </div>
+                    <div key={i} style={{ borderLeft: `2px solid ${CLAY}`, padding: '8px 0 8px 14px', marginBottom: 8, fontSize: 13, color: INK_SOFT, lineHeight: 1.5 }}>{w}</div>
                   ))}
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 22 }}>
-                <div style={{ borderLeft: '3px solid #EF4444', padding: '14px 0 14px 16px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,100,100,0.7)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10 }}>Your CV now</div>
-                  {['Generic language, no metrics', 'Missing key ATS keywords', 'Recruiters skip past it'].map((t, i) => (
-                    <div key={i} style={{ fontSize: 12, color: 'rgba(255,255,255,0.32)', marginBottom: 5 }}>— {t}</div>
-                  ))}
-                </div>
-                <div style={{ borderLeft: '3px solid #C8E600', padding: '14px 0 14px 16px' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(200,230,0,0.7)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 10 }}>After Jobsesame</div>
-                  {['Impact metrics on every bullet', '90%+ ATS pass rate', 'Recruiters call you back'].map((t, i) => (
-                    <div key={i} style={{ fontSize: 12, color: 'rgba(200,230,0,0.75)', marginBottom: 5 }}>+ {t}</div>
-                  ))}
-                </div>
-              </div>
-              <a href="/sign-up" style={{ display: 'block', background: '#C8E600', color: BG, fontSize: 15, fontWeight: 900, padding: '15px 0', borderRadius: 8, textDecoration: 'none', textAlign: 'center', animation: 'ctaGlow 2.5s ease-in-out infinite' }}>
-                Fix all issues with AI — free →
+              <a href="/sign-up" style={{ display: 'block', background: ACCENT, color: PAPER, fontSize: 14, fontWeight: 600, padding: '14px 0', borderRadius: 3, textDecoration: 'none', textAlign: 'center' }}>
+                Fix these issues with AI — free
               </a>
-              <div style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.18)', marginTop: 10 }}>No credit card · 30 seconds</div>
+              <div style={{ textAlign: 'center', fontSize: 12, color: INK_FAINT, marginTop: 10 }}>No credit card &middot; 30 seconds</div>
             </div>
           )}
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ───────────────────────────────────────── */}
-      <section id="how-it-works" style={{ padding: isMobile ? '72px 22px' : '96px 40px', maxWidth: 1240, margin: '0 auto' }}>
-        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '380px 1fr', gap: 80, alignItems: 'start' }}>
-          <div style={{ marginBottom: isMobile ? 40 : 0 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 18 }}>How it works</p>
-            <h2 style={{ fontSize: isMobile ? 30 : 44, fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: -1.2, marginBottom: 20 }}>
-              One upload.<br />Infinite<br />opportunities.
-            </h2>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.38)', lineHeight: 1.75, marginBottom: 28 }}>Upload your CV once and let AI handle every application from that point forward.</p>
-            <a href="/sign-up" style={{ display: 'inline-block', background: '#C8E600', color: BG, fontSize: 13, fontWeight: 800, padding: '12px 24px', borderRadius: 8, textDecoration: 'none' }}>Start free →</a>
-          </div>
-
-          <div style={{ borderTop: DIVIDE }}>
-            {[
-              { n: '01', title: 'Upload your CV once', body: 'Drop in your existing PDF. AI reads everything in seconds — your experience, skills, and achievements. You never have to do this again.' },
-              { n: '02', title: 'Paste any job description', body: 'Found a role on LinkedIn, Indeed, or a company site? Paste the job description in and AI rewrites your CV in 30 seconds to match exactly what that employer needs.' },
-              { n: '03', title: 'Download and send', body: 'Get your tailored CV and a personalised cover letter as polished, ATS-ready PDFs — ready to attach to any application, anywhere, in seconds.' },
-              { n: '04', title: 'Track and follow up', body: 'Every tailored CV, status update, and follow-up reminder in one clean dashboard. Know exactly where you stand at all times.' },
-            ].map(step => (
-              <div key={step.n} style={{ display: 'grid', gridTemplateColumns: '56px 1fr', gap: 20, padding: '28px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', alignItems: 'start' }}>
-                <span style={{ fontSize: isMobile ? 36 : 44, fontWeight: 800, color: 'rgba(200,230,0,0.15)', lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: -2 }}>{step.n}</span>
-                <div>
-                  <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, color: '#fff', marginBottom: 8, letterSpacing: -0.3 }}>{step.title}</div>
-                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', lineHeight: 1.72 }}>{step.body}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── FEATURES ─────────────────────────────────────────── */}
-      <section id="features" style={{ padding: isMobile ? '72px 22px' : '96px 40px', borderTop: DIVIDE, borderBottom: DIVIDE }}>
-        <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-          <div style={{ display: isMobile ? 'block' : 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: isMobile ? 36 : 52, gap: 24 }}>
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 14 }}>What you get</p>
-              <h2 style={{ fontSize: isMobile ? 28 : 44, fontWeight: 800, color: '#fff', lineHeight: 1.06, letterSpacing: -1.2 }}>
-                Everything you need<br />to get hired faster
-              </h2>
-            </div>
-            <a href="/sign-up" style={{ display: 'inline-block', flexShrink: 0, background: 'rgba(200,230,0,0.1)', color: '#C8E600', fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 8, textDecoration: 'none', border: '1px solid rgba(200,230,0,0.2)', marginTop: isMobile ? 20 : 0 }}>
-              See all features →
-            </a>
-          </div>
-
-          <div style={{ borderTop: DIVIDE }}>
-            {[
-              { n: '01', title: 'AI CV tailoring per job',       body: 'Your CV rewritten for every application in 30 seconds — keywords, tone, and structure matched to the exact role.' },
-              { n: '02', title: 'ATS score optimisation',        body: 'Pass automated screening every time. Our AI knows exactly what filters look for and makes sure you clear them.' },
-              { n: '03', title: 'AI cover letters',              body: 'Every rewrite comes with a personalised cover letter, matched to the same role and ready in seconds.' },
-              { n: '04', title: 'Instant PDF download',          body: 'Get a polished, ATS-friendly PDF of your tailored CV — ready to attach to any application, anywhere.' },
-              { n: '05', title: 'Match scoring',                 body: 'See exactly how your CV fits each role before applying. Fix the gaps before the employer sees your name.' },
-              { n: '06', title: 'Application tracker',           body: 'Track every application in one dashboard. Know what stage you are at, what to follow up, and what is next.' },
-            ].map(f => (
-              <div key={f.n} className="row-feat" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '56px 260px 1fr', gap: isMobile ? 6 : 40, padding: isMobile ? '22px 0' : '26px 0', alignItems: 'start' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.35)', fontVariantNumeric: 'tabular-nums', paddingTop: 3 }}>{f.n}</span>
-                <span style={{ fontSize: isMobile ? 15 : 16, fontWeight: 800, color: '#fff', letterSpacing: -0.2 }}>{f.title}</span>
-                <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.38)', lineHeight: 1.72 }}>{f.body}</p>
-              </div>
-            ))}
-          </div>
+      <section id="features" style={{ padding: isMobile ? '56px 22px' : '96px 40px', maxWidth: 1120, margin: '0 auto' }}>
+        <div style={{ maxWidth: 560, marginBottom: isMobile ? 36 : 56 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 18 }}>What you get</p>
+          <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: isMobile ? 28 : 34, lineHeight: 1.2 }}>Everything built around one job: getting you the interview.</h2>
         </div>
-      </section>
-
-      {/* ── INTERACTIVE DEMO ─────────────────────────────────── */}
-      <section id="demo" style={{ padding: isMobile ? '72px 22px' : '96px 40px', maxWidth: 1240, margin: '0 auto' }}>
-        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '380px 1fr', gap: 72, alignItems: 'start' }}>
-          <div style={{ marginBottom: isMobile ? 36 : 0 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 18 }}>Live demo</p>
-            <h2 style={{ fontSize: isMobile ? 28 : 42, fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: -1.2, marginBottom: 16 }}>
-              Watch AI rewrite a CV in real time
-            </h2>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.38)', lineHeight: 1.75 }}>See the transformation from generic language to recruiter-ready copy that passes every ATS filter.</p>
-          </div>
-
-          <div>
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ padding: '12px 20px', background: 'rgba(0,0,0,0.2)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                {['#FF5F57', '#FFBD2E', '#28CA41'].map(c => <div key={c} style={{ width: 10, height: 10, background: c, borderRadius: '50%' }} />)}
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>CV Optimiser — AI Transform</span>
-              </div>
-
-              <div style={{ display: isMobile ? 'flex' : 'grid', gridTemplateColumns: isMobile ? undefined : '1fr 100px 1fr', flexDirection: isMobile ? 'column' : undefined }}>
-                <div style={{ padding: '24px 20px', opacity: demoStage === 'loading' ? 0 : 1, transition: 'opacity 0.3s' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14, alignItems: 'center' }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '1.5px', textTransform: 'uppercase' }}>Original CV</span>
-                    <div style={{ background: 'rgba(255,100,100,0.1)', border: '1px solid rgba(255,100,100,0.18)', borderRadius: 4, padding: '3px 9px', fontSize: 11, fontWeight: 700, color: '#FF6B6B' }}>ATS: 42%</div>
-                  </div>
-                  {['Responsible for managing team', 'Worked on various projects', 'Helped with strategy'].map((t, i) => (
-                    <div key={i} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,80,80,0.1)', borderRadius: 6, padding: '9px 12px', fontSize: 12, color: 'rgba(255,255,255,0.28)', lineHeight: 1.5, marginBottom: 7 }}>
-                      <span style={{ color: '#FF6B6B', marginRight: 8 }}>✕</span>{t}
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: isMobile ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '14px 20px' : '24px 10px', borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.04)', borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.04)', gap: 8 }}>
-                  {demoStage === 'loading' ? (
-                    <div style={{ width: 30, height: 30, border: '3px solid rgba(200,230,0,0.18)', borderTop: '3px solid #C8E600', borderRadius: '50%', animation: 'spinAI 0.8s linear infinite' }} />
-                  ) : (
-                    <>
-                      <button onClick={handleDemoTransform} style={{ background: demoStage === 'done' ? 'rgba(74,222,128,0.08)' : '#C8E600', color: demoStage === 'done' ? '#4ADE80' : BG, border: demoStage === 'done' ? '1px solid rgba(74,222,128,0.25)' : 'none', fontSize: 12, fontWeight: 800, padding: '10px 14px', borderRadius: 8, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                        {demoStage === 'done' ? '✓ Done' : 'Transform →'}
-                      </button>
-                      {demoStage === 'done' && <button onClick={() => { setDemoStage('idle'); setDemoAts(42); }} style={{ background: 'transparent', border: 'none', fontSize: 10, color: 'rgba(255,255,255,0.18)', cursor: 'pointer' }}>Reset</button>}
-                    </>
-                  )}
-                </div>
-
-                <div style={{ padding: '24px 20px', opacity: demoStage === 'done' ? 1 : 0.2, animation: demoStage === 'done' ? 'slideRight 0.4s ease-out' : 'none', transition: 'opacity 0.4s' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14, alignItems: 'center' }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: demoStage === 'done' ? 'rgba(200,230,0,0.65)' : 'rgba(255,255,255,0.15)', letterSpacing: '1.5px', textTransform: 'uppercase', transition: 'color 0.4s' }}>AI-optimised</span>
-                    <div style={{ background: demoStage === 'done' ? 'rgba(200,230,0,0.07)' : 'rgba(255,255,255,0.03)', border: `1px solid ${demoStage === 'done' ? 'rgba(200,230,0,0.18)' : 'rgba(255,255,255,0.05)'}`, borderRadius: 4, padding: '3px 9px', fontSize: 11, fontWeight: 700, color: demoStage === 'done' ? '#C8E600' : 'rgba(255,255,255,0.15)', transition: 'all 0.4s' }}>
-                      ATS: {demoStage === 'done' ? `${demoAts}%` : '—'}
-                    </div>
-                  </div>
-                  {['Led cross-functional team of 12 driving 40% efficiency gains', 'Delivered 5 enterprise projects on time and 15% under budget', 'Architected go-to-market strategy generating $2.4M revenue'].map((t, i) => (
-                    <div key={i} style={{ background: demoStage === 'done' ? 'rgba(200,230,0,0.03)' : 'rgba(255,255,255,0.01)', border: `1px solid ${demoStage === 'done' ? 'rgba(200,230,0,0.1)' : 'rgba(255,255,255,0.04)'}`, borderRadius: 6, padding: '9px 12px', fontSize: 12, color: demoStage === 'done' ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.1)', lineHeight: 1.5, marginBottom: 7, transition: `all 0.4s ${i * 0.08}s` }}>
-                      <span style={{ color: demoStage === 'done' ? '#C8E600' : 'rgba(255,255,255,0.1)', marginRight: 8, transition: 'color 0.3s' }}>✓</span>{t}
-                    </div>
-                  ))}
-                </div>
-              </div>
+        <div style={{ borderTop: `1px solid ${LINE}` }}>
+          {features.map(f => (
+            <div key={f.n} className="feature-row" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '56px 260px 1fr', gap: isMobile ? 6 : 32, padding: isMobile ? '20px 0' : '26px 0', borderBottom: `1px solid ${LINE}`, alignItems: 'start' }}>
+              <span style={{ fontFamily: SERIF, fontSize: 13, color: INK_FAINT, paddingTop: 3 }}>{f.n}</span>
+              <span style={{ fontSize: 15.5, fontWeight: 600 }}>{f.title}</span>
+              <p style={{ fontSize: 14, color: INK_SOFT, lineHeight: 1.7 }}>{f.body}</p>
             </div>
-            <div style={{ marginTop: 20, textAlign: 'center' }}>
-              <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: 14, fontWeight: 800, padding: '13px 32px', borderRadius: 8, textDecoration: 'none', display: 'inline-block' }}>Transform my CV now →</a>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
       {/* ── TESTIMONIALS ─────────────────────────────────────── */}
-      <section style={{ padding: isMobile ? '72px 22px' : '96px 40px', borderTop: DIVIDE, maxWidth: 1240, margin: '0 auto' }}>
-        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '380px 1fr', gap: 72, alignItems: 'start' }}>
-          <div style={{ marginBottom: isMobile ? 40 : 0 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 18 }}>Results</p>
-            <h2 style={{ fontSize: isMobile ? 30 : 44, fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: -1.2, marginBottom: 20 }}>
-              Real people.<br />Real results.
-            </h2>
-            <div style={{ padding: '20px 0', borderTop: DIVIDE }}>
-              <div style={{ fontSize: isMobile ? 40 : 52, fontWeight: 800, color: '#C8E600', lineHeight: 1, letterSpacing: -2, fontVariantNumeric: 'tabular-nums' }}>11 days</div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)', marginTop: 6 }}>Average time from signup to first interview</div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, borderTop: DIVIDE }}>
-            {[
-              { photo: PHOTOS[5], name: 'Thabo N.', result: 'Hired in 3 weeks', quote: 'I applied to 30 jobs manually for 4 months. Zero responses. After Jobsesame I had 4 interviews in 10 days. The AI knew exactly what recruiters wanted to see.' },
-              { photo: PHOTOS[0], name: 'Amara D.', result: 'ATS: 38% → 91%', quote: 'My CV was good. Jobsesame made it exceptional. The ATS score went from 38 to 91 percent. I got a callback within 48 hours.' },
-              { photo: PHOTOS[1], name: 'James K.', result: 'Relocated internationally', quote: 'I was relocating and had no idea what employers there wanted. Jobsesame rewrote my CV perfectly for the market. I got the job.' },
-            ].map(t => (
-              <div key={t.name} style={{ padding: isMobile ? '28px 0' : '36px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <section style={{ borderTop: `1px solid ${LINE}`, borderBottom: `1px solid ${LINE}`, background: CARD }}>
+        <div style={{ maxWidth: 1120, margin: '0 auto', padding: isMobile ? '56px 22px' : '88px 40px' }}>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, textAlign: 'center', marginBottom: 44 }}>What people say after rewriting</p>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
+            {testimonials.map(t => (
+              <div key={t.name}>
                 <div style={{ display: 'flex', gap: 2, marginBottom: 14 }}>
-                  {[1,2,3,4,5].map(n => <span key={n} style={{ color: '#C8E600', fontSize: 12 }}>★</span>)}
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <svg key={i} width="13" height="13" viewBox="0 0 24 24" fill={AMBER}><path d="M12 2l2.9 6.9 7.1.6-5.4 4.8 1.7 7-6.3-4-6.3 4 1.7-7-5.4-4.8 7.1-.6z" /></svg>
+                  ))}
                 </div>
-                <p style={{ fontSize: isMobile ? 16 : 19, color: 'rgba(255,255,255,0.78)', lineHeight: 1.58, fontStyle: 'italic', marginBottom: 18, fontWeight: 500, letterSpacing: -0.2 }}>&ldquo;{t.quote}&rdquo;</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Image src={t.photo} loading="lazy" width={38} height={38} alt={t.name} style={{ borderRadius: '50%', border: '2px solid rgba(200,230,0,0.18)', background: '#1A4A2A', flexShrink: 0, objectFit: 'cover' }} />
+                <p style={{ fontSize: 15, color: INK, lineHeight: 1.75, fontStyle: 'italic', marginBottom: 20 }}>&ldquo;{t.quote}&rdquo;</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(63,93,82,0.1)', color: ACCENT, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{t.initials}</div>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{t.name}</div>
-                    <div style={{ fontSize: 12, color: '#C8E600', fontWeight: 600 }}>{t.result}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{t.name}</div>
+                    <div style={{ fontSize: 12.5, color: INK_FAINT, marginTop: 1 }}>{t.role}</div>
                   </div>
                 </div>
               </div>
@@ -681,82 +371,68 @@ export default function Home() {
       </section>
 
       {/* ── PRICING ─────────────────────────────────────────── */}
-      <section id="pricing" style={{ padding: isMobile ? '72px 22px' : '96px 40px', borderTop: DIVIDE }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <div style={{ marginBottom: isMobile ? 44 : 60 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 14 }}>Pricing</p>
-            <h2 style={{ fontSize: isMobile ? 30 : 48, fontWeight: 800, color: '#fff', lineHeight: 1.06, letterSpacing: -1.5, marginBottom: 12 }}>
-              Simple pricing.<br /><span style={{ color: '#C8E600' }}>Serious results.</span>
-            </h2>
-            <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.35)' }}>Start free. Upgrade when you are ready.</p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: 14, alignItems: 'start' }}>
-            {[
-              { name: 'Free', price: 'R0', gbpPrice: '£0', usdPrice: '$0', per: ' forever', features: ['3 free CV rewrites', 'AI CV analysis', 'ATS score check', 'No card needed'], popular: false, btn: 'Get started free' },
-              { name: 'Credits', price: 'R99', gbpPrice: '£10', usdPrice: '$5', per: ' per pack', features: ['10 CV rewrite credits', 'Credits never expire', 'AI CV rewrite per job', 'Cover letter generation', 'ATS-optimised formatting'], popular: false, btn: 'Buy credits' },
-              { name: 'Pro', price: 'R249', gbpPrice: '£21', usdPrice: '$14', per: ' /month', features: ['Unlimited CV rewrites', 'Unlimited cover letters', 'Priority support', 'Application tracking'], popular: true, btn: 'Go Pro' },
-            ].map(p => (
-              <div key={p.name} style={{ background: p.popular ? 'rgba(200,230,0,0.04)' : 'rgba(255,255,255,0.02)', border: `1.5px solid ${p.popular ? 'rgba(200,230,0,0.3)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 12, padding: '26px 22px', position: 'relative' }}>
-                {p.popular && <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: '#C8E600', color: BG, fontSize: 10, fontWeight: 800, padding: '3px 14px', borderRadius: 4, whiteSpace: 'nowrap', letterSpacing: 0.5 }}>MOST POPULAR</div>}
-                <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.32)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 8 }}>{p.name}</div>
-                <div style={{ marginBottom: 4 }}>
-                  <span style={{ fontSize: 42, fontWeight: 800, color: p.popular ? '#C8E600' : '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{currency === 'ZAR' ? p.price : currency === 'GBP' ? p.gbpPrice : p.usdPrice}</span>
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)' }}>{p.per}</span>
-                </div>
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '18px 0' }} />
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
-                  {p.features.map(f => (
-                    <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
-                      <svg width="14" height="14" viewBox="0 0 14 14" style={{ flexShrink: 0 }}>
-                        <circle cx="7" cy="7" r="6" fill={p.popular ? 'rgba(200,230,0,0.1)' : 'rgba(255,255,255,0.05)'} />
-                        <path d="M4.5 7L6.2 9L9.5 5" stroke={p.popular ? '#C8E600' : 'rgba(255,255,255,0.3)'} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                      {f}
-                    </div>
-                  ))}
-                </div>
-                <a href="/sign-up" style={{ display: 'block', background: p.popular ? '#C8E600' : 'rgba(255,255,255,0.06)', color: p.popular ? BG : 'rgba(255,255,255,0.7)', border: `1px solid ${p.popular ? 'transparent' : 'rgba(255,255,255,0.1)'}`, fontSize: 13, fontWeight: 800, padding: '12px 0', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>{p.btn}</a>
+      <section id="pricing" style={{ padding: isMobile ? '56px 22px' : '96px 40px', maxWidth: 1120, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', maxWidth: 560, margin: '0 auto 48px' }}>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 18 }}>Pricing</p>
+          <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: isMobile ? 28 : 34, lineHeight: 1.2 }}>Start free. Pay only if it’s working.</h2>
+        </div>
+        <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          {pricing.map(p => (
+            <div key={p.name} style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 4, padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: INK_SOFT, marginBottom: 14 }}>{p.name}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
+                <span style={{ fontFamily: SERIF, fontSize: 30 }}>{p.price[currency]}</span>
+                <span style={{ fontSize: 13, color: INK_FAINT }}>{p.per}</span>
               </div>
-            ))}
-          </div>
-          <div style={{ textAlign: 'center', marginTop: 24 }}>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
-              {['🔒 SSL secured', '✓ No credit card to start', '↩ 30-day refund guarantee', '⚡ Instant access'].map(t => (
-                <span key={t} style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 99, padding: '5px 12px' }}>{t}</span>
-              ))}
+              <div style={{ fontSize: 13, color: INK_FAINT, marginBottom: 24 }}>{p.desc}</div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 20, borderTop: `1px solid ${LINE}`, marginBottom: 24 }}>
+                {p.items.map(it => (
+                  <div key={it} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13.5, color: INK_SOFT }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={ACCENT} strokeWidth="2.4" style={{ flexShrink: 0, marginTop: 3 }}><path d="M4 12l5 5 11-11" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    <span>{it}</span>
+                  </div>
+                ))}
+              </div>
+              {p.highlight
+                ? <a href="/sign-up" style={{ background: ACCENT, color: PAPER, fontSize: 14, fontWeight: 600, padding: '13px 0', borderRadius: 3, textDecoration: 'none', textAlign: 'center' }}>{p.cta}</a>
+                : <a href="/sign-up" style={{ background: 'transparent', color: INK, border: `1px solid ${INK}`, fontSize: 14, fontWeight: 600, padding: '13px 0', borderRadius: 3, textDecoration: 'none', textAlign: 'center' }}>{p.cta}</a>
+              }
             </div>
-          </div>
+          ))}
+        </div>
+        <div className="stack-mobile" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 12 : 32, flexWrap: 'wrap', marginTop: 36, paddingTop: 28, borderTop: `1px solid ${LINE}` }}>
+          {[
+            ['M9 12l2 2 4-4', 'Secure payment via Paystack'],
+            ['M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6z', '30-day money-back guarantee on Pro'],
+            ['M6 6l12 12M6 18L18 6', 'Cancel anytime, no lock-in'],
+          ].map(([path, label]) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: INK_SOFT }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={path} /></svg>
+              {label}
+            </div>
+          ))}
         </div>
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────── */}
-      <section id="faq" style={{ padding: isMobile ? '72px 22px' : '96px 40px', borderTop: DIVIDE, maxWidth: 900, margin: '0 auto' }}>
-        <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '320px 1fr', gap: 72, alignItems: 'start' }}>
-          <div style={{ marginBottom: isMobile ? 36 : 0 }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: 'rgba(200,230,0,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: 18 }}>FAQ</p>
-            <h2 style={{ fontSize: isMobile ? 28 : 40, fontWeight: 800, color: '#fff', lineHeight: 1.08, letterSpacing: -1.2, marginBottom: 16 }}>
-              Everything<br />you need<br />to know
-            </h2>
-            <div style={{ position: 'relative', marginTop: 24 }}>
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'rgba(255,255,255,0.22)', pointerEvents: 'none' }}>⌕</span>
-              <input value={faqSearch} onChange={e => setFaqSearch(e.target.value)} placeholder="Search questions..." style={{ width: '100%', padding: '12px 14px 12px 36px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, fontSize: 13, color: '#fff', fontFamily: 'inherit' }} />
-            </div>
+      <section id="faq" style={{ borderTop: `1px solid ${LINE}`, background: CARD }}>
+        <div style={{ maxWidth: 760, margin: '0 auto', padding: isMobile ? '56px 22px' : '96px 40px' }}>
+          <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 18 }}>FAQ</p>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap', marginBottom: 32 }}>
+            <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: isMobile ? 26 : 32, lineHeight: 1.2 }}>Questions people ask before starting.</h2>
+            <input value={faqSearch} onChange={e => setFaqSearch(e.target.value)} placeholder="Search questions..." style={{ width: isMobile ? '100%' : 220, padding: '10px 14px', background: PAPER, border: `1px solid ${LINE}`, borderRadius: 3, fontSize: 13, color: INK, fontFamily: 'inherit' }} />
           </div>
-
-          <div>
+          <div style={{ borderTop: `1px solid ${LINE}` }}>
             {filteredFaqs.length === 0
-              ? <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.25)', padding: '24px 0' }}>No questions match &ldquo;{faqSearch}&rdquo;</div>
+              ? <div style={{ fontSize: 13, color: INK_FAINT, padding: '24px 0' }}>No questions match &ldquo;{faqSearch}&rdquo;</div>
               : filteredFaqs.map((faq, i) => (
-                <div key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 0', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16 }}>
-                    <span style={{ fontSize: isMobile ? 14 : 15, fontWeight: 600, color: 'rgba(255,255,255,0.78)', lineHeight: 1.4, flex: 1 }}>{faq.q}</span>
-                    <span style={{ fontSize: 18, color: '#C8E600', flexShrink: 0, transform: openFaq === i ? 'rotate(45deg)' : 'none', transition: 'transform 0.18s', lineHeight: 1 }}>+</span>
+                <div key={faq.q} className="faq-row">
+                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 0', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 16, fontFamily: 'inherit' }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.4, flex: 1 }}>{faq.q}</span>
+                    <span style={{ fontSize: 18, color: INK_FAINT, flexShrink: 0, lineHeight: 1 }}>{openFaq === i ? '−' : '+'}</span>
                   </button>
                   {openFaq === i && (
-                    <div style={{ paddingBottom: 18 }}>
-                      <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.42)', lineHeight: 1.8, margin: 0 }}>{faq.a}</p>
-                    </div>
+                    <p style={{ fontSize: 14, color: INK_SOFT, lineHeight: 1.75, paddingBottom: 22, maxWidth: 620 }}>{faq.a}</p>
                   )}
                 </div>
               ))}
@@ -764,50 +440,26 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── FAQ CTA ─────────────────────────────────────────── */}
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '0 22px 56px' : '0 40px 56px' }}>
-        <div style={{ background: 'rgba(200,230,0,0.04)', border: '1px solid rgba(200,230,0,0.15)', borderRadius: 14, padding: isMobile ? '24px 20px' : '28px 36px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 16 }}>
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Still unsure? Check your CV score first — it&apos;s free.</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.38)' }}>No signup. No card. Just drop your CV and see exactly where you stand in 15 seconds.</div>
-          </div>
-          <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: 14, fontWeight: 800, padding: '13px 28px', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            Try it free →
-          </a>
-        </div>
-      </div>
-
       {/* ── FINAL CTA ────────────────────────────────────────── */}
-      <section style={{ padding: isMobile ? '88px 22px' : '120px 40px', borderTop: DIVIDE }}>
-        <div style={{ maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontSize: isMobile ? 34 : 58, fontWeight: 800, color: '#fff', lineHeight: 1.03, letterSpacing: -2.5, marginBottom: 18 }}>
-            Stop sending CVs<br />into the void.
-          </h2>
-          <p style={{ fontSize: isMobile ? 16 : 18, color: 'rgba(255,255,255,0.4)', lineHeight: 1.72, maxWidth: 460, margin: '0 auto 36px' }}>
-            Join 2,400+ job seekers who stopped applying manually and started getting interviews.
+      <section style={{ padding: isMobile ? '64px 22px' : '110px 40px' }}>
+        <div style={{ maxWidth: 620, margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: isMobile ? 30 : 42, lineHeight: 1.15, marginBottom: 18 }}>Stop sending CVs into the void.</h2>
+          <p style={{ fontSize: isMobile ? 15 : 16, color: INK_SOFT, lineHeight: 1.72, maxWidth: 440, margin: '0 auto 32px' }}>
+            Rewrite your CV for the next role you apply to — free, in about 30 seconds.
           </p>
-          <a href="/sign-up" style={{ background: '#C8E600', color: BG, fontSize: isMobile ? 15 : 17, fontWeight: 800, padding: isMobile ? '16px 32px' : '18px 48px', borderRadius: 8, textDecoration: 'none', display: 'inline-block', animation: 'ctaGlow 2.5s ease-in-out infinite', marginBottom: 24 }}>
-            Get your first 3 applications free
+          <a href="/sign-up" style={{ display: 'inline-block', background: ACCENT, color: PAPER, fontSize: isMobile ? 14.5 : 15.5, fontWeight: 600, padding: isMobile ? '15px 30px' : '16px 40px', borderRadius: 3, textDecoration: 'none' }}>
+            Get your first 3 rewrites free
           </a>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex' }}>
-              {PHOTOS.map((src, i) => (
-                <Image key={i} src={src} loading="lazy" width={28} height={28} alt=""
-                  style={{ borderRadius: '50%', border: `2px solid ${BG}`, marginLeft: i === 0 ? 0 : -7, zIndex: 6 - i, position: 'relative', objectFit: 'cover', background: '#1A4A2A' }} />
-              ))}
-            </div>
-            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>2,400+ new members this week</span>
-          </div>
         </div>
       </section>
 
-      <FooterSA />
+      <Footer theme="light" />
 
-      {/* MOBILE STICKY BAR */}
+      {/* MOBILE STICKY CTA */}
       {isMobile && !isSignedIn && (
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300, background: 'rgba(4,12,6,0.97)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(200,230,0,0.15)', padding: '12px 20px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
-          <a href="/sign-up" style={{ display: 'block', background: '#C8E600', color: BG, fontSize: 15, fontWeight: 800, padding: '15px 24px', borderRadius: 8, textDecoration: 'none', textAlign: 'center' }}>
-            Get started free — 3 free applications
+        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 300, background: 'rgba(250,248,243,0.97)', backdropFilter: 'blur(10px)', borderTop: `1px solid ${LINE}`, padding: '12px 20px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom))' }}>
+          <a href="/sign-up" style={{ display: 'block', background: ACCENT, color: PAPER, fontSize: 15, fontWeight: 600, padding: '14px 24px', borderRadius: 3, textDecoration: 'none', textAlign: 'center' }}>
+            Start free — 3 CV rewrites
           </a>
         </div>
       )}
