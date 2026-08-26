@@ -12,9 +12,9 @@ export default function Home() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [faqSearch, setFaqSearch] = useState('');
   const [cvAnalysisState, setCvAnalysisState] = useState<'idle' | 'uploading' | 'done'>('idle');
-  const [cvAnalysisScore, setCvAnalysisScore] = useState(0);
-  const [cvAnalysisWeaknesses, setCvAnalysisWeaknesses] = useState<string[]>([]);
+  const [cvAnalysisScores, setCvAnalysisScores] = useState({ overall: 0, keywords: 0, impact: 0, structure: 0, completeness: 0 });
   const [cvAnalysisDragOver, setCvAnalysisDragOver] = useState(false);
+  const [cvSample, setCvSample] = useState<{ status: 'idle' | 'loading' | 'done' | 'unavailable'; before: string; after: string }>({ status: 'idle', before: '', after: '' });
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -37,9 +37,73 @@ export default function Home() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const actionVerbs = ['led','managed','delivered','achieved','increased','reduced','built','launched','drove','grew','saved','developed','implemented','improved','created','established'];
+  const metricPattern = /\d+\s*%|\d+\s*(million|thousand|k\b|\$|£|€|R\d)|\d+\s*(people|users|clients|projects|teams)/i;
+  const techIndustryKw = ['software','engineering','finance','marketing','sales','operations','product','data','cloud','agile','devops','react','python','java','node','aws','azure','crm','erp','saas'];
+
+  const computeSubScores = (cv: any) => {
+    const summaryText = (cv.summary || '').toLowerCase();
+    const bullets: string[] = (cv.experience || []).flatMap((e: any) => e.bullets || []);
+    const bulletText = bullets.join(' ');
+    const jobTitles = (cv.experience || []).map((e: any) => (e.title || '').toLowerCase()).join(' ');
+
+    let keywords = 35;
+    if ((cv.skills?.length || 0) > 8) keywords += 35; else if ((cv.skills?.length || 0) > 4) keywords += 18;
+    if (techIndustryKw.some(kw => summaryText.includes(kw))) keywords += 20;
+    keywords = Math.min(96, keywords);
+
+    let impact = 30;
+    const metricMatches = (bulletText.match(new RegExp(metricPattern, 'gi')) || []).length;
+    impact += Math.min(50, metricMatches * 18);
+    if (actionVerbs.some(v => bulletText.toLowerCase().includes(v))) impact += 12;
+    impact = Math.min(94, impact);
+
+    let structure = 40;
+    if (cv.summary && cv.summary.length > 100 && actionVerbs.some(v => summaryText.includes(v))) structure += 25;
+    if (/senior|lead|manager|director|head|principal|chief|vp|vice president/.test(jobTitles)) structure += 15;
+    if ((cv.experience?.length || 0) >= 2) structure += 10;
+    structure = Math.min(95, structure);
+
+    let completeness = 30;
+    if (cv.phone && cv.email) completeness += 20;
+    if (cv.education && /bachelor|master|phd|diploma|degree|bsc|ba |msc|mba|honours|certificate/i.test(cv.education)) completeness += 25;
+    if (cv.location && cv.location.length > 2) completeness += 15;
+    if ((cv.languages?.length || 0) > 0) completeness += 6;
+    completeness = Math.min(96, completeness);
+
+    const overall = Math.min(78, Math.round((keywords + impact + structure + completeness) / 4));
+    return { overall, keywords, impact, structure, completeness };
+  };
+
+  const pickWeakBullet = (cv: any): { bullet: string; title: string } | null => {
+    const bullets = (cv.experience || []).flatMap((e: any) => (e.bullets || []).map((b: string) => ({ bullet: b, title: e.title || '' })));
+    if (!bullets.length) return null;
+    return bullets.find((x: any) => !/\d/.test(x.bullet)) || bullets[0];
+  };
+
+  const fetchSampleRewrite = async (weak: { bullet: string; title: string }) => {
+    setCvSample({ status: 'loading', before: weak.bullet, after: '' });
+    try {
+      const res = await fetch('/api/cv-check/rewrite-sample', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bullet: weak.bullet, title: weak.title }),
+      });
+      const data = await res.json();
+      if (data.success && data.rewritten) {
+        setCvSample({ status: 'done', before: weak.bullet, after: data.rewritten });
+      } else {
+        setCvSample({ status: 'unavailable', before: weak.bullet, after: '' });
+      }
+    } catch {
+      setCvSample({ status: 'unavailable', before: weak.bullet, after: '' });
+    }
+  };
+
   const handleCvAnalysis = async (file: File) => {
     if (!file || !file.name.toLowerCase().endsWith('.pdf')) return;
     setCvAnalysisState('uploading');
+    setCvSample({ status: 'idle', before: '', after: '' });
     try {
       const formData = new FormData();
       formData.append('cv', file);
@@ -47,30 +111,10 @@ export default function Home() {
       const data = await res.json();
       if (data.success) {
         const cv = data.cvData;
-        let s = 20;
-        const actionVerbs = ['led','managed','delivered','achieved','increased','reduced','built','launched','drove','grew','saved','developed','implemented','improved','created','established'];
-        const summaryText = (cv.summary || '').toLowerCase();
-        if (cv.summary && cv.summary.length > 100 && actionVerbs.some(v => summaryText.includes(v))) s += 8;
-        if ((cv.skills?.length || 0) > 8) s += 8;
-        const bulletText = (cv.experience || []).flatMap((e: any) => e.bullets || []).join(' ');
-        if (/\d+\s*%|\d+\s*(million|thousand|k\b|\$|£|€|R\d)|\d+\s*(people|users|clients|projects|teams)/i.test(bulletText)) s += 8;
-        const jobTitles = (cv.experience || []).map((e: any) => (e.title || '').toLowerCase()).join(' ');
-        if (/senior|lead|manager|director|head|principal|chief|vp|vice president/.test(jobTitles)) s += 8;
-        const techIndustryKw = ['software','engineering','finance','marketing','sales','operations','product','data','cloud','agile','devops','react','python','java','node','aws','azure','crm','erp','saas'];
-        if (techIndustryKw.some(kw => summaryText.includes(kw))) s += 8;
-        if (cv.phone && cv.email) s += 5;
-        const countryNames = ['south africa','nigeria','kenya','ghana','united kingdom','united states','canada','australia','india'];
-        if (cv.location && !countryNames.some(c => cv.location.toLowerCase().includes(c)) && cv.location.length > 2) s += 5;
-        if (cv.education && /bachelor|master|phd|diploma|degree|bsc|ba |msc|mba|honours|certificate/i.test(cv.education)) s += 5;
-        const score = Math.min(75, s);
-        const weaknesses: string[] = [];
-        if (!cv.summary || cv.summary.length < 100 || !actionVerbs.some(v => summaryText.includes(v))) weaknesses.push('No impact-driven summary — ATS filters reject CVs without measurable action verbs');
-        if ((cv.skills?.length || 0) <= 8) weaknesses.push('Too few skills listed — ATS needs 9+ role-specific keywords to pass filters');
-        if (!bulletText || !/\d/.test(bulletText)) weaknesses.push('No measurable achievements — add numbers and percentages to every bullet point');
-        if (!cv.education || !/bachelor|master|phd|diploma|degree|bsc|msc|mba|honours/i.test(cv.education)) weaknesses.push('Education section incomplete — ATS systems rank CVs with specific qualifications higher');
-        setCvAnalysisScore(score);
-        setCvAnalysisWeaknesses(weaknesses.slice(0, 3));
+        setCvAnalysisScores(computeSubScores(cv));
         setCvAnalysisState('done');
+        const weak = pickWeakBullet(cv);
+        if (weak) fetchSampleRewrite(weak);
       } else {
         setCvAnalysisState('idle');
       }
@@ -179,33 +223,85 @@ export default function Home() {
             </div>
           </div>
 
-          <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 4, padding: isMobile ? 24 : 32 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
-              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: INK_FAINT }}>Before → after</span>
-              <span className="hide-mobile" style={{ fontSize: 11, color: INK_FAINT }}>Same experience, rewritten</span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+          <div id="cv-check" style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 4, padding: isMobile ? 22 : 28 }}>
+            {cvAnalysisState === 'idle' && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: INK_FAINT }}>Free CV check</span>
+                  <span className="hide-mobile" style={{ fontSize: 11, color: INK_FAINT }}>No signup required</span>
+                </div>
+                <div
+                  onDrop={e => { e.preventDefault(); setCvAnalysisDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleCvAnalysis(f); }}
+                  onDragOver={e => { e.preventDefault(); setCvAnalysisDragOver(true); }}
+                  onDragLeave={() => setCvAnalysisDragOver(false)}
+                  style={{ border: `1px dashed ${cvAnalysisDragOver ? ACCENT : 'rgba(28,26,22,0.22)'}`, borderRadius: 4, padding: isMobile ? '36px 20px' : '48px 24px', textAlign: 'center', background: cvAnalysisDragOver ? 'rgba(63,93,82,0.04)' : PAPER, transition: 'all 0.2s' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={INK_FAINT} strokeWidth="1.4" style={{ marginBottom: 14 }}><path d="M12 3v12" strokeLinecap="round" /><path d="M7 8l5-5 5 5" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" strokeLinecap="round" /></svg>
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Drop your CV here to see your ATS score</div>
+                  <div style={{ fontSize: 12.5, color: INK_FAINT, marginBottom: 20 }}>PDF format &middot; analysed instantly &middot; never stored</div>
+                  <label style={{ cursor: 'pointer' }}>
+                    <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleCvAnalysis(f); }} />
+                    <span style={{ display: 'inline-block', padding: '11px 24px', border: `1px solid ${INK}`, borderRadius: 3, fontSize: 13.5, fontWeight: 600 }}>Choose PDF</span>
+                  </label>
+                </div>
+              </>
+            )}
+
+            {cvAnalysisState === 'uploading' && (
+              <div style={{ textAlign: 'center', padding: '56px 20px' }}>
+                <div style={{ width: 32, height: 32, border: `2px solid ${LINE}`, borderTop: `2px solid ${ACCENT}`, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Reading your CV…</div>
+                <div style={{ fontSize: 13, color: INK_FAINT }}>Analysing skills, experience and ATS compatibility</div>
+              </div>
+            )}
+
+            {cvAnalysisState === 'done' && (
               <div>
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: CLAY, marginBottom: 10 }}>Before</div>
-                {['Responsible for managing a team', 'Worked on various projects', 'Helped with strategy'].map((t, i) => (
-                  <div key={i} style={{ fontSize: 13, color: INK_FAINT, lineHeight: 1.6, paddingBottom: 8, borderBottom: `1px solid ${LINE}`, marginBottom: 8 }}>{t}</div>
-                ))}
-                <div style={{ marginTop: 16, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: INK_FAINT }}>ATS score</span>
-                  <span style={{ fontFamily: SERIF, fontSize: 20, color: CLAY }}>42%</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: INK_FAINT }}>Your ATS score</span>
+                  <span style={{ fontFamily: SERIF, fontSize: 30, color: cvAnalysisScores.overall >= 75 ? ACCENT : cvAnalysisScores.overall >= 60 ? AMBER : CLAY }}>{cvAnalysisScores.overall}%</span>
                 </div>
-              </div>
-              <div style={{ borderLeft: `1px solid ${LINE}`, paddingLeft: 18 }}>
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: ACCENT, marginBottom: 10 }}>After</div>
-                {['Led a 12-person team, +40% efficiency', 'Delivered 5 projects, 15% under budget', 'Drove strategy behind $2.4M new revenue'].map((t, i) => (
-                  <div key={i} style={{ fontSize: 13, color: INK, lineHeight: 1.6, paddingBottom: 8, borderBottom: `1px solid ${LINE}`, marginBottom: 8 }}>{t}</div>
-                ))}
-                <div style={{ marginTop: 16, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 11, color: INK_FAINT }}>ATS score</span>
-                  <span style={{ fontFamily: SERIF, fontSize: 20, color: ACCENT }}>94%</span>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
+                  {([
+                    ['Keywords', cvAnalysisScores.keywords],
+                    ['Impact & metrics', cvAnalysisScores.impact],
+                    ['Structure', cvAnalysisScores.structure],
+                    ['Completeness', cvAnalysisScores.completeness],
+                  ] as [string, number][]).map(([label, val]) => (
+                    <div key={label}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: INK_SOFT, marginBottom: 4 }}>
+                        <span>{label}</span>
+                        <span style={{ fontWeight: 600, color: val >= 75 ? ACCENT : val >= 55 ? AMBER : CLAY }}>{val}%</span>
+                      </div>
+                      <div style={{ height: 5, background: LINE, borderRadius: 99, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${val}%`, background: val >= 75 ? ACCENT : val >= 55 ? AMBER : CLAY, borderRadius: 99 }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
+
+                {(cvSample.status === 'loading' || cvSample.status === 'done') && (
+                  <div style={{ borderTop: `1px solid ${LINE}`, paddingTop: 18, marginBottom: 20 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 10 }}>We rewrote one of your lines</div>
+                    {cvSample.status === 'loading' && (
+                      <div style={{ fontSize: 13, color: INK_FAINT, fontStyle: 'italic' }}>Rewriting a sample line…</div>
+                    )}
+                    {cvSample.status === 'done' && (
+                      <>
+                        <div style={{ fontSize: 13, color: INK_FAINT, lineHeight: 1.6, marginBottom: 8, paddingLeft: 10, borderLeft: `2px solid ${CLAY}` }}>{cvSample.before}</div>
+                        <div style={{ fontSize: 13, color: INK, lineHeight: 1.6, paddingLeft: 10, borderLeft: `2px solid ${ACCENT}` }}>{cvSample.after}</div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <a href="/sign-up" style={{ display: 'block', background: ACCENT, color: PAPER, fontSize: 14, fontWeight: 600, padding: '14px 0', borderRadius: 3, textDecoration: 'none', textAlign: 'center' }}>
+                  Fix everything with AI — free
+                </a>
+                <div style={{ textAlign: 'center', fontSize: 12, color: INK_FAINT, marginTop: 10 }}>No credit card &middot; 30 seconds</div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -251,79 +347,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── FREE CV ANALYSIS ─────────────────────────────────── */}
-      <section id="cv-check" style={{ borderTop: `1px solid ${LINE}`, borderBottom: `1px solid ${LINE}`, background: CARD }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: isMobile ? '56px 22px' : '88px 40px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 32 : 72, alignItems: 'center' }}>
-          <div>
-            <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 18 }}>Free — no signup required</p>
-            <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: isMobile ? 28 : 34, lineHeight: 1.2, marginBottom: 18 }}>See your ATS score in seconds.</h2>
-            <p style={{ fontSize: 15, color: INK_SOFT, lineHeight: 1.75, maxWidth: 420 }}>
-              Drop your CV in as a PDF. It’s analysed instantly and never stored — you’ll see exactly what’s holding your applications back.
-            </p>
-          </div>
-
-          {cvAnalysisState === 'idle' && (
-            <div
-              onDrop={e => { e.preventDefault(); setCvAnalysisDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleCvAnalysis(f); }}
-              onDragOver={e => { e.preventDefault(); setCvAnalysisDragOver(true); }}
-              onDragLeave={() => setCvAnalysisDragOver(false)}
-              style={{ border: `1px dashed ${cvAnalysisDragOver ? ACCENT : 'rgba(28,26,22,0.22)'}`, borderRadius: 4, padding: isMobile ? '40px 24px' : '56px 32px', textAlign: 'center', background: cvAnalysisDragOver ? 'rgba(63,93,82,0.04)' : PAPER, transition: 'all 0.2s' }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={INK_FAINT} strokeWidth="1.4" style={{ marginBottom: 16 }}><path d="M12 3v12" strokeLinecap="round" /><path d="M7 8l5-5 5 5" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" strokeLinecap="round" /></svg>
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Drop your CV here</div>
-              <div style={{ fontSize: 12.5, color: INK_FAINT, marginBottom: 22 }}>PDF format &middot; analysed instantly &middot; never stored</div>
-              <label style={{ cursor: 'pointer' }}>
-                <input type="file" accept=".pdf" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleCvAnalysis(f); }} />
-                <span style={{ display: 'inline-block', padding: '11px 24px', border: `1px solid ${INK}`, borderRadius: 3, fontSize: 13.5, fontWeight: 600 }}>Choose PDF</span>
-              </label>
-            </div>
-          )}
-
-          {cvAnalysisState === 'uploading' && (
-            <div style={{ textAlign: 'center', padding: '56px 28px', border: `1px solid ${LINE}`, borderRadius: 4, background: PAPER }}>
-              <div style={{ width: 32, height: 32, border: `2px solid ${LINE}`, borderTop: `2px solid ${ACCENT}`, borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Reading your CV…</div>
-              <div style={{ fontSize: 13, color: INK_FAINT }}>Analysing skills, experience and ATS compatibility</div>
-            </div>
-          )}
-
-          {cvAnalysisState === 'done' && (
-            <div style={{ border: `1px solid ${LINE}`, borderRadius: 4, padding: isMobile ? '24px 20px' : '32px 36px', background: PAPER }}>
-              <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 24 }}>
-                <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                  <div style={{ position: 'relative', width: 92, height: 92, margin: '0 auto 8px' }}>
-                    <svg width="92" height="92" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx="46" cy="46" r="38" fill="none" stroke={LINE} strokeWidth="7" />
-                      <circle cx="46" cy="46" r="38" fill="none"
-                        stroke={cvAnalysisScore >= 75 ? ACCENT : cvAnalysisScore >= 60 ? AMBER : CLAY}
-                        strokeWidth="7" strokeDasharray={`${2 * Math.PI * 38}`}
-                        strokeDashoffset={`${2 * Math.PI * 38 * (1 - cvAnalysisScore / 100)}`}
-                        strokeLinecap="round" />
-                    </svg>
-                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-                      <span style={{ fontFamily: SERIF, fontSize: 22, color: cvAnalysisScore >= 75 ? ACCENT : cvAnalysisScore >= 60 ? AMBER : CLAY }}>{cvAnalysisScore}%</span>
-                      <span style={{ fontSize: 9, color: INK_FAINT, marginTop: 2 }}>ATS score</span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14, lineHeight: 1.4 }}>
-                    {cvAnalysisScore >= 75 ? 'Solid CV — tailoring per role can push it above 90%.' : 'Here is exactly what’s holding your CV back:'}
-                  </div>
-                  {cvAnalysisWeaknesses.map((w, i) => (
-                    <div key={i} style={{ borderLeft: `2px solid ${CLAY}`, padding: '8px 0 8px 14px', marginBottom: 8, fontSize: 13, color: INK_SOFT, lineHeight: 1.5 }}>{w}</div>
-                  ))}
-                </div>
-              </div>
-              <a href="/sign-up" style={{ display: 'block', background: ACCENT, color: PAPER, fontSize: 14, fontWeight: 600, padding: '14px 0', borderRadius: 3, textDecoration: 'none', textAlign: 'center' }}>
-                Fix these issues with AI — free
-              </a>
-              <div style={{ textAlign: 'center', fontSize: 12, color: INK_FAINT, marginTop: 10 }}>No credit card &middot; 30 seconds</div>
-            </div>
-          )}
         </div>
       </section>
 

@@ -68,6 +68,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/greenhouse(.*)',
   '/api/cv(.*)',
   '/api/cv-test(.*)',
+  '/api/cv-check(.*)',
   '/api/payment/verify(.*)',
   '/api/data-deletion(.*)',
   '/api/admin/stats(.*)',
