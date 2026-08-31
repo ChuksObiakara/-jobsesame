@@ -8,8 +8,8 @@ Marketing-channel attribution is wired so new ad channels drop in without code c
 | Stage | Scope | State |
 |---|---|---|
 | 0 | SDKs installed, attribution + channel scaffolding, event catalog | **done** |
-| 1 | PostHog client provider + client events (`landing_page_viewed`, `signup_started`, `cv_downloaded`) | blocked on `NEXT_PUBLIC_POSTHOG_KEY` |
-| 2 | PostHog server events in `/api/cv` | blocked on Stage 1 |
+| 1 | PostHog client provider + client events (`landing_page_viewed`, `signup_started`, `cv_downloaded`) | **done** |
+| 2 | PostHog server events in `/api/cv` | next |
 | 3 | PostHog server events in `/api/rewrite`, `/api/user/sync`, `/api/payment*` | blocked on Stage 1 |
 | 4 | Relevance AI `Growth Director` + PostHog Query API | blocked on `RELEVANCE_AI_*` + `POSTHOG_PERSONAL_API_KEY` |
 | 5 | Signed Relevance webhook receiver | blocked on Stage 4 |
@@ -23,7 +23,7 @@ local `.env.local`. `.env*` is gitignored, so this table is the source of truth.
 | Variable | Example | Client-safe? | Used by |
 |---|---|---|---|
 | `NEXT_PUBLIC_POSTHOG_KEY` | `phc_xxx` | **Yes** — write-only ingest key, safe in the browser bundle | client + server capture |
-| `NEXT_PUBLIC_POSTHOG_HOST` | `https://eu.i.posthog.com` | **Yes** — not a secret | client + server capture |
+| `NEXT_PUBLIC_POSTHOG_HOST` | `https://us.i.posthog.com` | **Yes** — not a secret | client + server capture |
 | `POSTHOG_PERSONAL_API_KEY` | `phx_xxx` | **No** — server-only secret | `/api/growth/*` (reads funnels) |
 | `POSTHOG_PROJECT_ID` | `123456` | No (server-only, not secret) | `/api/growth/*` |
 | `RELEVANCE_AI_API_KEY` | `sk-...` | **No** — server-only secret | `/api/growth/*` |
@@ -32,8 +32,7 @@ local `.env.local`. `.env*` is gitignored, so this table is the source of truth.
 | `RELEVANCE_AI_AGENT_ID` | `agent_xxx` | No (server-only) | `/api/growth/analyze` |
 | `RELEVANCE_WEBHOOK_SECRET` | generated (`openssl rand -hex 32`) | **No** — server-only secret | `/api/growth/webhook` auth |
 
-Cloud region: **EU** (`https://eu.i.posthog.com`). The PostHog project must be created
-in the EU region so the host matches.
+Cloud region: **US** (`https://us.i.posthog.com`) — project created in the US region.
 
 ## Event catalog
 
@@ -49,7 +48,7 @@ Fire server-side where the action is server-side; client-side only where it isn'
 | `cv_optimization_completed` | `/api/rewrite` success, `source = optimise_page` | server |
 | `job_description_submitted` | `/api/rewrite` on entry, **once**, any source | server |
 | `cv_tailoring_completed` | `/api/rewrite` success, `source = dashboard_tailor` \| `dashboard_job` | server |
-| `cv_downloaded` | jsPDF download handlers in `optimise` + `dashboard` | client |
+| `cv_downloaded` | jsPDF download handlers in `optimise` + `dashboard` (only `source` is sent — never the filename, which contains the name) | client |
 | `checkout_started` | `/api/payment` after transaction init | server |
 | `subscription_completed` | `/api/payment/webhook` (+ `/verify`), idempotent on `reference` | server |
 
@@ -61,6 +60,17 @@ Fire server-side where the action is server-side; client-side only where it isn'
 `app/lib/analytics-events.ts` → `sanitizeEventProperties()` drops every other key. CV
 text, CV file bytes, passwords, card/payment details, email and full names cannot pass
 through it.
+
+## Consent
+
+PostHog boots with `opt_out_capturing_by_default: true`. It only starts capturing
+once `localStorage.jobsesame_cookie_consent === 'accepted'` (the "Accept all cookies"
+button in `CookieConsent`). "Necessary only" → nothing is sent. `CookieConsent` fires a
+`jobsesame-consent-change` event so the opt-in/out takes effect without a reload.
+
+`before_send` in `posthog-client.ts` is a last-line scrub: it drops any non-`$` property
+whose key looks sensitive (email/name/phone/card/token/raw_text/…) from every outgoing
+payload, including PostHog's own `$pageview` / `$identify`.
 
 ## Attribution (`app/lib/attribution.ts` + `attribution-server.ts`)
 
@@ -78,7 +88,7 @@ No ad-platform API is called and no budget is ever changed by this codebase.
 
 ## PostHog project settings to apply in the UI
 
-- Cloud region **EU**.
+- Cloud region **US**.
 - **Autocapture OFF**, **Session Replay OFF**, **Heatmaps OFF**, **Web vitals OFF** —
   the job-description / CV textareas must never be captured.
 - Person profiles: **identified events only**. We `identify()` by Clerk user id and set

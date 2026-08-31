@@ -17,6 +17,8 @@ export default function CookieConsent() {
 
   function accept(value: 'accepted' | 'necessary') {
     localStorage.setItem('jobsesame_cookie_consent', value);
+    // Let PostHog opt in / out immediately, without waiting for a reload.
+    window.dispatchEvent(new Event('jobsesame-consent-change'));
     setVisible(false);
   }
 

@@ -3,6 +3,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import "./globals.css";
 import CookieConsent from "./components/CookieConsent";
+import PostHogProvider from "./components/PostHogProvider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -54,7 +55,7 @@ export default function RootLayout({
     >
       <html lang="en" className={plusJakarta.className}>
         <body>
-          {children}
+          <PostHogProvider>{children}</PostHogProvider>
           <CookieConsent />
         </body>
       </html>

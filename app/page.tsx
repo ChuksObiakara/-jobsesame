@@ -5,6 +5,8 @@ import Nav from './components/Nav';
 import Footer from './components/Footer';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF } from './lib/theme';
 import { captureAttribution } from './lib/attribution';
+import { captureClient } from './lib/posthog-client';
+import { ANALYTICS_EVENTS } from './lib/analytics-events';
 
 export default function Home() {
   const { isSignedIn } = useAuth();
@@ -24,10 +26,10 @@ export default function Home() {
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // First-touch attribution: records utm_* / click ids / referrer on the first
-  // landing only. No-op on later visits. Analytics events read this cookie.
+  // First-touch attribution (no-op on later visits), then the funnel-top event.
   useEffect(() => {
     captureAttribution();
+    captureClient(ANALYTICS_EVENTS.LANDING_PAGE_VIEWED);
   }, []);
 
   useEffect(() => {

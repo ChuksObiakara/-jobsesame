@@ -6,6 +6,8 @@ import QuickApply, { isAutoApply } from '../components/QuickApply';
 import CoverLetter from '../components/CoverLetter';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF, SANS } from '../lib/theme';
+import { captureClient } from '../lib/posthog-client';
+import { ANALYTICS_EVENTS } from '../lib/analytics-events';
 
 const SALARY_DATA: Record<string, { min: number; max: number }> = {
   'software engineer': { min: 480000, max: 720000 },
@@ -473,6 +475,7 @@ export default function Dashboard() {
     if (cv.education) { sectionHdr('Education'); doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40); doc.text(cv.education, margin, y); y += 11; }
     if (cv.languages?.length) { sectionHdr('Languages'); doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40); doc.text((cv.languages as string[]).join('   ·   '), margin, y); }
     doc.save(`${(cv.name||'CV').replace(/\s+/g,'_')}_${(cvOptimizeJob.title||'job').replace(/\s+/g,'_')}_optimised.pdf`);
+    captureClient(ANALYTICS_EVENTS.CV_DOWNLOADED, { source: 'dashboard_job' });
   };
 
   const handleRewrite = async () => {
@@ -608,6 +611,7 @@ export default function Dashboard() {
     const safeName = (cv.name || 'CV').replace(/\s+/g, '_');
     const safeJob = (jobTitle || 'rewritten').replace(/\s+/g, '_');
     doc.save(`${safeName}_${safeJob}.pdf`);
+    captureClient(ANALYTICS_EVENTS.CV_DOWNLOADED, { source: 'dashboard_tailor' });
   };
 
   const copyReferralLink = () => {

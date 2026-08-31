@@ -3,6 +3,8 @@ import { useState } from 'react';
 import Nav from '../components/Nav';
 import Footer from '../components/Footer';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, SERIF, SANS } from '../lib/theme';
+import { captureClient } from '../lib/posthog-client';
+import { ANALYTICS_EVENTS } from '../lib/analytics-events';
 
 interface CVExperience {
   title?: string;
@@ -207,6 +209,8 @@ export default function OptimisePage() {
 
       const fileName = `${(rewrittenCV.name || 'CV').replace(/\s+/g, '_')}_CV_for_${(jobCompany || jobTitle).replace(/\s+/g, '_')}.pdf`;
       doc.save(fileName);
+      // Only the entry point is sent — never the filename (contains the name).
+      captureClient(ANALYTICS_EVENTS.CV_DOWNLOADED, { source: 'optimise_page' });
     } catch {
       setError('PDF download failed. Please try again.');
     } finally {
