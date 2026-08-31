@@ -4,6 +4,7 @@ import { useAuth } from '@clerk/nextjs';
 import Nav from './components/Nav';
 import Footer from './components/Footer';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF } from './lib/theme';
+import { captureAttribution } from './lib/attribution';
 
 export default function Home() {
   const { isSignedIn } = useAuth();
@@ -21,6 +22,12 @@ export default function Home() {
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // First-touch attribution: records utm_* / click ids / referrer on the first
+  // landing only. No-op on later visits. Analytics events read this cookie.
+  useEffect(() => {
+    captureAttribution();
   }, []);
 
   useEffect(() => {
