@@ -41,7 +41,7 @@ function scrub(props?: Record<string, unknown>): Record<string, unknown> | undef
   if (!props) return props;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(props)) {
-    if (k.startsWith('$')) { out[k] = v; continue; }
+    if (k.startsWith('$') || k === 'token') { out[k] = v; continue; }
     if (SENSITIVE_KEY.test(k)) continue;
     out[k] = v;
   }
@@ -67,7 +67,6 @@ export function initPostHog(): void {
     autocapture: false,
     capture_pageview: 'history_change',
     capture_pageleave: true,
-      debug: true, // TEMP diagnostic flag - remove after diagnosis    
     disable_session_recording: true,
     disable_surveys: true,
     person_profiles: 'identified_only',
