@@ -67,6 +67,7 @@ export function initPostHog(): void {
     autocapture: false,
     capture_pageview: 'history_change',
     capture_pageleave: true,
+      debug: true, // TEMP diagnostic flag - remove after diagnosis    
     disable_session_recording: true,
     disable_surveys: true,
     person_profiles: 'identified_only',
