@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import Nav from './components/Nav';
 import Footer from './components/Footer';
+import CvTransformShowcase from './components/CvTransformShowcase';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF } from './lib/theme';
 import { captureAttribution } from './lib/attribution';
 import { captureClient } from './lib/posthog-client';
@@ -335,6 +336,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ── CV TRANSFORMATION SHOWCASE ───────────────────────── */}
+      <CvTransformShowcase isMobile={isMobile} />
 
       {/* ── HOW IT WORKS ─────────────────────────────────────── */}
       <section id="how" style={{ padding: isMobile ? '56px 22px' : '96px 40px', maxWidth: 1120, margin: '0 auto' }}>
