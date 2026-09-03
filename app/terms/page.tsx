@@ -1,4 +1,24 @@
+import type { Metadata } from 'next';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service | Jobsesame',
+  description: 'The terms and conditions for using Jobsesame’s AI CV rewriting and job search tools.',
+  alternates: { canonical: 'https://www.jobsesame.co.za/terms' },
+  openGraph: {
+    title: 'Terms of Service | Jobsesame',
+    description: 'The terms and conditions for using Jobsesame’s AI CV rewriting and job search tools.',
+    url: 'https://www.jobsesame.co.za/terms',
+    siteName: 'Jobsesame',
+    locale: 'en_ZA',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Terms of Service | Jobsesame',
+    description: 'The terms and conditions for using Jobsesame’s AI CV rewriting and job search tools.',
+  },
+};
 
 export default function TermsPage() {
   const nav = (
