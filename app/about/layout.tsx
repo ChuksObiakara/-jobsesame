@@ -1,21 +1,21 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About Jobsesame | AI-Powered Job Search for South Africans',
-  description: 'Jobsesame is an AI job platform built for South African professionals. Upload your CV and apply smarter.',
+  title: 'About Jobsesame | AI-Powered Job Search for Everyone',
+  description: 'Jobsesame is an AI job platform built to help professionals everywhere apply smarter, wherever they are.',
   alternates: { canonical: 'https://www.jobsesame.co.za/about' },
   openGraph: {
-    title: 'About Jobsesame | AI-Powered Job Search for South Africans',
-    description: 'Jobsesame is an AI job platform built for South African professionals. Upload your CV and apply smarter.',
+    title: 'About Jobsesame | AI-Powered Job Search for Everyone',
+    description: 'Jobsesame is an AI job platform built to help professionals everywhere apply smarter, wherever they are.',
     url: 'https://www.jobsesame.co.za/about',
     siteName: 'Jobsesame',
-    locale: 'en_ZA',
+    locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'About Jobsesame | AI-Powered Job Search for South Africans',
-    description: 'Jobsesame is an AI job platform built for South African professionals. Upload your CV and apply smarter.',
+    title: 'About Jobsesame | AI-Powered Job Search for Everyone',
+    description: 'Jobsesame is an AI job platform built to help professionals everywhere apply smarter, wherever they are.',
   },
 };
 

@@ -11,7 +11,7 @@ export default function AboutPage() {
       <section style={{ padding: '72px 24px 56px', textAlign: 'center', borderBottom: `1px solid ${LINE}` }}>
         <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 24 }}>Our story</p>
         <h1 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(30px, 5vw, 44px)', lineHeight: 1.15, maxWidth: 640, margin: '0 auto 20px' }}>
-          Built in Africa. Open to the world.
+          Built to open doors, wherever you’re from.
         </h1>
         <p style={{ fontSize: 16, color: INK_SOFT, maxWidth: 520, margin: '0 auto', lineHeight: 1.75 }}>
           We believe where you were born should never limit where you can work. Jobsesame exists to make that true.
@@ -27,8 +27,8 @@ export default function AboutPage() {
               n: '01',
               title: 'The problem we saw every day',
               body: [
-                'In Johannesburg, Lagos, Nairobi, Accra, and Cape Town — brilliant, hardworking people were spending hours sending CVs into silence. Not because they lacked talent, but because the job market was built for someone else. CVs formatted for London. AI tools priced for Silicon Valley salaries.',
-                'A developer in Lagos with ten years of experience was competing against a polished, well-tailored CV from San Francisco, with the same ATS software making the call. The game was rigged — not by malice, but by neglect. Africa was an afterthought.',
+                'Everywhere we looked, brilliant, hardworking people were spending hours sending CVs into silence. Not because they lacked talent, but because the job market was built for someone else. CVs formatted for one country’s conventions. AI tools priced for a handful of the world’s highest salaries.',
+                'A skilled candidate outside the traditional hiring hubs was competing against a polished, well-tailored CV from someone who already knew the system — with the same ATS software making the call. The game was rigged, not by malice, but by neglect.',
               ],
             },
             {
@@ -64,7 +64,7 @@ export default function AboutPage() {
         <div style={{ borderTop: `1px solid ${LINE}`, borderBottom: `1px solid ${LINE}`, padding: '48px 0', marginBottom: 56, textAlign: 'center' }}>
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 18 }}>Our mission</p>
           <p style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 26, lineHeight: 1.45, maxWidth: 560, margin: '0 auto' }}>
-            To democratise access to the global job market — so that a CV from Johannesburg competes equally with a CV from London.
+            To democratise access to the global job market — so a CV from anywhere competes equally with a CV from anywhere else.
           </p>
         </div>
 
@@ -73,8 +73,8 @@ export default function AboutPage() {
           <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 26, marginBottom: 32, textAlign: 'center' }}>What we stand for</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 0, borderTop: `1px solid ${LINE}`, borderLeft: `1px solid ${LINE}` }}>
             {[
-              { title: 'Africa first', body: 'We built for Johannesburg, Lagos, Nairobi, Accra, and Kampala before anywhere else. Jobsesame understands African qualifications and career paths, while opening doors to the entire world.' },
-              { title: 'Equal access', body: 'A brilliant engineer in Kigali deserves the same shot at a London tech role as someone who went to Oxford. AI is the great equaliser. We put it in the hands of the people who need it most.' },
+              { title: 'Everyone, everywhere', body: 'We build for job seekers who have been overlooked by tools designed around a handful of major markets. Jobsesame understands qualifications and career paths from anywhere, and opens doors to the entire world.' },
+              { title: 'Equal access', body: 'A brilliant engineer outside the traditional hiring hubs deserves the same shot at a top tech role as someone who went to a name-brand university. AI is the great equaliser. We put it in the hands of the people who need it most.' },
               { title: 'No gatekeeping', body: 'No premium tiers that lock out the people who can least afford them. Three free CV rewrites, no card needed, because your first step into the global market should not cost you anything.' },
               { title: 'AI that serves you', body: 'Our AI does not just match keywords. It understands what makes your experience exceptional and communicates it the way employers respond to. Every rewrite is specific to the job you’re applying for.' },
             ].map(v => (
@@ -88,7 +88,7 @@ export default function AboutPage() {
 
         {/* BY THE NUMBERS */}
         <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 4, padding: '36px 32px', marginBottom: 56 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, textAlign: 'center', marginBottom: 28, color: INK_SOFT }}>Opening doors across Africa and beyond</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 600, textAlign: 'center', marginBottom: 28, color: INK_SOFT }}>Opening doors, wherever you are</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
             {[
               ['30s', 'Average CV rewrite'],
@@ -110,14 +110,14 @@ export default function AboutPage() {
           <p style={{ fontSize: 14, color: INK_FAINT, textAlign: 'center', marginBottom: 32, fontStyle: 'italic' }}>If this sounds like you, Jobsesame was made for you.</p>
           <div style={{ borderTop: `1px solid ${LINE}` }}>
             {[
-              { city: 'Johannesburg', desc: 'A software developer tired of local salary ceilings, ready to work remotely for a London or New York company — but their CV keeps getting filtered out before anyone reads it.' },
-              { city: 'Lagos', desc: 'A marketing manager with a decade of results who wants a shot at a senior role abroad, but the ATS system rejects their application before a human ever sees it.' },
-              { city: 'Nairobi', desc: 'A finance professional who knows they’re ready for a global career but has no idea how to position their experience for international recruiters.' },
-              { city: 'Accra', desc: 'A recent graduate who can’t afford to pay a CV writer for every application — but needs every application to be their best.' },
-              { city: 'Anywhere in Africa', desc: 'Anyone who is brilliant, ambitious, and has been told in a thousand small ways that global opportunities are for other people. They are not. Not anymore.' },
+              { role: 'The developer', desc: 'Tired of local salary ceilings, ready to work remotely for a company on the other side of the world — but their CV keeps getting filtered out before anyone reads it.' },
+              { role: 'The marketer', desc: 'A decade of results and wants a shot at a senior role abroad, but the ATS system rejects their application before a human ever sees it.' },
+              { role: 'The finance professional', desc: 'Knows they’re ready for a global career but has no idea how to position their experience for international recruiters.' },
+              { role: 'The recent graduate', desc: 'Can’t afford to pay a CV writer for every application — but needs every application to be their best.' },
+              { role: 'Anyone, anywhere', desc: 'Anyone who is brilliant, ambitious, and has been told in a thousand small ways that global opportunities are for other people. They are not. Not anymore.' },
             ].map(p => (
-              <div key={p.city} style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 20, padding: '20px 0', borderBottom: `1px solid ${LINE}` }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: ACCENT }}>{p.city}</div>
+              <div key={p.role} style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 20, padding: '20px 0', borderBottom: `1px solid ${LINE}` }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: ACCENT }}>{p.role}</div>
                 <p style={{ fontSize: 13.5, color: INK_SOFT, lineHeight: 1.75, margin: 0 }}>{p.desc}</p>
               </div>
             ))}
