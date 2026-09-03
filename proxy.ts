@@ -42,6 +42,8 @@ function ukRouteRedirect(req: NextRequest): NextResponse | null {
 
 const isPublicRoute = createRouteMatcher([
   '/',
+  '/robots.txt',
+  '/sitemap.xml',
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/sso-callback(.*)',
