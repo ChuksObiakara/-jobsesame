@@ -74,6 +74,13 @@ export default function Dashboard() {
   // ── Applications state ────────────────────────────────────────
   const [applications, setApplications] = useState<Application[]>([]);
   const [loadingApplications, setLoadingApplications] = useState(true);
+  const [showAddApplication, setShowAddApplication] = useState(false);
+  const [newAppTitle, setNewAppTitle] = useState('');
+  const [newAppCompany, setNewAppCompany] = useState('');
+  const [newAppLocation, setNewAppLocation] = useState('');
+  const [newAppUrl, setNewAppUrl] = useState('');
+  const [addingApplication, setAddingApplication] = useState(false);
+  const [addApplicationError, setAddApplicationError] = useState('');
 
   // ── Payment state ─────────────────────────────────────────────
   const [currency, setCurrency] = useState<'ZAR' | 'GBP' | 'USD'>('USD');
@@ -307,6 +314,48 @@ export default function Dashboard() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     }).catch((err) => console.error('[dashboard] status update failed:', err));
+  };
+
+  const addApplication = async () => {
+    if (!newAppTitle.trim() || !newAppCompany.trim()) {
+      setAddApplicationError('Job title and company are required.');
+      return;
+    }
+    setAddingApplication(true);
+    setAddApplicationError('');
+    try {
+      const res = await fetch('/api/user/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobTitle: newAppTitle.trim(),
+          company: newAppCompany.trim(),
+          location: newAppLocation.trim() || undefined,
+          jobUrl: newAppUrl.trim() || undefined,
+          jobSource: 'manual',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save that application.');
+      const saved: Application = {
+        id: data.application.id,
+        jobTitle: data.application.jobTitle,
+        company: data.application.company,
+        location: data.application.location || '',
+        dateApplied: data.application.appliedAt,
+        status: data.application.status,
+        jobUrl: data.application.jobUrl,
+      };
+      const updated = [saved, ...applications];
+      setApplications(updated);
+      localStorage.setItem('jobsesame_applications', JSON.stringify(updated));
+      setNewAppTitle(''); setNewAppCompany(''); setNewAppLocation(''); setNewAppUrl('');
+      setShowAddApplication(false);
+    } catch (err: any) {
+      setAddApplicationError(err.message || 'Could not save that application. Try again.');
+    } finally {
+      setAddingApplication(false);
+    }
   };
 
   const sendWelcomeEmailOnce = async () => {
@@ -1474,10 +1523,44 @@ export default function Dashboard() {
         {/* ──────────────────────────────────────────────────────────── */}
         {activeSection === 'applications' && (
           <div>
-            <div style={{marginBottom:20}}>
-              <h2 style={{fontFamily:SERIF,fontWeight:500,fontSize:22,marginBottom:4}}>My Applications</h2>
-              <p style={{fontSize:13,color:INK_SOFT}}>Every job you applied to — tracked automatically.</p>
+            <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:16,flexWrap:"wrap",marginBottom:20}}>
+              <div>
+                <h2 style={{fontFamily:SERIF,fontWeight:500,fontSize:22,marginBottom:4}}>My Applications</h2>
+                <p style={{fontSize:13,color:INK_SOFT}}>Every job you apply to, in one place — logged automatically from Quick Apply, or add one yourself.</p>
+              </div>
+              {!showAddApplication && (
+                <button onClick={()=>{setShowAddApplication(true);setAddApplicationError('');}} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 18px",borderRadius:3,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>+ Log application</button>
+              )}
             </div>
+
+            {showAddApplication && (
+              <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:20,marginBottom:20}}>
+                <h3 style={{fontSize:15,fontWeight:600,marginBottom:14}}>Log an application</h3>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:12,marginBottom:12}}>
+                  <div>
+                    <label style={{fontSize:11,color:INK_FAINT,fontWeight:600,display:"block",marginBottom:4}}>Job title *</label>
+                    <input value={newAppTitle} onChange={e=>setNewAppTitle(e.target.value)} placeholder="e.g. Senior Project Manager" style={{width:"100%",padding:"10px 12px",border:`1px solid ${LINE}`,borderRadius:3,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}} />
+                  </div>
+                  <div>
+                    <label style={{fontSize:11,color:INK_FAINT,fontWeight:600,display:"block",marginBottom:4}}>Company *</label>
+                    <input value={newAppCompany} onChange={e=>setNewAppCompany(e.target.value)} placeholder="e.g. Standard Bank" style={{width:"100%",padding:"10px 12px",border:`1px solid ${LINE}`,borderRadius:3,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}} />
+                  </div>
+                  <div>
+                    <label style={{fontSize:11,color:INK_FAINT,fontWeight:600,display:"block",marginBottom:4}}>Location</label>
+                    <input value={newAppLocation} onChange={e=>setNewAppLocation(e.target.value)} placeholder="Optional" style={{width:"100%",padding:"10px 12px",border:`1px solid ${LINE}`,borderRadius:3,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}} />
+                  </div>
+                  <div>
+                    <label style={{fontSize:11,color:INK_FAINT,fontWeight:600,display:"block",marginBottom:4}}>Job posting link</label>
+                    <input value={newAppUrl} onChange={e=>setNewAppUrl(e.target.value)} placeholder="Optional" style={{width:"100%",padding:"10px 12px",border:`1px solid ${LINE}`,borderRadius:3,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}} />
+                  </div>
+                </div>
+                {addApplicationError && <p style={{fontSize:12,color:CLAY,marginBottom:12}}>{addApplicationError}</p>}
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={addApplication} disabled={addingApplication} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 20px",borderRadius:3,border:"none",cursor:addingApplication?"default":"pointer",opacity:addingApplication?0.7:1}}>{addingApplication?'Saving…':'Save application'}</button>
+                  <button onClick={()=>{setShowAddApplication(false);setAddApplicationError('');}} style={{background:"transparent",color:INK_SOFT,fontSize:13,fontWeight:600,padding:"10px 20px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>Cancel</button>
+                </div>
+              </div>
+            )}
 
             {/* Stats */}
             <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
@@ -1500,13 +1583,16 @@ export default function Dashboard() {
                 <div style={{width:28,height:28,border:`2px solid ${LINE}`,borderTopColor:ACCENT,borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto"}}/>
                 <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
               </div>
-            ) : applications.length === 0 ? (
+            ) : applications.length === 0 && !showAddApplication ? (
               <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:48,textAlign:"center"}}>
                 <h3 style={{fontFamily:SERIF,fontWeight:500,fontSize:19,marginBottom:8}}>No applications yet</h3>
-                <p style={{fontSize:13,color:INK_SOFT,marginBottom:24}}>{JOB_BOARD_ENABLED ? "Use Quick Apply on any job and it will appear here automatically." : "Applications you submit will appear here automatically."}</p>
-                {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"11px 28px",borderRadius:3,textDecoration:"none",display:"inline-block"}}>Browse jobs</a>}
+                <p style={{fontSize:13,color:INK_SOFT,marginBottom:24}}>{JOB_BOARD_ENABLED ? "Use Quick Apply on any job and it will appear here automatically — or log one you've already sent." : "Applied somewhere already? Log it here to start tracking your pipeline."}</p>
+                <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
+                  <button onClick={()=>{setShowAddApplication(true);setAddApplicationError('');}} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"11px 28px",borderRadius:3,border:"none",cursor:"pointer"}}>+ Log application</button>
+                  {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:"transparent",color:INK_SOFT,fontSize:13,fontWeight:600,padding:"11px 28px",borderRadius:3,border:`1px solid ${LINE}`,textDecoration:"none",display:"inline-block"}}>Browse jobs</a>}
+                </div>
               </div>
-            ) : (
+            ) : applications.length > 0 ? (
               <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,overflow:"hidden"}}>
                 {!isMobile && (
                   <div style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"12px 20px",borderBottom:`1px solid ${LINE}`,background:PAPER}}>
@@ -1550,7 +1636,7 @@ export default function Dashboard() {
                   )
                 ))}
               </div>
-            )}
+            ) : null}
           </div>
         )}
 
