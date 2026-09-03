@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMessage } from '@/app/lib/anthropic-retry';
 import { auth } from '@clerk/nextjs/server';
+import { extractText, getDocumentProxy } from 'unpdf';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,13 +40,15 @@ export async function POST(request: NextRequest) {
     if (file.size > 15 * 1024 * 1024) return NextResponse.json({ error: 'File too large. Maximum 15MB.' }, { status: 400 });
 
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
 
     console.log('Parsing PDF...');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require('pdf-parse/lib/pdf-parse.js') as (buf: Buffer) => Promise<{ text: string; numpages: number }>;
-    const pdfData = await pdfParse(buffer);
-    const pdfText = (pdfData.text || '').trim();
+    // unpdf wraps a current, maintained pdfjs-dist build — pdf-parse's frozen
+    // ~2019 internal parser can't read the compressed xref streams modern PDF
+    // writers (Word, Google Docs, LibreOffice, qpdf) emit by default, and was
+    // rejecting effectively every real CV with "bad XRef entry".
+    const pdf = await getDocumentProxy(new Uint8Array(bytes));
+    const { text: extracted } = await extractText(pdf, { mergePages: true });
+    const pdfText = (extracted || '').trim();
     console.log('PDF text length:', pdfText.length);
 
     if (!pdfText || pdfText.length < 50) {
