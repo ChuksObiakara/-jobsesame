@@ -1,21 +1,7 @@
 import { MetadataRoute } from 'next';
+import { POSTS } from './blog/posts';
 
 const BASE = 'https://www.jobsesame.co.za';
-
-const BLOG_SLUGS = [
-  'cv-writing-tips-get-more-interviews',
-  'ats-systems-explained',
-  'how-to-get-a-job-in-london',
-  'teaching-english-in-asia',
-  'salary-negotiation-tips',
-  'remote-work-guide-for-africans',
-  'how-to-get-a-job-in-the-uk-from-south-africa',
-  'south-african-cv-vs-uk-cv',
-  'best-cities-in-the-uk-to-work-2025',
-  'uk-skilled-worker-visa-guide-south-africans',
-  'average-uk-salaries-by-industry-2025',
-  'how-to-write-a-uk-cover-letter',
-];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -23,9 +9,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE,                          lastModified: now, changeFrequency: 'daily',   priority: 1.0 },
     { url: `${BASE}/jobs`,                lastModified: now, changeFrequency: 'hourly',  priority: 0.9 },
-    { url: `${BASE}/uk`,                  lastModified: now, changeFrequency: 'daily',   priority: 0.9 },
-    { url: `${BASE}/uk/jobs`,             lastModified: now, changeFrequency: 'hourly',  priority: 0.9 },
-    { url: `${BASE}/uk/subscribe`,        lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
+    // NOTE: /uk, /uk/jobs, /uk/subscribe were previously listed here but no
+    // such routes exist in the app — they 404. Removed to stop submitting
+    // dead links to Google. If a UK section is meant to be built, add it
+    // back here once the routes actually exist.
     { url: `${BASE}/optimise`,            lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/blog`,                lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
     { url: `${BASE}/about`,               lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
@@ -35,8 +22,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/refund`,              lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
   ];
 
-  const blogRoutes: MetadataRoute.Sitemap = BLOG_SLUGS.map(slug => ({
-    url: `${BASE}/blog/${slug}`,
+  // Generated from the actual post list so newly added posts are never
+  // silently missing from the sitemap again (6 published posts were
+  // previously omitted here).
+  const blogRoutes: MetadataRoute.Sitemap = POSTS.map(post => ({
+    url: `${BASE}/blog/${post.slug}`,
     lastModified: now,
     changeFrequency: 'monthly',
     priority: 0.6,
