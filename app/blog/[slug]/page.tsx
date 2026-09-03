@@ -1,11 +1,55 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { POSTS, TAG_COLORS, TAG_COLOR_FALLBACK } from '../posts';
 import Nav from '../../components/Nav';
 import Footer from '../../components/Footer';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, SERIF, SANS } from '../../lib/theme';
 
+const BASE = 'https://www.jobsesame.co.za';
+
 export async function generateStaticParams() {
   return POSTS.map(p => ({ slug: p.slug }));
+}
+
+function toIsoDate(date: string): string | undefined {
+  const d = new Date(date);
+  return isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const post = POSTS.find(p => p.slug === slug);
+  if (!post) return {};
+
+  const url = `${BASE}/blog/${post.slug}`;
+  const title = `${post.title} | Jobsesame Blog`;
+
+  return {
+    title,
+    description: post.excerpt,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description: post.excerpt,
+      url,
+      siteName: 'Jobsesame',
+      locale: 'en_ZA',
+      type: 'article',
+      publishedTime: toIsoDate(post.date),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: post.excerpt,
+    },
+  };
+}
+
+// Every post's `content` starts with its own leading "# Title" line, which
+// duplicates the <h1> already rendered in the hero above — strip it so each
+// article page has exactly one H1.
+function stripLeadingH1(content: string): string {
+  return content.replace(/^#\s+.+(\r?\n)+/, '');
 }
 
 function renderMarkdown(text: string): React.ReactNode[] {
@@ -76,9 +120,30 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   const tc = TAG_COLORS[post.category] || TAG_COLOR_FALLBACK;
   const otherPosts = POSTS.filter(p => p.slug !== slug).slice(0, 3);
+  const url = `${BASE}/blog/${post.slug}`;
+  const isoDate = toIsoDate(post.date);
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    ...(isoDate ? { datePublished: isoDate, dateModified: isoDate } : {}),
+    author: { '@type': 'Organization', name: 'Jobsesame' },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Jobsesame',
+      logo: { '@type': 'ImageObject', url: `${BASE}/og-image.png` },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+  };
 
   return (
     <main style={{ fontFamily: SANS, background: PAPER, color: INK, minHeight: '100vh', margin: 0 }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Nav theme="light" />
 
       {/* HERO */}
@@ -98,7 +163,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       {/* ARTICLE */}
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '48px 24px 64px' }}>
         <article style={{ background: CARD, borderRadius: 4, padding: '36px 40px', border: `1px solid ${LINE}`, marginBottom: 40 }}>
-          {renderMarkdown(post.content)}
+          {renderMarkdown(stripLeadingH1(post.content))}
         </article>
 
         {/* CTA */}
