@@ -1,3 +1,24 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Refund Policy | Jobsesame',
+  description: 'Jobsesame’s refund policy for Pro subscriptions and credit packs.',
+  alternates: { canonical: 'https://www.jobsesame.co.za/refund' },
+  openGraph: {
+    title: 'Refund Policy | Jobsesame',
+    description: 'Jobsesame’s refund policy for Pro subscriptions and credit packs.',
+    url: 'https://www.jobsesame.co.za/refund',
+    siteName: 'Jobsesame',
+    locale: 'en_ZA',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Refund Policy | Jobsesame',
+    description: 'Jobsesame’s refund policy for Pro subscriptions and credit packs.',
+  },
+};
+
 export default function RefundPage() {
   const nav = (
     <nav style={{ background: "#052A14", padding: "0 24px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #0D4A20", position: "sticky", top: 0, zIndex: 100 }}>
