@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     description: 'The terms and conditions for using Jobsesame’s AI CV rewriting and job search tools.',
     url: 'https://www.jobsesame.co.za/terms',
     siteName: 'Jobsesame',
-    locale: 'en_ZA',
+    locale: 'en_US',
     type: 'website',
   },
   twitter: {
