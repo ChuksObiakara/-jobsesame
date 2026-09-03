@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       description: post.excerpt,
       url,
       siteName: 'Jobsesame',
-      locale: 'en_ZA',
+      locale: 'en_US',
       type: 'article',
       publishedTime: toIsoDate(post.date),
     },
