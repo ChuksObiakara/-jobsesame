@@ -21,6 +21,12 @@ export const CONSENT_KEY = 'jobsesame_cookie_consent';
 export const CONSENT_EVENT = 'jobsesame-consent-change';
 
 let initialized = false;
+// Captures attempted before the visitor has consented aren't dropped, they're
+// queued here and replayed the moment syncConsent() sees consent flip to
+// granted (the mount-time landing_page_viewed call, made while the cookie
+// banner is still up, would otherwise be lost forever since nothing else
+// re-fires it).
+let pendingActions: Array<() => void> = [];
 
 function analyticsConsentGranted(): boolean {
   try {
@@ -87,6 +93,13 @@ export function syncConsent(): void {
   if (!initialized || !KEY) return;
   if (analyticsConsentGranted()) {
     if (posthog.has_opted_out_capturing()) posthog.opt_in_capturing();
+    // Consent just became available (or already was) - replay anything that
+    // was captured while the visitor hadn't decided yet.
+    if (pendingActions.length) {
+      const queued = pendingActions;
+      pendingActions = [];
+      queued.forEach((run) => run());
+    }
   } else if (!posthog.has_opted_out_capturing()) {
     posthog.opt_out_capturing();
   }
@@ -116,7 +129,11 @@ export function captureClient(
   extra: Partial<AllowedEventProperties> = {},
 ): void {
   if (!initialized) initPostHog(); // safe if a page effect runs before the provider's
-  if (!initialized || !KEY || !analyticsConsentGranted()) return;
+  if (!initialized || !KEY) return;
+  if (!analyticsConsentGranted()) {
+    pendingActions.push(() => captureClient(event, extra));
+    return;
+  }
   posthog.capture(event, sanitizeEventProperties({ ...baseProps(), ...extra }));
 }
 
@@ -126,7 +143,11 @@ export function identifyUser(
   personProps: Partial<AllowedEventProperties> = {},
 ): void {
   if (!initialized) initPostHog();
-  if (!initialized || !KEY || !analyticsConsentGranted() || !distinctId) return;
+  if (!initialized || !KEY || !distinctId) return;
+  if (!analyticsConsentGranted()) {
+    pendingActions.push(() => identifyUser(distinctId, personProps));
+    return;
+  }
   posthog.identify(distinctId, sanitizeEventProperties(personProps));
 }
 
