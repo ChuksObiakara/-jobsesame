@@ -305,17 +305,6 @@ export default function Dashboard() {
     return { bg: LINE, color: INK_SOFT };
   };
 
-  const updateApplicationStatus = (id: string, status: Application['status']) => {
-    const updated = applications.map(a => a.id === id ? { ...a, status } : a);
-    setApplications(updated);
-    localStorage.setItem('jobsesame_applications', JSON.stringify(updated));
-    fetch(`/api/user/applications/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    }).catch((err) => console.error('[dashboard] status update failed:', err));
-  };
-
   const addApplication = async () => {
     if (!newAppTitle.trim() || !newAppCompany.trim()) {
       setAddApplicationError('Job title and company are required.');
@@ -1258,15 +1247,6 @@ export default function Dashboard() {
                         <div style={{fontSize:13,fontWeight:600,marginBottom:1}}>{app.jobTitle}</div>
                         <div style={{fontSize:11,color:INK_FAINT}}>{app.company} · {new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
                       </div>
-                      <select
-                        value={app.status}
-                        onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])}
-                        style={{padding:"4px 10px",borderRadius:99,border:"1px solid",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none",background:PAPER,borderColor:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:LINE,color:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:INK_SOFT}}>
-                        <option value="Applied">Applied</option>
-                        <option value="Interview">Interview</option>
-                        <option value="Offer">Offer</option>
-                        <option value="Rejected">Rejected</option>
-                      </select>
                     </div>
                   ))}
                 </div>
@@ -1526,7 +1506,7 @@ export default function Dashboard() {
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:16,flexWrap:"wrap",marginBottom:20}}>
               <div>
                 <h2 style={{fontFamily:SERIF,fontWeight:500,fontSize:22,marginBottom:4}}>My Applications</h2>
-                <p style={{fontSize:13,color:INK_SOFT}}>Every job you apply to, in one place — logged automatically from Quick Apply, or add one yourself.</p>
+                <p style={{fontSize:13,color:INK_SOFT}}>{JOB_BOARD_ENABLED ? "Every job you apply to, in one place — logged automatically from Quick Apply, or add one yourself." : "Track every job you apply to, in one place."}</p>
               </div>
               {!showAddApplication && (
                 <button onClick={()=>{setShowAddApplication(true);setAddApplicationError('');}} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 18px",borderRadius:3,border:"none",cursor:"pointer",whiteSpace:"nowrap"}}>+ Log application</button>
@@ -1562,21 +1542,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Stats */}
-            <div style={{display:"flex",gap:10,flexWrap:"wrap",marginBottom:20}}>
-              {[
-                {label:"Total applied",value:applications.length,color:INK},
-                {label:"Interviews",value:applications.filter(a=>a.status==='Interview').length,color:AMBER},
-                {label:"Offers",value:applications.filter(a=>a.status==='Offer').length,color:ACCENT},
-                {label:"Rejected",value:applications.filter(a=>a.status==='Rejected').length,color:CLAY},
-              ].map(s=>(
-                <div key={s.label} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:"14px 20px",flex:1,minWidth:100}}>
-                  <div style={{fontFamily:SERIF,fontSize:20,color:s.color,marginBottom:2}}>{s.value}</div>
-                  <div style={{fontSize:11,color:INK_FAINT,fontWeight:600}}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-
             {loadingApplications ? (
               <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:48,textAlign:"center"}}>
                 <div style={{fontSize:13,color:INK_SOFT,fontStyle:"italic",marginBottom:8}}>Syncing applications from database...</div>
@@ -1595,8 +1560,8 @@ export default function Dashboard() {
             ) : applications.length > 0 ? (
               <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,overflow:"hidden"}}>
                 {!isMobile && (
-                  <div style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"12px 20px",borderBottom:`1px solid ${LINE}`,background:PAPER}}>
-                    {["Job","Company","Location","Date","Status"].map(h=>(
+                  <div style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr",gap:0,padding:"12px 20px",borderBottom:`1px solid ${LINE}`,background:PAPER}}>
+                    {["Job","Company","Location","Date"].map(h=>(
                       <div key={h} style={{fontSize:10,color:INK_FAINT,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase"}}>{h}</div>
                     ))}
                   </div>
@@ -1604,19 +1569,11 @@ export default function Dashboard() {
                 {applications.map((app,i)=>(
                   isMobile ? (
                     <div key={app.id} style={{padding:"14px 16px",borderBottom:i<applications.length-1?`1px solid ${LINE}`:"none"}}>
-                      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-                        <div style={{fontSize:13,fontWeight:600}}>{app.jobTitle}</div>
-                        <select value={app.status} onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])} style={{padding:"4px 8px",borderRadius:99,border:"1px solid",fontSize:10,fontWeight:700,cursor:"pointer",outline:"none",background:PAPER,borderColor:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:LINE,color:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:INK_SOFT}}>
-                          <option value="Applied">Applied</option>
-                          <option value="Interview">Interview</option>
-                          <option value="Offer">Offer</option>
-                          <option value="Rejected">Rejected</option>
-                        </select>
-                      </div>
+                      <div style={{fontSize:13,fontWeight:600,marginBottom:4}}>{app.jobTitle}</div>
                       <div style={{fontSize:11,color:INK_FAINT}}>{app.company} · {app.location} · {new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
                     </div>
                   ) : (
-                    <div key={app.id} style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr 1.2fr",gap:0,padding:"14px 20px",borderBottom:i<applications.length-1?`1px solid ${LINE}`:"none",alignItems:"center"}}>
+                    <div key={app.id} style={{display:"grid",gridTemplateColumns:"2fr 1.5fr 1fr 1fr",gap:0,padding:"14px 20px",borderBottom:i<applications.length-1?`1px solid ${LINE}`:"none",alignItems:"center"}}>
                       <div>
                         <div style={{fontSize:13,fontWeight:600,marginBottom:2}}>{app.jobTitle}</div>
                         {app.jobUrl && <a href={app.jobUrl} target="_blank" rel="noreferrer" style={{fontSize:11,color:INK_FAINT,textDecoration:"none"}}>View posting ↗</a>}
@@ -1624,14 +1581,6 @@ export default function Dashboard() {
                       <div style={{fontSize:12,color:INK_SOFT}}>{app.company}</div>
                       <div style={{fontSize:12,color:INK_SOFT}}>{app.location}</div>
                       <div style={{fontSize:11,color:INK_FAINT}}>{new Date(app.dateApplied).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</div>
-                      <div>
-                        <select value={app.status} onChange={e=>updateApplicationStatus(app.id,e.target.value as Application['status'])} style={{padding:"5px 10px",borderRadius:99,border:"1px solid",fontSize:11,fontWeight:700,cursor:"pointer",outline:"none",background:PAPER,borderColor:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:LINE,color:app.status==='Offer'?ACCENT:app.status==='Interview'?AMBER:app.status==='Rejected'?CLAY:INK_SOFT}}>
-                          <option value="Applied">Applied</option>
-                          <option value="Interview">Interview</option>
-                          <option value="Offer">Offer</option>
-                          <option value="Rejected">Rejected</option>
-                        </select>
-                      </div>
                     </div>
                   )
                 ))}
