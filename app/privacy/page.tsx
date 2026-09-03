@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     description: 'How Jobsesame collects, uses, and protects your CV data and personal information.',
     url: 'https://www.jobsesame.co.za/privacy',
     siteName: 'Jobsesame',
-    locale: 'en_ZA',
+    locale: 'en_US',
     type: 'website',
   },
   twitter: {
