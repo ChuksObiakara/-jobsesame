@@ -1,4 +1,24 @@
+import type { Metadata } from 'next';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy | Jobsesame',
+  description: 'How Jobsesame collects, uses, and protects your CV data and personal information.',
+  alternates: { canonical: 'https://www.jobsesame.co.za/privacy' },
+  openGraph: {
+    title: 'Privacy Policy | Jobsesame',
+    description: 'How Jobsesame collects, uses, and protects your CV data and personal information.',
+    url: 'https://www.jobsesame.co.za/privacy',
+    siteName: 'Jobsesame',
+    locale: 'en_ZA',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Privacy Policy | Jobsesame',
+    description: 'How Jobsesame collects, uses, and protects your CV data and personal information.',
+  },
+};
 
 export default function PrivacyPage() {
   const nav = (
