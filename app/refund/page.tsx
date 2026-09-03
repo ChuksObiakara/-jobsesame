@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     description: 'Jobsesame’s refund policy for Pro subscriptions and credit packs.',
     url: 'https://www.jobsesame.co.za/refund',
     siteName: 'Jobsesame',
-    locale: 'en_ZA',
+    locale: 'en_US',
     type: 'website',
   },
   twitter: {
