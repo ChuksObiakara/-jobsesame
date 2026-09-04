@@ -399,7 +399,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       const res = await fetch('/api/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, plan, currency }),
+        body: JSON.stringify({ email, plan, currency: 'USD' }),
       });
       const data = await res.json();
       if (data.authorizationUrl) window.location.href = data.authorizationUrl;
@@ -790,20 +790,11 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
             <div style={{fontSize:44,marginBottom:16}}>🔑</div>
             <h3 style={{fontSize:20,fontWeight:800,color:'#FFFFFF',marginBottom:8}}>3 free applications used</h3>
             <p style={{fontSize:14,color:'#5A9A6A',marginBottom:24,lineHeight:1.7}}>Unlock more to keep applying with AI-tailored CVs.</p>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:16}}>
-              <div style={{background:'#0D3A1A',border:'1.5px solid #1A5A2A',borderRadius:14,padding:16,textAlign:'center'}}>
-                <div style={{fontSize:22,fontWeight:800,color:'#FFFFFF',marginBottom:4}}>
-                  {currency === 'ZAR' ? 'R99' : '$5'}<span style={{fontSize:12,color:'#888'}}>/pack</span>
-                </div>
-                <div style={{fontSize:12,color:'#5A9A6A',marginBottom:12}}>10 applications. No expiry.</div>
-                <button onClick={() => handlePayment('credits')} disabled={paying} style={{display:'block',width:'100%',background:'#052A14',color:'#C8E600',fontSize:12,fontWeight:800,padding:'9px',borderRadius:99,border:'1px solid #C8E600',cursor:paying?'default':'pointer',opacity:paying?0.7:1}}>
-                  {paying ? 'Loading...' : 'Get credits'}
-                </button>
-              </div>
+            <div style={{maxWidth:220,margin:'0 auto 16px'}}>
               <div style={{background:'#0D3A1A',border:'1.5px solid #C8E600',borderRadius:14,padding:16,textAlign:'center'}}>
                 <div style={{background:'#C8E600',color:'#052A14',fontSize:10,fontWeight:800,padding:'2px 10px',borderRadius:99,display:'inline-block',marginBottom:6}}>Best value</div>
                 <div style={{fontSize:22,fontWeight:800,color:'#FFFFFF',marginBottom:4}}>
-                  {currency === 'ZAR' ? 'R249' : '$14'}<span style={{fontSize:12,color:'#888'}}>/mo</span>
+                  $25<span style={{fontSize:12,color:'#888'}}>/mo</span>
                 </div>
                 <div style={{fontSize:12,color:'#5A9A6A',marginBottom:12}}>Unlimited. Everything.</div>
                 <button onClick={() => handlePayment('pro')} disabled={paying} style={{display:'block',width:'100%',background:'#C8E600',color:'#052A14',fontSize:12,fontWeight:800,padding:'9px',borderRadius:99,border:'none',cursor:paying?'default':'pointer',opacity:paying?0.7:1}}>
