@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { email, name, currency } = await req.json();
+    const { email, name } = await req.json();
     if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 });
 
     const { prisma } = await import('@/app/lib/prisma');
@@ -24,8 +24,7 @@ export async function POST(req: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co.za';
     const unsubToken = Buffer.from(JSON.stringify({ userId: dbUser?.clerkId || '', email, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64url');
     const unsubUrl = `${appUrl}/unsubscribe?token=${unsubToken}`;
-    const isZAR = !currency || currency === 'ZAR';
-    const price = isZAR ? 'R249/month' : '$14/month';
+    const price = '$25/month';
     const upgradeUrl = `${appUrl}/account`;
 
     const loseItems = [
