@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import Nav from './components/Nav';
 import Footer from './components/Footer';
@@ -12,13 +12,37 @@ import { ANALYTICS_EVENTS } from './lib/analytics-events';
 export default function Home() {
   const { isSignedIn } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
-  const [currency, setCurrency] = useState<'ZAR' | 'GBP' | 'USD'>('ZAR');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [faqSearch, setFaqSearch] = useState('');
   const [cvAnalysisState, setCvAnalysisState] = useState<'idle' | 'uploading' | 'done'>('idle');
   const [cvAnalysisScores, setCvAnalysisScores] = useState({ overall: 0, keywords: 0, impact: 0, structure: 0, completeness: 0 });
   const [cvAnalysisDragOver, setCvAnalysisDragOver] = useState(false);
   const [cvSample, setCvSample] = useState<{ status: 'idle' | 'loading' | 'done' | 'unavailable'; before: string; after: string }>({ status: 'idle', before: '', after: '' });
+  const [testimonialsInView, setTestimonialsInView] = useState(false);
+  const [atsCounter, setAtsCounter] = useState(38);
+  const testimonialsRef = useRef<HTMLDivElement>(null);
+
+  // Reveal the testimonials + animate Amara's ATS number (38 → 91, the actual
+  // figure from her quote) once the section actually scrolls into view.
+  useEffect(() => {
+    const el = testimonialsRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setTestimonialsInView(true);
+      const start = performance.now();
+      const duration = 900;
+      const tick = (now: number) => {
+        const progress = Math.min(1, (now - start) / duration);
+        setAtsCounter(Math.round(38 + (91 - 38) * (1 - Math.pow(1 - progress, 3))));
+        if (progress < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      observer.disconnect();
+    }, { threshold: 0.3 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -31,16 +55,6 @@ export default function Home() {
   useEffect(() => {
     captureAttribution();
     captureClient(ANALYTICS_EVENTS.LANDING_PAGE_VIEWED);
-  }, []);
-
-  useEffect(() => {
-    fetch('https://ipapi.co/json/')
-      .then(r => r.json())
-      .then(data => {
-        if (data.country_code === 'GB') setCurrency('GBP');
-        else if (data.country_code !== 'ZA') setCurrency('USD');
-      })
-      .catch((err) => console.error('[home] geo-detect failed:', err));
   }, []);
 
   const scrollTo = (id: string) => {
@@ -157,9 +171,9 @@ export default function Home() {
   ];
 
   const testimonials = [
-    { quote: 'I’d sent out forty CVs with no replies. After rewriting with Jobsesame I had four interviews in ten days.', name: 'Thabo N.', role: 'Software developer, Johannesburg', initials: 'TN', stat: '4 interviews in 10 days' },
-    { quote: 'My ATS score went from 38% to 91%. I had a callback within two days of applying.', name: 'Amara D.', role: 'Financial analyst, Cape Town', initials: 'AD', stat: '38% → 91% ATS score' },
-    { quote: 'I was relocating abroad and needed my CV rewritten for a different market. It worked.', name: 'James K.', role: 'Project manager, London', initials: 'JK', stat: 'Rewritten for a new market' },
+    { quote: 'I’d sent out forty CVs with no replies. After rewriting with Jobsesame I had four interviews in ten days.', name: 'Thabo N.', role: 'Software developer, Johannesburg', initials: 'TN', stat: '4 interviews in 10 days', accent: ACCENT },
+    { quote: 'My ATS score went from 38% to 91%. I had a callback within two days of applying.', name: 'Amara D.', role: 'Financial analyst, Cape Town', initials: 'AD', stat: 'animated-ats', accent: AMBER },
+    { quote: 'I was relocating abroad and needed my CV rewritten for a different market. It worked.', name: 'James K.', role: 'Project manager, London', initials: 'JK', stat: 'Rewritten for a new market', accent: CLAY },
   ];
 
   const trustPoints = [
@@ -169,13 +183,12 @@ export default function Home() {
   ];
 
   const pricing = [
-    { name: 'Free', price: { ZAR: 'R0', GBP: '£0', USD: '$0' }, per: '', desc: '3 free AI CV rewrites, no card required.', items: ['3 AI CV rewrites', 'ATS score on every rewrite', 'Matching cover letter'], highlight: false, cta: 'Start free' },
-    { name: 'Credit pack', price: { ZAR: 'R99', GBP: '£10', USD: '$5' }, per: 'one-time', desc: '10 credits, use anytime.', items: ['10 AI CV rewrites', 'ATS score on every rewrite', 'Matching cover letters', 'Priority processing'], highlight: true, cta: 'Buy credits' },
-    { name: 'Pro', price: { ZAR: 'R249', GBP: '£21', USD: '$14' }, per: '/ month', desc: 'Unlimited rewrites while you’re job hunting.', items: ['Unlimited AI CV rewrites', 'ATS score on every rewrite', 'Matching cover letters', 'Application tracker'], highlight: false, cta: 'Go Pro' },
+    { name: 'Free', price: '$0', per: '', desc: '3 free AI CV rewrites, no card required.', items: ['3 AI CV rewrites', 'ATS score on every rewrite', 'Matching cover letter'], highlight: false, cta: 'Start free' },
+    { name: 'Pro', price: '$25', per: '/ month', desc: 'Unlimited rewrites while you’re job hunting.', items: ['Unlimited AI CV rewrites', 'ATS score on every rewrite', 'Matching cover letters', 'Priority processing', 'Cancel anytime'], highlight: true, cta: 'Go Pro' },
   ];
 
   const faqs = [
-    { q: 'Is it really free to start?', a: 'Yes — you get 3 AI CV rewrites with no credit card required. After that you can buy a 10-credit pack or go unlimited with Pro.' },
+    { q: 'Is it really free to start?', a: 'Yes — you get 3 AI CV rewrites with no credit card required. After that, go unlimited with Pro for $25/month.' },
     { q: 'How does the rewrite work?', a: 'Upload your CV once, then paste the job description for any role you’re applying to. The AI rewrites your CV to match it in about 30 seconds.' },
     { q: 'Where do I find the job description?', a: 'Anywhere — LinkedIn, Indeed, a company careers page, a recruiter email. Jobsesame doesn’t list jobs itself; it tailors your CV to whatever role you’re applying for.' },
     { q: 'Will my real experience be changed?', a: 'No. We only rewrite how your experience is described, never the facts — your real companies, titles, dates and qualifications always stay as they are.' },
@@ -407,11 +420,12 @@ export default function Home() {
       <section style={{ borderTop: `1px solid ${LINE}`, borderBottom: `1px solid ${LINE}`, background: CARD }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: isMobile ? '56px 22px' : '88px 40px' }}>
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, textAlign: 'center', marginBottom: 44 }}>What people say after rewriting</p>
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28, marginBottom: 48 }}>
+          <div ref={testimonialsRef} className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28, marginBottom: 48 }}>
             {testimonials.map((t, i) => (
-              <div key={t.name} className="testimonial-card" style={{ position: 'relative', background: PAPER, border: `1px solid ${LINE}`, borderRadius: 6, padding: '28px 24px 24px', animationDelay: `${i * 90}ms` }}>
-                <svg width="30" height="22" viewBox="0 0 30 22" fill="none" style={{ position: 'absolute', top: 20, right: 20, opacity: 0.5 }}>
-                  <path d="M0 22V13.2C0 8.8 1.1 5.4 3.4 3 5.7 0.6 8.6 -0.3 12 0.2V4.6C10 4.4 8.4 4.9 7.4 6.1 6.4 7.3 5.9 9 5.9 11.2H12V22H0ZM18 22V13.2C18 8.8 19.1 5.4 21.4 3 23.7 0.6 26.6 -0.3 30 0.2V4.6C28 4.4 26.4 4.9 25.4 6.1 24.4 7.3 23.9 9 23.9 11.2H30V22H18Z" fill={ACCENT} />
+              <div key={t.name} className={`testimonial-card${testimonialsInView ? ' is-visible' : ''}`} style={{ position: 'relative', background: PAPER, border: `1px solid ${LINE}`, borderRadius: 6, padding: '28px 24px 24px', overflow: 'hidden', transitionDelay: `${i * 110}ms` }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: t.accent }} />
+                <svg width="30" height="22" viewBox="0 0 30 22" fill="none" style={{ position: 'absolute', top: 24, right: 20, opacity: 0.5 }}>
+                  <path d="M0 22V13.2C0 8.8 1.1 5.4 3.4 3 5.7 0.6 8.6 -0.3 12 0.2V4.6C10 4.4 8.4 4.9 7.4 6.1 6.4 7.3 5.9 9 5.9 11.2H12V22H0ZM18 22V13.2C18 8.8 19.1 5.4 21.4 3 23.7 0.6 26.6 -0.3 30 0.2V4.6C28 4.4 26.4 4.9 25.4 6.1 24.4 7.3 23.9 9 23.9 11.2H30V22H18Z" fill={t.accent} />
                 </svg>
                 <div style={{ display: 'flex', gap: 2, marginBottom: 14 }}>
                   {Array.from({ length: 5 }).map((_, si) => (
@@ -419,11 +433,15 @@ export default function Home() {
                   ))}
                 </div>
                 <p style={{ fontSize: 15, color: INK, lineHeight: 1.75, fontStyle: 'italic', marginBottom: 16, minHeight: isMobile ? 'auto' : 105 }}>&ldquo;{t.quote}&rdquo;</p>
-                {t.stat && (
-                  <div style={{ display: 'inline-block', background: 'rgba(63,93,82,0.09)', color: ACCENT, fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 99, marginBottom: 18 }}>{t.stat}</div>
+                {t.stat === 'animated-ats' ? (
+                  <div style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6, background: `${t.accent}18`, color: t.accent, fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 99, marginBottom: 18, fontVariantNumeric: 'tabular-nums' }}>
+                    <span>38%</span><span style={{ opacity: 0.5 }}>→</span><span>{testimonialsInView ? atsCounter : 38}%</span><span>ATS score</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'inline-block', background: `${t.accent}18`, color: t.accent, fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 99, marginBottom: 18 }}>{t.stat}</div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(63,93,82,0.1)', color: ACCENT, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{t.initials}</div>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: `${t.accent}1a`, color: t.accent, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{t.initials}</div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{t.name}</div>
                     <div style={{ fontSize: 12.5, color: INK_FAINT, marginTop: 1 }}>{t.role}</div>
@@ -455,12 +473,12 @@ export default function Home() {
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, marginBottom: 18 }}>Pricing</p>
           <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: isMobile ? 28 : 34, lineHeight: 1.2 }}>Start free. Pay only if it’s working.</h2>
         </div>
-        <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+        <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 720, margin: '0 auto' }}>
           {pricing.map(p => (
-            <div key={p.name} style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 4, padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
+            <div key={p.name} style={{ background: CARD, border: p.highlight ? `2px solid ${ACCENT}` : `1px solid ${LINE}`, borderRadius: 4, padding: '32px 28px', display: 'flex', flexDirection: 'column' }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: INK_SOFT, marginBottom: 14 }}>{p.name}</div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 6 }}>
-                <span style={{ fontFamily: SERIF, fontSize: 30 }}>{p.price[currency]}</span>
+                <span style={{ fontFamily: SERIF, fontSize: 30 }}>{p.price}</span>
                 <span style={{ fontSize: 13, color: INK_FAINT }}>{p.per}</span>
               </div>
               <div style={{ fontSize: 13, color: INK_FAINT, marginBottom: 24 }}>{p.desc}</div>
