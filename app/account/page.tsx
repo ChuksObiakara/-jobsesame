@@ -16,7 +16,6 @@ export default function AccountPage() {
   const [paying, setPaying] = useState(false);
   const [payingPlan, setPayingPlan] = useState<'credits' | 'pro' | null>(null);
   const [paymentError, setPaymentError] = useState('');
-  const [currency, setCurrency] = useState<'ZAR' | 'USD'>('ZAR');
   const [cancelConfirm, setCancelConfirm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
@@ -31,13 +30,6 @@ export default function AccountPage() {
   useEffect(() => {
     if (isLoaded && !isSignedIn) router.push('/sign-in');
   }, [isLoaded, isSignedIn, router]);
-
-  useEffect(() => {
-    fetch('https://ipapi.co/json/')
-      .then(r => r.json())
-      .then(d => { if (d.country_code !== 'ZA') setCurrency('USD'); })
-      .catch((err) => console.error('[account] geo-detect failed:', err));
-  }, []);
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -62,7 +54,7 @@ export default function AccountPage() {
       const res = await fetch('/api/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, plan, currency }),
+        body: JSON.stringify({ email, plan, currency: 'USD' }),
       });
       const data = await res.json();
       if (data.authorizationUrl) {
@@ -197,32 +189,7 @@ export default function AccountPage() {
         {/* ── UPGRADE PLANS ──────────────────────────────────────── */}
         <div>
           <h2 style={{ fontSize: 15, fontWeight: 800, color: '#FFFFFF', margin: '0 0 12px' }}>Plans &amp; pricing</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
-
-            {/* Credits card */}
-            <div style={{ ...card({ border: '1.5px solid #1A4A2A' }), display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#FFA500', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 6 }}>Top-up credits</div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: '#FFFFFF', lineHeight: 1, marginBottom: 4 }}>
-                  {currency === 'ZAR' ? 'R99' : '$5'}
-                </div>
-                <div style={{ fontSize: 12, color: '#5A9A6A' }}>10 credits — pay as you go</div>
-              </div>
-              <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {['10 AI CV rewrites', '10 cover letters', 'No subscription', 'Credits never expire'].map(f => (
-                  <li key={f} style={{ fontSize: 12, color: '#90C898', display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-                    <span style={{ color: '#C8E600', flexShrink: 0 }}>✓</span>{f}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => handlePayment('credits')}
-                disabled={paying}
-                style={{ marginTop: 'auto', width: '100%', background: paying && payingPlan === 'credits' ? '#1A4A2A' : 'transparent', color: paying && payingPlan === 'credits' ? '#3A7A4A' : '#C8E600', fontSize: 13, fontWeight: 800, padding: '11px 0', borderRadius: 99, border: '1.5px solid #C8E600', cursor: paying ? 'default' : 'pointer' }}
-              >
-                {paying && payingPlan === 'credits' ? 'Redirecting...' : 'Buy 10 credits →'}
-              </button>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', maxWidth: 340 }}>
 
             {/* Pro card */}
             <div style={{ ...card({ border: isPro ? '1.5px solid #1A4A2A' : '2px solid #C8E600', position: 'relative', overflow: 'hidden' }), display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -234,7 +201,7 @@ export default function AccountPage() {
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#C8E600', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: 6 }}>Pro</div>
                 <div style={{ fontSize: 26, fontWeight: 900, color: '#FFFFFF', lineHeight: 1, marginBottom: 4 }}>
-                  {currency === 'ZAR' ? 'R249' : '$13'}<span style={{ fontSize: 13, fontWeight: 600, color: '#5A9A6A' }}>/month</span>
+                  $25<span style={{ fontSize: 13, fontWeight: 600, color: '#5A9A6A' }}>/month</span>
                 </div>
                 <div style={{ fontSize: 12, color: '#5A9A6A' }}>Unlimited rewrites and cover letters</div>
               </div>
