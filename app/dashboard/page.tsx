@@ -630,7 +630,7 @@ export default function Dashboard() {
       const res = await fetch('/api/payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, plan, currency }),
+        body: JSON.stringify({ email, plan, currency: 'USD' }),
       });
       const data = await res.json();
       if (data.authorizationUrl) {
@@ -1369,7 +1369,7 @@ export default function Dashboard() {
                 <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
                   <div>
                     <div style={{fontSize:14,fontWeight:600,marginBottom:4}}>Unlock Pro — all doors open</div>
-                    <div style={{fontSize:12,color:INK_SOFT}}>Unlimited rewrites. Cover letters. {currency==='ZAR'?'R249':currency==='GBP'?'£21':'$14'}/month.</div>
+                    <div style={{fontSize:12,color:INK_SOFT}}>Unlimited rewrites. Cover letters. $25/month.</div>
                   </div>
                   <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 24px",borderRadius:3,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
                     {paying?'Loading…':'Upgrade to Pro'}
@@ -1417,7 +1417,7 @@ export default function Dashboard() {
             <div style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:20,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:12}}>
               <div>
                 <div style={{fontSize:14,fontWeight:600,marginBottom:4}}>Want unlimited rewrites now?</div>
-                <div style={{fontSize:12,color:INK_SOFT}}>Upgrade to Pro for {currency==='ZAR'?'R249':currency==='GBP'?'£21':'$14'}/month — unlimited everything.</div>
+                <div style={{fontSize:12,color:INK_SOFT}}>Upgrade to Pro for $25/month — unlimited everything.</div>
               </div>
               <button onClick={()=>handlePayment('pro')} disabled={paying} style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 24px",borderRadius:3,border:"none",cursor:paying?"default":"pointer",opacity:paying?0.7:1}}>
                 {paying?'Loading…':'Upgrade to Pro'}
