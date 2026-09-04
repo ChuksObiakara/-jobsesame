@@ -101,8 +101,7 @@ export default function TermsPage() {
           <p style={{ margin: "0 0 12px" }}>We offer the following plans:</p>
           <ul style={{ margin: "0 0 14px", paddingLeft: 20 }}>
             {li(<><strong style={{ color: "#FFFFFF" }}>Free tier</strong> — 3 Quick Apply credits included at no charge on sign-up.</>)}
-            {li(<><strong style={{ color: "#FFFFFF" }}>Credits pack</strong> — R99 for 10 Quick Apply credits. Credits do not expire. No recurring billing.</>)}
-            {li(<><strong style={{ color: "#FFFFFF" }}>Pro plan</strong> — R249 per month, billed monthly. Cancel any time. Access continues until the end of the current billing period.</>)}
+            {li(<><strong style={{ color: "#FFFFFF" }}>Pro plan</strong> — $25 USD per month, billed monthly. Cancel any time. Access continues until the end of the current billing period.</>)}
           </ul>
           <div style={{ background: "rgba(200,230,0,0.07)", border: "1px solid rgba(200,230,0,0.15)", borderRadius: 10, padding: "14px 18px", marginBottom: 14 }}>
             <strong style={{ color: "#C8E600", fontSize: 13 }}>Cooling-off period (Consumer Protection Act s. 44)</strong>
