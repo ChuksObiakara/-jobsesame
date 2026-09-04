@@ -157,9 +157,15 @@ export default function Home() {
   ];
 
   const testimonials = [
-    { quote: 'I’d sent out forty CVs with no replies. After rewriting with Jobsesame I had four interviews in ten days.', name: 'Thabo N.', role: 'Software developer, Johannesburg', initials: 'TN' },
-    { quote: 'My ATS score went from 38% to 91%. I had a callback within two days of applying.', name: 'Amara D.', role: 'Financial analyst, Cape Town', initials: 'AD' },
-    { quote: 'I was relocating abroad and needed my CV rewritten for a different market. It worked.', name: 'James K.', role: 'Project manager, London', initials: 'JK' },
+    { quote: 'I’d sent out forty CVs with no replies. After rewriting with Jobsesame I had four interviews in ten days.', name: 'Thabo N.', role: 'Software developer, Johannesburg', initials: 'TN', stat: '4 interviews in 10 days' },
+    { quote: 'My ATS score went from 38% to 91%. I had a callback within two days of applying.', name: 'Amara D.', role: 'Financial analyst, Cape Town', initials: 'AD', stat: '38% → 91% ATS score' },
+    { quote: 'I was relocating abroad and needed my CV rewritten for a different market. It worked.', name: 'James K.', role: 'Project manager, London', initials: 'JK', stat: 'Rewritten for a new market' },
+  ];
+
+  const trustPoints = [
+    { icon: 'M12 2 4 6v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6z', label: 'Your CV data is never sold', href: '/privacy' },
+    { icon: 'M9 11l3 3L22 4M21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11', label: '30-day money-back guarantee on Pro', href: '/refund' },
+    { icon: 'M13 2 3 14h8l-1 8 11-14h-8z', label: 'Rewritten for a role in 30 seconds', href: '#how' },
   ];
 
   const pricing = [
@@ -206,6 +212,9 @@ export default function Home() {
         .faq-row:last-child { border-bottom: none; }
         input::placeholder { color: ${INK_FAINT}; }
         input:focus { border-color: rgba(63,93,82,0.4) !important; outline: none; }
+        @keyframes fadeUpIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+        .testimonial-card { animation: fadeUpIn 0.5s ease-out both; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .testimonial-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(28,26,22,0.06); }
         @media (max-width: 767px) {
           .hide-mobile { display: none !important; }
           .stack-mobile { flex-direction: column !important; align-items: flex-start !important; }
@@ -398,16 +407,22 @@ export default function Home() {
       <section style={{ borderTop: `1px solid ${LINE}`, borderBottom: `1px solid ${LINE}`, background: CARD }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: isMobile ? '56px 22px' : '88px 40px' }}>
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: INK_FAINT, textAlign: 'center', marginBottom: 44 }}>What people say after rewriting</p>
-          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
-            {testimonials.map(t => (
-              <div key={t.name}>
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28, marginBottom: 48 }}>
+            {testimonials.map((t, i) => (
+              <div key={t.name} className="testimonial-card" style={{ position: 'relative', background: PAPER, border: `1px solid ${LINE}`, borderRadius: 6, padding: '28px 24px 24px', animationDelay: `${i * 90}ms` }}>
+                <svg width="30" height="22" viewBox="0 0 30 22" fill="none" style={{ position: 'absolute', top: 20, right: 20, opacity: 0.5 }}>
+                  <path d="M0 22V13.2C0 8.8 1.1 5.4 3.4 3 5.7 0.6 8.6 -0.3 12 0.2V4.6C10 4.4 8.4 4.9 7.4 6.1 6.4 7.3 5.9 9 5.9 11.2H12V22H0ZM18 22V13.2C18 8.8 19.1 5.4 21.4 3 23.7 0.6 26.6 -0.3 30 0.2V4.6C28 4.4 26.4 4.9 25.4 6.1 24.4 7.3 23.9 9 23.9 11.2H30V22H18Z" fill={ACCENT} />
+                </svg>
                 <div style={{ display: 'flex', gap: 2, marginBottom: 14 }}>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <svg key={i} width="13" height="13" viewBox="0 0 24 24" fill={AMBER}><path d="M12 2l2.9 6.9 7.1.6-5.4 4.8 1.7 7-6.3-4-6.3 4 1.7-7-5.4-4.8 7.1-.6z" /></svg>
+                  {Array.from({ length: 5 }).map((_, si) => (
+                    <svg key={si} width="13" height="13" viewBox="0 0 24 24" fill={AMBER}><path d="M12 2l2.9 6.9 7.1.6-5.4 4.8 1.7 7-6.3-4-6.3 4 1.7-7-5.4-4.8 7.1-.6z" /></svg>
                   ))}
                 </div>
-                <p style={{ fontSize: 15, color: INK, lineHeight: 1.75, fontStyle: 'italic', marginBottom: 20 }}>&ldquo;{t.quote}&rdquo;</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <p style={{ fontSize: 15, color: INK, lineHeight: 1.75, fontStyle: 'italic', marginBottom: 16, minHeight: isMobile ? 'auto' : 105 }}>&ldquo;{t.quote}&rdquo;</p>
+                {t.stat && (
+                  <div style={{ display: 'inline-block', background: 'rgba(63,93,82,0.09)', color: ACCENT, fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 99, marginBottom: 18 }}>{t.stat}</div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderTop: `1px solid ${LINE}`, paddingTop: 16 }}>
                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(63,93,82,0.1)', color: ACCENT, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{t.initials}</div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{t.name}</div>
@@ -416,6 +431,20 @@ export default function Home() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Trust bar — real, checkable claims, not manufactured stats */}
+          <div className="grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 40 }}>
+            {trustPoints.map(tp => (
+              <a key={tp.label} href={tp.href} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: INK_SOFT, fontWeight: 500, textDecoration: 'none', padding: '14px 16px', border: `1px solid ${LINE}`, borderRadius: 4, background: PAPER }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d={tp.icon} /></svg>
+                {tp.label}
+              </a>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <a href="/sign-up" style={{ display: 'inline-block', background: ACCENT, color: PAPER, fontSize: 13.5, fontWeight: 600, padding: '12px 26px', borderRadius: 3, textDecoration: 'none' }}>See what the AI finds in your CV — free</a>
           </div>
         </div>
       </section>
