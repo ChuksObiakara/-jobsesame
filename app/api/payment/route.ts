@@ -15,9 +15,12 @@ function checkRateLimit(userId: string, max: number): boolean {
   return true;
 }
 
+// Credit-pack pricing kept here for any legacy reference, but the purchase
+// flow for it has been removed from the UI (homepage pricing + account page) —
+// Free and Pro (USD-only now) are the only plans users can buy.
 const PLAN_AMOUNTS: Record<string, Record<string, number>> = {
   credits: { ZAR: 9900, USD: 599 },
-  pro:     { ZAR: 24900, USD: 1399 },
+  pro:     { ZAR: 24900, USD: 2500 },
 };
 
 export async function POST(req: NextRequest) {
