@@ -167,7 +167,7 @@ export default function Home() {
     { n: '03', title: 'Matching cover letters', body: 'Every rewrite comes with a personalised cover letter for the same role, ready in seconds.' },
     { n: '04', title: 'ATS-ready PDF', body: 'A polished, correctly formatted PDF ready to attach to any application, anywhere.' },
     { n: '05', title: 'Role match scoring', body: 'See how well your CV fits a role before you apply, so you can fix the gaps first.' },
-    { n: '06', title: 'Application tracker', body: 'Every version and every application in one place, so you always know where you stand.' },
+    { n: '06', title: 'Free rewrites by referral', body: 'Invite other job seekers and earn extra free rewrites — no extra spend needed to keep going.' },
   ];
 
   const testimonials = [
