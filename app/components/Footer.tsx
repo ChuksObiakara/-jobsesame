@@ -24,7 +24,7 @@ export default function Footer({ theme = 'dark' }: Props) {
 
   const columns = [
     { heading: 'Product', links: [['Find Jobs', '/jobs'], ['CV Optimiser', '/optimise'], ['Dashboard', '/dashboard'], ['Saved Jobs', '/saved-jobs']].filter(([, h]) => JOB_BOARD_ENABLED || (h !== '/jobs' && h !== '/saved-jobs')) },
-    { heading: 'Company', links: [['About', '/about'], ['Recruiters', '/recruiters'], ['Blog', '/blog'], ['Contact', 'mailto:hello@jobsesame.co.za']].filter(([, h]) => JOB_BOARD_ENABLED || h !== '/recruiters') },
+    { heading: 'Company', links: [['About', '/about'], ['Recruiters', '/recruiters'], ['Blog', '/blog'], ['Contact', 'mailto:support@jobsesame.co.za']].filter(([, h]) => JOB_BOARD_ENABLED || h !== '/recruiters') },
     { heading: 'Legal',   links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Refund Policy', '/refund'], ['Delete My Data', '/delete-data']] },
   ];
 
