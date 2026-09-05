@@ -929,7 +929,7 @@ export default function JobsPage() {
             <a href="/optimise" style={{fontSize:12,color:"#5A9A6A",textDecoration:"none"}}>CV Optimiser</a>
             <a href="/privacy" style={{fontSize:12,color:"#5A9A6A",textDecoration:"none"}}>Privacy</a>
             <a href="/terms" style={{fontSize:12,color:"#5A9A6A",textDecoration:"none"}}>Terms</a>
-            <a href="mailto:hello@jobsesame.co.za" style={{fontSize:12,color:"#5A9A6A",textDecoration:"none"}}>Contact</a>
+            <a href="mailto:support@jobsesame.co.za" style={{fontSize:12,color:"#5A9A6A",textDecoration:"none"}}>Contact</a>
           </div>
           <span style={{fontSize:11,color:"#1A4A2A"}}>© 2025 Jobsesame</span>
         </div>
