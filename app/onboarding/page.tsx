@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, SERIF, SANS } from '../lib/theme';
 
 interface CvData {
   name?: string;
@@ -150,19 +151,19 @@ export default function OnboardingPage() {
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '12px 16px',
-    border: '1.5px solid #1A5A2A',
-    borderRadius: 10,
+    border: `1.5px solid ${LINE}`,
+    borderRadius: 6,
     fontSize: 14,
-    color: '#FFFFFF',
-    background: '#0D3A1A',
+    color: INK,
+    background: CARD,
     outline: 'none',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    fontFamily: SANS,
     boxSizing: 'border-box',
   };
 
   const labelStyle: React.CSSProperties = {
     fontSize: 12,
-    color: '#5A9A6A',
+    color: INK_SOFT,
     fontWeight: 700,
     display: 'block',
     marginBottom: 6,
@@ -178,33 +179,21 @@ export default function OnboardingPage() {
   const atsScore = cvData?.ats_score || 72;
 
   return (
-    <main style={{fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#052A14",minHeight:"100vh",padding:isMobile?"0 0 40px":"0 0 60px"}}>
+    <main style={{fontFamily:SANS,background:PAPER,color:INK,minHeight:"100vh",padding:isMobile?"0 0 40px":"0 0 60px"}}>
 
       {/* NAV */}
-      <nav style={{background:"#052A14",padding:"0 24px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #0D4A20"}}>
-        <a href="/" style={{display:"flex",alignItems:"center",gap:11,textDecoration:"none"}}>
-          <div style={{width:38,height:38,background:"#C8E600",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <circle cx="9" cy="9" r="5.5" stroke="#052A14" strokeWidth="2.2"/>
-              <circle cx="9" cy="9" r="2.5" fill="#052A14" opacity="0.4"/>
-              <line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#052A14" strokeWidth="2.8" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <span style={{fontSize:20,fontWeight:800,letterSpacing:-0.5}}>
-            <span style={{color:"#FFFFFF"}}>job</span>
-            <span style={{color:"#C8E600"}}>sesame</span>
-          </span>
-        </a>
-        <div style={{fontSize:12,color:"#5A9A6A",fontWeight:600}}>
+      <nav style={{background:CARD,padding:"0 24px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${LINE}`}}>
+        <a href="/" style={{textDecoration:"none",fontFamily:SERIF,fontSize:18,fontWeight:500,color:INK}}>jobsesame</a>
+        <div style={{fontSize:12,color:INK_SOFT,fontWeight:600}}>
           Step {step} of 4
         </div>
       </nav>
 
       {/* PROGRESS BAR */}
-      <div style={{background:"#0D3A1A",height:4}}>
+      <div style={{background:LINE,height:4}}>
         <div style={{
           height:4,
-          background:"#C8E600",
+          background:ACCENT,
           width:`${progressPercent}%`,
           transition:"width 0.4s ease",
           borderRadius:"0 2px 2px 0",
@@ -220,16 +209,16 @@ export default function OnboardingPage() {
               <div style={{
                 width:28,height:28,
                 borderRadius:"50%",
-                background:step>i+1?"#C8E600":step===i+1?"#C8E600":"#1A4A2A",
-                color:step>=i+1?"#052A14":"#3A7A4A",
+                background:step>=i+1?ACCENT:LINE,
+                color:step>=i+1?PAPER:INK_FAINT,
                 fontSize:12,fontWeight:800,
                 display:"flex",alignItems:"center",justifyContent:"center",
                 margin:"0 auto 4px",
-                border:step===i+1?"3px solid #90C898":"3px solid transparent",
+                border:step===i+1?"3px solid rgba(63,93,82,0.25)":"3px solid transparent",
               }}>
                 {step>i+1?"✓":i+1}
               </div>
-              {!isMobile && <div style={{fontSize:10,color:step===i+1?"#C8E600":step>i+1?"#5A9A6A":"#2A5A3A",fontWeight:step===i+1?700:500}}>{label}</div>}
+              {!isMobile && <div style={{fontSize:10,color:step===i+1?ACCENT:step>i+1?INK_SOFT:INK_FAINT,fontWeight:step===i+1?700:500}}>{label}</div>}
             </div>
           ))}
         </div>
@@ -237,11 +226,11 @@ export default function OnboardingPage() {
         {/* ─── STEP 1: CV Upload ─── */}
         {step === 1 && (
           <div>
-            <h1 style={{fontSize:isMobile?22:28,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>
+            <h1 style={{fontFamily:SERIF,fontSize:isMobile?22:26,fontWeight:500,color:INK,marginBottom:8}}>
               Upload your CV
             </h1>
-            <p style={{fontSize:14,color:"#5A9A6A",marginBottom:28,lineHeight:1.7}}>
-              AI reads your CV in seconds and builds your complete career profile — so you never fill another form.
+            <p style={{fontSize:14,color:INK_SOFT,marginBottom:28,lineHeight:1.7}}>
+              AI reads your CV in seconds and builds your career profile — so you never fill another form.
             </p>
 
             <div
@@ -249,42 +238,42 @@ export default function OnboardingPage() {
               onDragOver={e=>{e.preventDefault();setDragOver(true);}}
               onDragLeave={()=>setDragOver(false)}
               style={{
-                border:`2px dashed ${dragOver?'#C8E600':'#1A5A2A'}`,
-                borderRadius:16,
+                border:`2px dashed ${dragOver?ACCENT:LINE}`,
+                borderRadius:8,
                 padding:"48px 24px",
                 textAlign:"center",
-                background:dragOver?'rgba(200,230,0,0.05)':uploading?'rgba(200,230,0,0.03)':'transparent',
+                background:dragOver?'rgba(63,93,82,0.05)':uploading?'rgba(63,93,82,0.03)':CARD,
                 transition:"all 0.2s",
                 cursor:uploading?'default':'pointer',
               }}>
               {uploading ? (
                 <div>
                   <div style={{fontSize:36,marginBottom:16}}>🤖</div>
-                  <div style={{fontSize:16,fontWeight:800,color:"#C8E600",marginBottom:8}}>AI is reading your CV...</div>
-                  <div style={{fontSize:13,color:"#5A9A6A",marginBottom:20}}>Extracting skills, experience and achievements</div>
-                  <div style={{width:200,height:4,background:"#1A4A2A",borderRadius:99,margin:"0 auto",overflow:"hidden"}}>
-                    <div style={{height:4,background:"#C8E600",borderRadius:99,animation:"loading 1.5s ease-in-out infinite"}}/>
+                  <div style={{fontSize:16,fontWeight:700,color:ACCENT,marginBottom:8}}>AI is reading your CV...</div>
+                  <div style={{fontSize:13,color:INK_SOFT,marginBottom:20}}>Extracting skills, experience and achievements</div>
+                  <div style={{width:200,height:4,background:LINE,borderRadius:99,margin:"0 auto",overflow:"hidden"}}>
+                    <div style={{height:4,background:ACCENT,borderRadius:99,animation:"loading 1.5s ease-in-out infinite"}}/>
                   </div>
                   <style>{`@keyframes loading { 0%{width:0%} 50%{width:80%} 100%{width:100%} }`}</style>
                 </div>
               ) : (
                 <div>
                   <div style={{fontSize:48,marginBottom:16}}>📄</div>
-                  <div style={{fontSize:16,fontWeight:700,color:"#FFFFFF",marginBottom:8}}>Drag your CV here</div>
-                  <div style={{fontSize:13,color:"#4A8A5A",marginBottom:20}}>or click to browse</div>
+                  <div style={{fontSize:16,fontWeight:700,color:INK,marginBottom:8}}>Drag your CV here</div>
+                  <div style={{fontSize:13,color:INK_FAINT,marginBottom:20}}>or click to browse</div>
                   <label style={{cursor:"pointer",display:"inline-block"}}>
                     <input type="file" accept=".pdf" onChange={handleFileInput} style={{display:"none"}}/>
-                    <span style={{background:"#C8E600",color:"#052A14",fontSize:14,fontWeight:800,padding:"12px 28px",borderRadius:99,cursor:"pointer",display:"inline-block"}}>
+                    <span style={{background:ACCENT,color:PAPER,fontSize:14,fontWeight:700,padding:"12px 28px",borderRadius:3,cursor:"pointer",display:"inline-block"}}>
                       Choose PDF file
                     </span>
                   </label>
-                  <div style={{fontSize:11,color:"#2A5A3A",marginTop:16}}>PDF only · Max 10MB · Processed securely</div>
+                  <div style={{fontSize:11,color:INK_FAINT,marginTop:16}}>PDF only · Max 10MB · Processed securely</div>
                 </div>
               )}
             </div>
 
             {uploadError && (
-              <div style={{background:"rgba(163,45,45,0.2)",border:"1px solid #A32D2D",borderRadius:10,padding:"10px 16px",fontSize:13,color:"#F09595",marginTop:16}}>
+              <div style={{background:"rgba(168,92,64,0.08)",border:`1px solid rgba(168,92,64,0.3)`,borderRadius:6,padding:"10px 16px",fontSize:13,color:CLAY,marginTop:16}}>
                 {uploadError}
               </div>
             )}
@@ -292,7 +281,7 @@ export default function OnboardingPage() {
             <div style={{marginTop:24,textAlign:"center"}}>
               <button
                 onClick={()=>setStep(2)}
-                style={{background:"transparent",border:"none",fontSize:13,color:"#3A7A4A",cursor:"pointer",textDecoration:"underline"}}>
+                style={{background:"transparent",border:"none",fontSize:13,color:INK_FAINT,cursor:"pointer",textDecoration:"underline"}}>
                 Skip for now — fill in manually
               </button>
             </div>
@@ -302,11 +291,11 @@ export default function OnboardingPage() {
         {/* ─── STEP 2: Profile ─── */}
         {step === 2 && (
           <div>
-            <h1 style={{fontSize:isMobile?22:28,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>
+            <h1 style={{fontFamily:SERIF,fontSize:isMobile?22:26,fontWeight:500,color:INK,marginBottom:8}}>
               Your profile
             </h1>
-            <p style={{fontSize:14,color:"#5A9A6A",marginBottom:28,lineHeight:1.7}}>
-              {cvData ? 'We pre-filled this from your CV — check and edit anything.' : 'Tell us about yourself so we can match you to the right jobs.'}
+            <p style={{fontSize:14,color:INK_SOFT,marginBottom:28,lineHeight:1.7}}>
+              {cvData ? 'We pre-filled this from your CV — check and edit anything.' : 'Tell us about yourself so we can tailor your CV rewrites to you.'}
             </p>
 
             <div style={{display:"flex",flexDirection:"column",gap:16}}>
@@ -367,13 +356,13 @@ export default function OnboardingPage() {
             </div>
 
             <div style={{display:"flex",gap:12,marginTop:28}}>
-              <button onClick={()=>setStep(1)} style={{background:"transparent",color:"#5A9A6A",fontSize:14,fontWeight:600,padding:"12px 24px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+              <button onClick={()=>setStep(1)} style={{background:"transparent",color:INK_SOFT,fontSize:14,fontWeight:600,padding:"12px 24px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>
                 Back
               </button>
               <button
                 onClick={()=>setStep(3)}
                 disabled={!profile.name || !profile.email || !profile.jobTitle}
-                style={{flex:1,background:!profile.name||!profile.email||!profile.jobTitle?"#1A4A2A":"#C8E600",color:!profile.name||!profile.email||!profile.jobTitle?"#3A7A4A":"#052A14",fontSize:14,fontWeight:800,padding:"12px",borderRadius:99,border:"none",cursor:!profile.name||!profile.email||!profile.jobTitle?"default":"pointer",transition:"all 0.2s"}}>
+                style={{flex:1,background:!profile.name||!profile.email||!profile.jobTitle?LINE:ACCENT,color:!profile.name||!profile.email||!profile.jobTitle?INK_FAINT:PAPER,fontSize:14,fontWeight:700,padding:"12px",borderRadius:3,border:"none",cursor:!profile.name||!profile.email||!profile.jobTitle?"default":"pointer",transition:"all 0.2s"}}>
                 Continue →
               </button>
             </div>
@@ -383,11 +372,11 @@ export default function OnboardingPage() {
         {/* ─── STEP 3: Job preferences ─── */}
         {step === 3 && (
           <div>
-            <h1 style={{fontSize:isMobile?22:28,fontWeight:800,color:"#FFFFFF",marginBottom:8}}>
+            <h1 style={{fontFamily:SERIF,fontSize:isMobile?22:26,fontWeight:500,color:INK,marginBottom:8}}>
               Job preferences
             </h1>
-            <p style={{fontSize:14,color:"#5A9A6A",marginBottom:28,lineHeight:1.7}}>
-              Tell AI what you&apos;re looking for and it will match you to the best jobs every day.
+            <p style={{fontSize:14,color:INK_SOFT,marginBottom:28,lineHeight:1.7}}>
+              This helps us tailor your CV rewrites and cover letters to the kind of role you&apos;re after.
             </p>
 
             <div style={{display:"flex",flexDirection:"column",gap:16}}>
@@ -438,19 +427,19 @@ export default function OnboardingPage() {
                 <input style={inputStyle} value={profile.desiredLocation} onChange={e=>setProfile(p=>({...p,desiredLocation:e.target.value}))} placeholder="e.g. Johannesburg, Remote, London..."/>
               </div>
               <div>
-                <label style={labelStyle}>Salary expectation (in Rand or equivalent)</label>
-                <input style={inputStyle} value={profile.salaryExpectation} onChange={e=>setProfile(p=>({...p,salaryExpectation:e.target.value}))} placeholder="e.g. R45,000/month or $3,000/month"/>
+                <label style={labelStyle}>Salary expectation</label>
+                <input style={inputStyle} value={profile.salaryExpectation} onChange={e=>setProfile(p=>({...p,salaryExpectation:e.target.value}))} placeholder="e.g. $3,000/month or R45,000/month"/>
               </div>
             </div>
 
             <div style={{display:"flex",gap:12,marginTop:28}}>
-              <button onClick={()=>setStep(2)} style={{background:"transparent",color:"#5A9A6A",fontSize:14,fontWeight:600,padding:"12px 24px",borderRadius:99,border:"1px solid #1A5A2A",cursor:"pointer"}}>
+              <button onClick={()=>setStep(2)} style={{background:"transparent",color:INK_SOFT,fontSize:14,fontWeight:600,padding:"12px 24px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>
                 Back
               </button>
               <button
                 onClick={()=>setStep(4)}
                 disabled={!profile.preferredJobTitle}
-                style={{flex:1,background:!profile.preferredJobTitle?"#1A4A2A":"#C8E600",color:!profile.preferredJobTitle?"#3A7A4A":"#052A14",fontSize:14,fontWeight:800,padding:"12px",borderRadius:99,border:"none",cursor:!profile.preferredJobTitle?"default":"pointer",transition:"all 0.2s"}}>
+                style={{flex:1,background:!profile.preferredJobTitle?LINE:ACCENT,color:!profile.preferredJobTitle?INK_FAINT:PAPER,fontSize:14,fontWeight:700,padding:"12px",borderRadius:3,border:"none",cursor:!profile.preferredJobTitle?"default":"pointer",transition:"all 0.2s"}}>
                 Continue →
               </button>
             </div>
@@ -461,34 +450,34 @@ export default function OnboardingPage() {
         {step === 4 && (
           <div style={{textAlign:"center"}}>
             <div style={{fontSize:56,marginBottom:20}}>🎉</div>
-            <h1 style={{fontSize:isMobile?24:32,fontWeight:800,color:"#FFFFFF",marginBottom:12}}>
-              You&apos;re all set, <span style={{color:"#C8E600"}}>{profile.name.split(' ')[0] || 'there'}</span>!
+            <h1 style={{fontFamily:SERIF,fontSize:isMobile?24:30,fontWeight:500,color:INK,marginBottom:12}}>
+              You&apos;re all set, <span style={{color:ACCENT}}>{profile.name.split(' ')[0] || 'there'}</span>!
             </h1>
-            <p style={{fontSize:14,color:"#5A9A6A",marginBottom:32,lineHeight:1.7,maxWidth:400,margin:"0 auto 32px"}}>
-              AI has analysed your profile and is ready to match you to thousands of jobs. Here&apos;s your career snapshot:
+            <p style={{fontSize:14,color:INK_SOFT,marginBottom:32,lineHeight:1.7,maxWidth:400,margin:"0 auto 32px"}}>
+              Your profile is saved. Head to your dashboard, paste a job description, and get a tailored CV and cover letter in about 30 seconds.
             </p>
 
             {/* CV Summary Card */}
-            <div style={{background:"#072E16",border:"1.5px solid #C8E600",borderRadius:18,padding:24,textAlign:"left",marginBottom:24}}>
+            <div style={{background:CARD,border:`1.5px solid ${ACCENT}`,borderRadius:8,padding:24,textAlign:"left",marginBottom:24}}>
               <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:20}}>
                 {/* ATS Score Circle */}
                 <div style={{position:"relative",width:80,height:80,flexShrink:0}}>
                   <svg width="80" height="80" style={{transform:"rotate(-90deg)"}}>
-                    <circle cx="40" cy="40" r="32" fill="none" stroke="#1A4A2A" strokeWidth="8"/>
-                    <circle cx="40" cy="40" r="32" fill="none" stroke="#C8E600" strokeWidth="8"
+                    <circle cx="40" cy="40" r="32" fill="none" stroke={LINE} strokeWidth="8"/>
+                    <circle cx="40" cy="40" r="32" fill="none" stroke={ACCENT} strokeWidth="8"
                       strokeDasharray={`${2*Math.PI*32}`}
                       strokeDashoffset={`${2*Math.PI*32*(1-atsScore/100)}`}
                       strokeLinecap="round"/>
                   </svg>
                   <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column"}}>
-                    <span style={{fontSize:16,fontWeight:800,color:"#C8E600",lineHeight:1}}>{atsScore}%</span>
-                    <span style={{fontSize:8,color:"#5A9A6A",lineHeight:1,marginTop:2}}>ATS</span>
+                    <span style={{fontFamily:SERIF,fontSize:16,color:ACCENT,lineHeight:1}}>{atsScore}%</span>
+                    <span style={{fontSize:8,color:INK_FAINT,lineHeight:1,marginTop:2}}>ATS</span>
                   </div>
                 </div>
                 <div>
-                  <div style={{fontSize:18,fontWeight:800,color:"#FFFFFF",marginBottom:3}}>{profile.name}</div>
-                  <div style={{fontSize:13,color:"#C8E600",fontWeight:600,marginBottom:2}}>{profile.jobTitle || profile.preferredJobTitle}</div>
-                  <div style={{fontSize:12,color:"#5A9A6A"}}>{profile.location}</div>
+                  <div style={{fontSize:18,fontWeight:700,color:INK,marginBottom:3}}>{profile.name}</div>
+                  <div style={{fontSize:13,color:ACCENT,fontWeight:600,marginBottom:2}}>{profile.jobTitle || profile.preferredJobTitle}</div>
+                  <div style={{fontSize:12,color:INK_SOFT}}>{profile.location}</div>
                 </div>
               </div>
 
@@ -499,32 +488,32 @@ export default function OnboardingPage() {
                   {label:"Work type",value:profile.workPreference || "—"},
                   {label:"Job type",value:profile.jobType || "—"},
                 ].map(s=>(
-                  <div key={s.label} style={{background:"#0D3A1A",borderRadius:10,padding:"10px 14px"}}>
-                    <div style={{fontSize:10,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>{s.label}</div>
-                    <div style={{fontSize:13,color:"#FFFFFF",fontWeight:600}}>{s.value}</div>
+                  <div key={s.label} style={{background:PAPER,border:`1px solid ${LINE}`,borderRadius:6,padding:"10px 14px"}}>
+                    <div style={{fontSize:10,color:INK_FAINT,fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:3}}>{s.label}</div>
+                    <div style={{fontSize:13,color:INK,fontWeight:600}}>{s.value}</div>
                   </div>
                 ))}
               </div>
 
               {profile.keySkills && (
                 <div>
-                  <div style={{fontSize:10,color:"#3A7A4A",fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Key skills</div>
+                  <div style={{fontSize:10,color:INK_FAINT,fontWeight:700,textTransform:"uppercase",letterSpacing:"1px",marginBottom:8}}>Key skills</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
                     {profile.keySkills.split(',').slice(0,8).map(s=>(
-                      <span key={s} style={{background:"#0D4A20",color:"#90C898",fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{s.trim()}</span>
+                      <span key={s} style={{background:"rgba(63,93,82,0.1)",color:ACCENT,fontSize:11,padding:"3px 10px",borderRadius:99,fontWeight:600}}>{s.trim()}</span>
                     ))}
                   </div>
                 </div>
               )}
             </div>
 
-            <div style={{background:"rgba(200,230,0,0.08)",border:"1.5px solid rgba(200,230,0,0.25)",borderRadius:14,padding:16,marginBottom:28,textAlign:"left"}}>
+            <div style={{background:"rgba(63,93,82,0.08)",border:"1.5px solid rgba(63,93,82,0.25)",borderRadius:8,padding:16,marginBottom:28,textAlign:"left"}}>
               <div style={{display:"flex",gap:10,alignItems:"flex-start"}}>
                 <span style={{fontSize:18}}>⚡</span>
                 <div>
-                  <div style={{fontSize:13,fontWeight:700,color:"#C8E600",marginBottom:4}}>AI is matching you to jobs right now</div>
-                  <div style={{fontSize:12,color:"#5A9A6A",lineHeight:1.6}}>
-                    Based on your profile, we&apos;ve found hundreds of matching roles. Your dashboard shows your top matches and lets you apply in one click.
+                  <div style={{fontSize:13,fontWeight:700,color:ACCENT,marginBottom:4}}>Your CV is ready to tailor</div>
+                  <div style={{fontSize:12,color:INK_SOFT,lineHeight:1.6}}>
+                    Paste any job description in your dashboard and get a CV and cover letter rewritten for that exact role in about 30 seconds.
                   </div>
                 </div>
               </div>
@@ -532,7 +521,7 @@ export default function OnboardingPage() {
 
             <button
               onClick={handleComplete}
-              style={{width:"100%",background:"#C8E600",color:"#052A14",fontSize:16,fontWeight:800,padding:"16px",borderRadius:99,border:"none",cursor:"pointer",boxShadow:"0 4px 20px rgba(200,230,0,0.3)"}}>
+              style={{width:"100%",background:ACCENT,color:PAPER,fontSize:16,fontWeight:700,padding:"16px",borderRadius:3,border:"none",cursor:"pointer",boxShadow:"0 4px 20px rgba(63,93,82,0.25)"}}>
               Take me to my dashboard →
             </button>
           </div>
