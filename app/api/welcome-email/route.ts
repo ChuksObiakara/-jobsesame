@@ -2,9 +2,10 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { Resend } from 'resend';
+import { referralCodeFor } from '@/app/lib/referral-code';
 
 function buildReferralLink(userId: string): string {
-  const referralCode = Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase();
+  const referralCode = referralCodeFor(userId);
   const appUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://jobsesame.co';
   return `${appUrl}?ref=${referralCode}`;
 }
