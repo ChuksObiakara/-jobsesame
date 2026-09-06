@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
-import { INK, INK_SOFT, LINE, PAPER, CARD, ACCENT, SERIF, SANS } from '../lib/theme';
+import { INK, INK_SOFT, LINE, PAPER, CARD, ACCENT, SERIF, SANS, SCRIPT } from '../lib/theme';
 
 export const metadata: Metadata = {
   title: 'Terms of Service | Jobsesame',
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   const nav = (
     <nav style={{ background: CARD, padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${LINE}`, position: 'sticky', top: 0, zIndex: 100 }}>
-      <a href="/" style={{ textDecoration: 'none', fontFamily: SERIF, fontSize: 18, fontWeight: 500, color: INK }}>jobsesame</a>
+      <a href="/" style={{ textDecoration: 'none', fontFamily: SCRIPT, fontSize: 28, fontWeight: 400, color: INK }}>jobsesame</a>
       <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
         {JOB_BOARD_ENABLED && <a href="/jobs" style={{ fontSize: 13, color: INK_SOFT, fontWeight: 500, textDecoration: 'none' }}>Find jobs</a>}
         <a href="/dashboard" style={{ fontSize: 13, color: INK_SOFT, fontWeight: 500, textDecoration: 'none' }}>Dashboard</a>
