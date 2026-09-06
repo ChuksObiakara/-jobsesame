@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
+import { PRIMARY_FROM, FALLBACK_FROM } from '@/app/lib/email-from';
 
 export async function GET(req: NextRequest) {
   const adminPassword = process.env.ADMIN_PASSWORD;
@@ -9,17 +10,15 @@ export async function GET(req: NextRequest) {
   }
 
   const apiKey = process.env.RESEND_API_KEY;
-  const fromEnv = process.env.RESEND_FROM_EMAIL;
+  const fromEnv = process.env.EMAIL_FROM;
   const testRecipient = 'chuksobiakara@gmail.com';
 
   const diagnostics: Record<string, unknown> = {
     hasApiKey: !!apiKey,
     apiKeyPrefix: apiKey ? `${apiKey.slice(0, 8)}...` : null,
-    RESEND_FROM_EMAIL: fromEnv || '(not set)',
-    primaryFrom: fromEnv
-      ? `Jobsesame <${fromEnv}>`
-      : 'Jobsesame <noreply@jobsesame.co>',
-    fallbackFrom: 'Jobsesame <onboarding@resend.dev>',
+    EMAIL_FROM: fromEnv || '(not set — defaulting to hello@jobsesame.co)',
+    primaryFrom: PRIMARY_FROM,
+    fallbackFrom: FALLBACK_FROM,
     sentTo: testRecipient,
   };
 
@@ -34,9 +33,7 @@ export async function GET(req: NextRequest) {
   const { Resend } = await import('resend');
   const resend = new Resend(apiKey);
 
-  const primaryFrom = fromEnv
-    ? `Jobsesame <${fromEnv}>`
-    : 'Jobsesame <noreply@jobsesame.co>';
+  const primaryFrom = PRIMARY_FROM;
 
   const sentAt = new Date().toISOString();
 
@@ -66,23 +63,23 @@ export async function GET(req: NextRequest) {
 </body></html>`,
   };
 
-  // Try primary from address (noreply@jobsesame.co via RESEND_FROM_EMAIL)
+  // Try primary from address (EMAIL_FROM, i.e. hello@jobsesame.co)
   let { data, error } = await resend.emails.send({ from: primaryFrom, ...emailOpts });
   let usedFrom = primaryFrom;
   let fallbackUsed = false;
   let primaryError: string | null = null;
 
   // If domain not verified, automatically retry with onboarding@resend.dev fallback
-  if (error && primaryFrom !== 'Jobsesame <onboarding@resend.dev>') {
+  if (error && primaryFrom !== FALLBACK_FROM) {
     primaryError = error.message || 'Unknown error';
     const fallback = await resend.emails.send({
-      from: 'Jobsesame <onboarding@resend.dev>',
+      from: FALLBACK_FROM,
       ...emailOpts,
       subject: `[TEST — fallback from] Jobsesame email test — ${sentAt}`,
     });
     data = fallback.data;
     error = fallback.error;
-    usedFrom = 'Jobsesame <onboarding@resend.dev>';
+    usedFrom = FALLBACK_FROM;
     fallbackUsed = true;
   }
 
@@ -104,7 +101,7 @@ export async function GET(req: NextRequest) {
       emailSent: !error,
       usedFallback: fallbackUsed,
       recommendation: fallbackUsed
-        ? `Domain ${fromEnv} not verified in Resend — verify it at resend.com/domains to send from noreply@jobsesame.co`
+        ? `Domain for ${primaryFrom} not verified in Resend — verify it at resend.com/domains so emails actually send from hello@jobsesame.co`
         : 'All checks passed',
     },
   });
