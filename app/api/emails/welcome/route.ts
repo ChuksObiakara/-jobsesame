@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const firstName = (name || email.split('@')[0]).split(' ')[0];
     const score = Math.round(atsScore || 0);
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co.za';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co';
     const unsubToken = Buffer.from(JSON.stringify({ userId: userId || '', email, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64url');
     const unsubUrl = `${appUrl}/unsubscribe?token=${unsubToken}`;
     const referralCode = userId ? Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase() : 'SHARE';
@@ -124,7 +124,7 @@ ${weakHtml ? `<tr><td style="background:#0D3A1A;padding:28px 36px;">
     const fromAddress = `Jobsesame <${process.env.EMAIL_FROM || 'onboarding@resend.dev'}>`;
     const { error } = await resend.emails.send({
       from: fromAddress,
-      replyTo: 'support@jobsesame.co.za',
+      replyTo: 'hello@jobsesame.co',
       to: email,
       subject: 'Your CV score is ready — here is what we found',
       html,

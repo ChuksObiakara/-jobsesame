@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
 
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
-    // Use Resend's shared test domain until jobsesame.co.za is verified in the Resend dashboard.
-    // Switch back to noreply@jobsesame.co.za once DNS records are confirmed.
+    // Use Resend's shared test domain until jobsesame.co is verified in the Resend dashboard.
+    // Switch back to noreply@jobsesame.co once DNS records are confirmed.
     const fromEmail = 'onboarding@resend.dev';
 
     const skillsList: string[] = cvData?.skills?.slice(0, 10) || [];
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       <div style="font-size:15px;color:#A8D8B0;margin-bottom:14px;">
         <strong style="color:#ffffff;">${candidateName}</strong>${currentTitle ? ` &mdash; ${currentTitle}` : ''}
       </div>
-      <span style="background:#C8E600;color:#052A14;font-size:11px;font-weight:800;padding:4px 14px;border-radius:99px;display:inline-block;">Submitted via Jobsesame.co.za</span>
+      <span style="background:#C8E600;color:#052A14;font-size:11px;font-weight:800;padding:4px 14px;border-radius:99px;display:inline-block;">Submitted via Jobsesame.co</span>
     </div>
 
     <!-- Body -->
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
 
     <!-- Footer -->
     <div style="background:#f4f9f4;padding:16px 32px;font-size:11px;color:#888;border-top:1px solid #dceadc;text-align:center;line-height:1.7;">
-      This application was submitted via <a href="https://jobsesame.co.za" style="color:#1A7A3A;font-weight:600;">Jobsesame.co.za</a> — AI-powered job applications.<br>
+      This application was submitted via <a href="https://jobsesame.co" style="color:#1A7A3A;font-weight:600;">Jobsesame.co</a> — AI-powered job applications.<br>
       Reply directly to this email to contact the applicant at <a href="mailto:${candidateEmail}" style="color:#1A7A3A;">${candidateEmail}</a>.
     </div>
   </div>

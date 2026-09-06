@@ -4,11 +4,11 @@ import { INK, INK_SOFT, LINE, PAPER, CARD, ACCENT, SERIF, SANS } from '../lib/th
 export const metadata: Metadata = {
   title: 'Refund Policy | Jobsesame',
   description: 'Jobsesame’s refund policy for Pro subscriptions.',
-  alternates: { canonical: 'https://www.jobsesame.co.za/refund' },
+  alternates: { canonical: 'https://www.jobsesame.co/refund' },
   openGraph: {
     title: 'Refund Policy | Jobsesame',
     description: 'Jobsesame’s refund policy for Pro subscriptions.',
-    url: 'https://www.jobsesame.co.za/refund',
+    url: 'https://www.jobsesame.co/refund',
     siteName: 'Jobsesame',
     locale: 'en_US',
     type: 'website',
@@ -68,7 +68,7 @@ export default function RefundPage() {
         </>)}
 
         {card('✉️', 'How to Request a Refund', <>
-          <p style={{ margin: '0 0 10px' }}>Email us at <a href="mailto:billing@jobsesame.co.za" style={{ color: ACCENT }}>billing@jobsesame.co.za</a> with:</p>
+          <p style={{ margin: '0 0 10px' }}>Email us at <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a> with:</p>
           <ul style={{ margin: '0 0 10px', paddingLeft: 20 }}>
             <li style={{ marginBottom: 6 }}>Your account email address</li>
             <li style={{ marginBottom: 6 }}>The date of purchase</li>
@@ -78,14 +78,14 @@ export default function RefundPage() {
         </>)}
 
         {card('💳', 'Processing Time', <>
-          <p style={{ margin: 0 }}>Approved refunds are processed within <strong style={{ color: INK }}>10 business days</strong> via your original payment method (Paystack). The time for funds to appear in your account depends on your bank but is typically 3–5 business days after we process the refund.</p>
+          <p style={{ margin: 0 }}>Approved refunds are processed within <strong style={{ color: INK }}>10 business days</strong> via your original payment method (Lemon Squeezy). The time for funds to appear in your account depends on your bank but is typically 3–5 business days after we process the refund.</p>
         </>)}
 
         <div style={{ background: CARD, border: `1px solid ${LINE}`, borderRadius: 8, padding: '24px 28px', textAlign: 'center' }}>
           <p style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: INK }}>Questions about a refund?</p>
           <p style={{ margin: '0 0 16px', fontSize: 13, color: INK_SOFT }}>Our team is here to help.</p>
-          <a href="mailto:billing@jobsesame.co.za" style={{ display: 'inline-block', background: ACCENT, color: PAPER, fontWeight: 700, fontSize: 14, padding: '12px 28px', borderRadius: 3, textDecoration: 'none' }}>
-            Email billing@jobsesame.co.za
+          <a href="mailto:hello@jobsesame.co" style={{ display: 'inline-block', background: ACCENT, color: PAPER, fontWeight: 700, fontSize: 14, padding: '12px 28px', borderRadius: 3, textDecoration: 'none' }}>
+            Email hello@jobsesame.co
           </a>
         </div>
 

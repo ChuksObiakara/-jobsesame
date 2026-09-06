@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: ['/'],
       disallow: ['/api/', '/dashboard', '/admin', '/onboarding', '/payment/', '/saved-jobs'],
     },
-    sitemap: 'https://www.jobsesame.co.za/sitemap.xml',
+    sitemap: 'https://www.jobsesame.co/sitemap.xml',
   };
 }

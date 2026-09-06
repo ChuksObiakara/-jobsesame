@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { downloadPdf } from '../lib/download-pdf-client';
 
 interface Job {
   id: string | number;
@@ -200,109 +201,10 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
     setStep('result');
   };
 
-  const downloadCVAsPDF = async (cv: any) => {
+  const downloadCVAsPDF = (cv: any) => {
     try {
-      const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageWidth = 210;
-      const margin = 20;
-      const contentWidth = pageWidth - margin * 2;
-      let y = 20;
-
-      doc.setFillColor(5, 42, 20);
-      doc.rect(0, 0, 210, 28, 'F');
-      doc.setTextColor(200, 230, 0);
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      doc.text(cv.name || '', margin, 13);
-      doc.setTextColor(144, 200, 152);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text(cv.title || '', margin, 21);
-      y = 36;
-      doc.setTextColor(80, 80, 80);
-      doc.setFontSize(9);
-      const contactParts = [cv.location, cv.email, cv.phone].filter(Boolean);
-      if (contactParts.length) doc.text(contactParts.join('  |  '), margin, y);
-      y += 8;
-      doc.setDrawColor(5, 42, 20);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 6;
-
-      const addSection = (title: string, content: () => void) => {
-        if (y > 265) { doc.addPage(); y = 20; }
-        doc.setFillColor(234, 245, 234);
-        doc.rect(margin, y - 4, contentWidth, 7, 'F');
-        doc.setTextColor(5, 42, 20);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text(title.toUpperCase(), margin + 2, y + 1);
-        y += 7;
-        doc.setTextColor(51, 51, 51);
-        doc.setFont('helvetica', 'normal');
-        content();
-        y += 4;
-      };
-
-      if (cv.summary) {
-        addSection('Professional Summary', () => {
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'italic');
-          const lines = doc.splitTextToSize(cv.summary, contentWidth);
-          doc.text(lines, margin, y);
-          y += lines.length * 5;
-        });
-      }
-      if (cv.skills?.length) {
-        addSection('Skills', () => {
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'normal');
-          const lines = doc.splitTextToSize(cv.skills.join('  ·  '), contentWidth);
-          doc.text(lines, margin, y);
-          y += lines.length * 5;
-        });
-      }
-      if (cv.experience?.length) {
-        addSection('Experience', () => {
-          cv.experience.forEach((exp: any) => {
-            if (y > 265) { doc.addPage(); y = 20; }
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(5, 42, 20);
-            doc.text(exp.title || '', margin, y);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(42, 106, 58);
-            doc.setFontSize(9);
-            doc.text(`${exp.company || ''}  |  ${exp.duration || ''}`, margin, y + 5);
-            y += 10;
-            doc.setTextColor(68, 68, 68);
-            exp.bullets?.forEach((bullet: string) => {
-              if (y > 265) { doc.addPage(); y = 20; }
-              const lines = doc.splitTextToSize(`• ${bullet}`, contentWidth - 4);
-              doc.text(lines, margin + 2, y);
-              y += lines.length * 4.5;
-            });
-            y += 3;
-          });
-        });
-      }
-      if (cv.education) {
-        addSection('Education', () => {
-          doc.setFontSize(10);
-          doc.text(cv.education, margin, y);
-          y += 6;
-        });
-      }
-      if (cv.languages?.length) {
-        addSection('Languages', () => {
-          doc.setFontSize(10);
-          doc.text(cv.languages.join('  |  '), margin, y);
-          y += 6;
-        });
-      }
       const fileName = `${(cv.name || 'CV').replace(/\s+/g, '_')}_tailored_for_${(job.company || 'Job').replace(/\s+/g, '_')}.pdf`;
-      doc.save(fileName);
+      downloadPdf('cv', cv, fileName);
     } catch (err) { console.error('[quickapply] pdf download failed:', err); }
   };
 
@@ -377,7 +279,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       return;
     }
     try {
-      await downloadCVAsPDF(rewrittenCV);
+      downloadCVAsPDF(rewrittenCV);
       await new Promise(r => setTimeout(r, 800));
       window.open(job.url, '_blank');
       deductCredit();

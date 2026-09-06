@@ -3,11 +3,11 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Job Search Tips and Career Advice | Jobsesame Blog',
   description: 'Career advice, CV tips, and job search strategies for job seekers everywhere.',
-  alternates: { canonical: 'https://www.jobsesame.co.za/blog' },
+  alternates: { canonical: 'https://www.jobsesame.co/blog' },
   openGraph: {
     title: 'Job Search Tips and Career Advice | Jobsesame Blog',
     description: 'Career advice, CV tips, and job search strategies for job seekers everywhere.',
-    url: 'https://www.jobsesame.co.za/blog',
+    url: 'https://www.jobsesame.co/blog',
     siteName: 'Jobsesame',
     locale: 'en_US',
     type: 'website',

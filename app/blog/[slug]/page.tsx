@@ -5,7 +5,7 @@ import Nav from '../../components/Nav';
 import Footer from '../../components/Footer';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, SERIF, SANS } from '../../lib/theme';
 
-const BASE = 'https://www.jobsesame.co.za';
+const BASE = 'https://www.jobsesame.co';
 
 export async function generateStaticParams() {
   return POSTS.map(p => ({ slug: p.slug }));

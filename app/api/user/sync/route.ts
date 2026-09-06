@@ -21,7 +21,7 @@ export async function POST() {
 
     // Fire welcome email only on first signup (not on subsequent syncs)
     if (!existing && email) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co.za';
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co';
       fetch(`${baseUrl}/api/welcome-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

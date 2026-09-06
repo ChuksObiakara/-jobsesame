@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     const { error } = await resend.emails.send({
       from: 'Jobsesame <onboarding@resend.dev>',
       replyTo: email,
-      to: 'privacy@jobsesame.co.za',
+      to: 'hello@jobsesame.co',
       subject: `Data deletion request from ${email}`,
       html,
     });

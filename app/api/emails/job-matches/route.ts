@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
     const firstName = (name || email.split('@')[0]).split(' ')[0];
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co.za';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co';
     const unsubToken = Buffer.from(JSON.stringify({ userId: dbUser?.clerkId || '', email, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64url');
     const unsubUrl = `${appUrl}/unsubscribe?token=${unsubToken}`;
     const role = cvTitle || 'your role';
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     const fromAddress = `Jobsesame <${process.env.EMAIL_FROM || 'onboarding@resend.dev'}>`;
     const { error } = await resend.emails.send({
       from: fromAddress,
-      replyTo: 'support@jobsesame.co.za',
+      replyTo: 'hello@jobsesame.co',
       to: email,
       subject,
       html,

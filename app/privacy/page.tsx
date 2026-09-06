@@ -5,11 +5,11 @@ import { INK, INK_SOFT, LINE, PAPER, CARD, ACCENT, SERIF, SANS } from '../lib/th
 export const metadata: Metadata = {
   title: 'Privacy Policy | Jobsesame',
   description: 'How Jobsesame collects, uses, and protects your CV data and personal information.',
-  alternates: { canonical: 'https://www.jobsesame.co.za/privacy' },
+  alternates: { canonical: 'https://www.jobsesame.co/privacy' },
   openGraph: {
     title: 'Privacy Policy | Jobsesame',
     description: 'How Jobsesame collects, uses, and protects your CV data and personal information.',
-    url: 'https://www.jobsesame.co.za/privacy',
+    url: 'https://www.jobsesame.co/privacy',
     siteName: 'Jobsesame',
     locale: 'en_US',
     type: 'website',
@@ -60,8 +60,8 @@ export default function PrivacyPage() {
         </div>
 
         {section('1. Who We Are', <>
-          <p style={{ margin: '0 0 10px' }}><strong style={{ color: INK }}>Jobsesame (Pty) Ltd</strong> (&ldquo;Jobsesame&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) operates the platform at <strong style={{ color: ACCENT }}>jobsesame.co.za</strong>. We are the responsible party (as defined under POPIA) for personal information collected through our platform.</p>
-          <p style={{ margin: 0 }}>For all privacy-related enquiries, contact us at: <a href="mailto:privacy@jobsesame.co.za" style={{ color: ACCENT }}>privacy@jobsesame.co.za</a></p>
+          <p style={{ margin: '0 0 10px' }}><strong style={{ color: INK }}>Jobsesame (Pty) Ltd</strong> (&ldquo;Jobsesame&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) operates the platform at <strong style={{ color: ACCENT }}>jobsesame.co</strong>. We are the responsible party (as defined under POPIA) for personal information collected through our platform.</p>
+          <p style={{ margin: 0 }}>For all privacy-related enquiries, contact us at: <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a></p>
         </>)}
 
         {section('2. Personal Data We Collect', <>
@@ -69,7 +69,7 @@ export default function PrivacyPage() {
           <ul style={{ margin: '0 0 12px', paddingLeft: 20 }}>
             {li(<><strong style={{ color: INK }}>CV Data</strong> — name, email address, phone number, work history, education, skills, and any other information you include in your CV.</>)}
             {li(<><strong style={{ color: INK }}>Account Information</strong> — email address, authentication credentials, and profile details collected via Clerk authentication.</>)}
-            {li(<><strong style={{ color: INK }}>Payment Information</strong> — billing details processed by Paystack. We never store your card details on our servers.</>)}
+            {li(<><strong style={{ color: INK }}>Payment Information</strong> — billing details processed by Lemon Squeezy. We never store your card details on our servers.</>)}
             {li(<><strong style={{ color: INK }}>Usage Data</strong> — pages visited, features used, click behaviour, and session information collected via cookies and analytics tools.</>)}
             {li(<><strong style={{ color: INK }}>Job Application History</strong> — jobs you have applied to, application status, and outcomes you share with us.</>)}
             {li(<><strong style={{ color: INK }}>Communications</strong> — messages you send to our support team.</>)}
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
           <p style={{ margin: '0 0 12px' }}>We process your personal information on the following lawful bases:</p>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {li(<><strong style={{ color: INK }}>Contract performance</strong> — to provide the CV optimisation service you have signed up for.</>)}
-            {li(<><strong style={{ color: INK }}>Legitimate interest</strong> — to process payments for Pro subscriptions via Paystack.</>)}
+            {li(<><strong style={{ color: INK }}>Legitimate interest</strong> — to process payments for Pro subscriptions via Lemon Squeezy.</>)}
             {li(<><strong style={{ color: INK }}>Consent</strong> — to send you product updates, marketing emails, and personalised recommendations. You may withdraw consent at any time by <a href="/unsubscribe" style={{ color: ACCENT }}>unsubscribing</a>.</>)}
             {li(<><strong style={{ color: INK }}>Legitimate interest</strong> — to improve our AI matching algorithms using <em>anonymised and aggregated</em> data only. We never use identifiable CV data to train AI models without explicit consent.</>)}
             {li(<><strong style={{ color: INK }}>Legal obligation</strong> — to retain financial records as required by South African tax law.</>)}
@@ -101,9 +101,9 @@ export default function PrivacyPage() {
         {section('5. Your Rights Under POPIA', <>
           <p style={{ margin: '0 0 12px' }}>As a data subject under POPIA, you have the following rights:</p>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
-            {li(<><strong style={{ color: INK }}>Right of access</strong> — request a copy of your personal data we hold. Email <a href="mailto:privacy@jobsesame.co.za" style={{ color: ACCENT }}>privacy@jobsesame.co.za</a>.</>)}
+            {li(<><strong style={{ color: INK }}>Right of access</strong> — request a copy of your personal data we hold. Email <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a>.</>)}
             {li(<><strong style={{ color: INK }}>Right to correction</strong> — request correction of inaccurate or incomplete data.</>)}
-            {li(<><strong style={{ color: INK }}>Right to deletion</strong> — request deletion of your personal data. Use our <a href="/delete-data" style={{ color: ACCENT }}>data deletion request form</a> or email <a href="mailto:privacy@jobsesame.co.za" style={{ color: ACCENT }}>privacy@jobsesame.co.za</a>. We will process requests within 30 days.</>)}
+            {li(<><strong style={{ color: INK }}>Right to deletion</strong> — request deletion of your personal data. Use our <a href="/delete-data" style={{ color: ACCENT }}>data deletion request form</a> or email <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a>. We will process requests within 30 days.</>)}
             {li(<><strong style={{ color: INK }}>Right to object</strong> — object to processing of your personal data for marketing or profiling purposes.</>)}
             {li(<><strong style={{ color: INK }}>Right to lodge a complaint</strong> — you may lodge a complaint with the Information Regulator of South Africa at <a href="https://inforegulator.org.za" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>inforegulator.org.za</a>.</>)}
           </ul>
@@ -114,7 +114,7 @@ export default function PrivacyPage() {
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {li(<><strong style={{ color: INK }}>Clerk</strong> — authentication and user account management. Privacy policy: <a href="https://clerk.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>clerk.com/privacy</a></>)}
             {li(<><strong style={{ color: INK }}>Anthropic</strong> — AI-powered CV processing and rewriting. Your CV content is sent to Anthropic to provide this service. Privacy policy: <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>anthropic.com/privacy</a></>)}
-            {li(<><strong style={{ color: INK }}>Paystack</strong> — secure payment processing. We do not store card details. Privacy policy: <a href="https://paystack.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>paystack.com/privacy</a></>)}
+            {li(<><strong style={{ color: INK }}>Lemon Squeezy</strong> — secure payment processing. We do not store card details. Privacy policy: <a href="https://www.lemonsqueezy.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>lemonsqueezy.com/privacy</a></>)}
             {li(<><strong style={{ color: INK }}>Resend</strong> — transactional email delivery. Privacy policy: <a href="https://resend.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>resend.com/privacy</a></>)}
             {li(<><strong style={{ color: INK }}>Vercel</strong> — cloud hosting and infrastructure. Privacy policy: <a href="https://vercel.com/privacy" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>vercel.com/privacy</a></>)}
           </ul>
@@ -148,13 +148,13 @@ export default function PrivacyPage() {
             {li(<><strong style={{ color: INK }}>Right to restrict processing</strong> — request that we restrict processing of your data in certain circumstances.</>)}
             {li(<><strong style={{ color: INK }}>Right not to be subject to automated decision-making</strong> — although our AI matching is automated, significant decisions about your employment are always made by employers, not by us.</>)}
           </ul>
-          <p style={{ margin: '12px 0 0' }}>To exercise any GDPR rights, contact us at <a href="mailto:privacy@jobsesame.co.za" style={{ color: ACCENT }}>privacy@jobsesame.co.za</a>.</p>
+          <p style={{ margin: '12px 0 0' }}>To exercise any GDPR rights, contact us at <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a>.</p>
         </>)}
 
         {section('10. Contact & Complaints', <>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
-            {li(<>Privacy enquiries: <a href="mailto:privacy@jobsesame.co.za" style={{ color: ACCENT }}>privacy@jobsesame.co.za</a></>)}
-            {li(<>Data deletion requests: <a href="/delete-data" style={{ color: ACCENT }}>jobsesame.co.za/delete-data</a></>)}
+            {li(<>Privacy enquiries: <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a></>)}
+            {li(<>Data deletion requests: <a href="/delete-data" style={{ color: ACCENT }}>jobsesame.co/delete-data</a></>)}
             {li(<>Information Regulator South Africa: <a href="https://inforegulator.org.za" target="_blank" rel="noopener noreferrer" style={{ color: ACCENT }}>inforegulator.org.za</a></>)}
             {li('Complaints to the Information Regulator can be submitted via their website or by post to: The Information Regulator, JD House, 27 Stiemens Street, Braamfontein, Johannesburg, 2001')}
           </ul>

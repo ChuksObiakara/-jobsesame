@@ -24,7 +24,7 @@ export default function Footer({ theme = 'dark' }: Props) {
 
   const columns = [
     { heading: 'Product', links: [['Find Jobs', '/jobs'], ['CV Optimiser', '/optimise'], ['Dashboard', '/dashboard'], ['Saved Jobs', '/saved-jobs']].filter(([, h]) => JOB_BOARD_ENABLED || (h !== '/jobs' && h !== '/saved-jobs')) },
-    { heading: 'Company', links: [['About', '/about'], ['Recruiters', '/recruiters'], ['Blog', '/blog'], ['Contact', 'mailto:support@jobsesame.co.za']].filter(([, h]) => JOB_BOARD_ENABLED || h !== '/recruiters') },
+    { heading: 'Company', links: [['About', '/about'], ['Recruiters', '/recruiters'], ['Blog', '/blog'], ['Contact', '/contact']].filter(([, h]) => JOB_BOARD_ENABLED || h !== '/recruiters') },
     { heading: 'Legal',   links: [['Privacy Policy', '/privacy'], ['Terms of Service', '/terms'], ['Refund Policy', '/refund'], ['Delete My Data', '/delete-data']] },
   ];
 
@@ -38,7 +38,7 @@ export default function Footer({ theme = 'dark' }: Props) {
               <div style={{ fontFamily: LIGHT.serif, fontSize: 18, fontWeight: 500, color: LIGHT.ink, marginBottom: 14 }}>jobsesame</div>
               <p style={{ fontSize: 13, color: LIGHT.inkFaint, lineHeight: 1.8, maxWidth: 240, marginBottom: 14 }}>AI CV rewriting and ATS optimisation for job seekers who refuse to be filtered out.</p>
               <p style={{ fontSize: 11, color: LIGHT.inkFaint, marginBottom: 4 }}>Jobsesame (Pty) Ltd &middot; South Africa</p>
-              <a href="mailto:support@jobsesame.co.za" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>support@jobsesame.co.za</a>
+              <a href="mailto:hello@jobsesame.co" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>hello@jobsesame.co</a>
             </div>
             {columns.map(col => (
               <div key={col.heading}>
@@ -92,7 +92,7 @@ export default function Footer({ theme = 'dark' }: Props) {
               <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>ZA Registered</span>
             </div>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.1)', marginBottom: 5 }}>Jobsesame (Pty) Ltd · South Africa</p>
-            <a href="mailto:support@jobsesame.co.za" className="footer-link" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none', transition: 'color 0.15s' }}>support@jobsesame.co.za</a>
+            <a href="mailto:hello@jobsesame.co" className="footer-link" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none', transition: 'color 0.15s' }}>hello@jobsesame.co</a>
           </div>
           {columns.map(col => (
             <div key={col.heading}>

@@ -3,11 +3,11 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Find Jobs | Jobsesame',
   description: 'Browse thousands of jobs worldwide. AI rewrites your CV for every application in 30 seconds. Free to start.',
-  alternates: { canonical: 'https://www.jobsesame.co.za/jobs' },
+  alternates: { canonical: 'https://www.jobsesame.co/jobs' },
   openGraph: {
     title: 'Find Jobs | Jobsesame',
     description: 'Browse thousands of jobs worldwide. AI rewrites your CV for every application in 30 seconds. Free to start.',
-    url: 'https://www.jobsesame.co.za/jobs',
+    url: 'https://www.jobsesame.co/jobs',
     siteName: 'Jobsesame',
     locale: 'en_US',
     type: 'website',

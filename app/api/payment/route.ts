@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { createLemonSqueezyCheckout } from '@/app/lib/lemonsqueezy';
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 function checkRateLimit(userId: string, max: number): boolean {
@@ -15,14 +16,7 @@ function checkRateLimit(userId: string, max: number): boolean {
   return true;
 }
 
-// Credit-pack pricing kept here for any legacy reference, but the purchase
-// flow for it has been removed from the UI (homepage pricing + account page) —
-// Free and Pro (USD-only now) are the only plans users can buy.
-const PLAN_AMOUNTS: Record<string, Record<string, number>> = {
-  credits: { ZAR: 9900, USD: 599 },
-  pro:     { ZAR: 24900, USD: 2500 },
-};
-
+// Pro is the only paid plan — billed monthly in USD via Lemon Squeezy.
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
@@ -33,10 +27,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { plan, currency } = await req.json();
+    const { plan } = await req.json();
 
-    if (!plan || !currency) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (plan !== 'pro') {
+      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
     const clerkUser = await currentUser();
@@ -45,39 +39,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No email found for account' }, { status: 400 });
     }
 
-    const resolvedCurrency = currency === 'ZAR' ? 'ZAR' : 'USD';
-    const amount = PLAN_AMOUNTS[plan]?.[resolvedCurrency];
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://www.jobsesame.co';
+    const redirectUrl = `${baseUrl}/payment/success`;
 
-    if (!amount) {
-      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
-    }
-
-    const reference = `jobsesame_${plan}_${Date.now()}`;
-    const callbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co.za'}/payment/success`;
-
-    const res = await fetch('https://api.paystack.co/transaction/initialize', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        amount,
-        currency: resolvedCurrency,
-        reference,
-        callback_url: callbackUrl,
-      }),
+    const checkoutUrl = await createLemonSqueezyCheckout({
+      email,
+      redirectUrl,
+      custom: { clerk_user_id: userId, plan: 'pro' },
     });
 
-    const data = await res.json();
-
-    if (!data.status) {
-      return NextResponse.json({ error: data.message || 'Payment initialisation failed' }, { status: 400 });
-    }
-
-    return NextResponse.json({ authorizationUrl: data.data.authorization_url });
-  } catch (err) {
+    return NextResponse.json({ authorizationUrl: checkoutUrl });
+  } catch (err: any) {
+    console.error('Payment checkout error:', err?.message);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }

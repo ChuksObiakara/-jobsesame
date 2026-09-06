@@ -70,7 +70,7 @@ function UnsubscribeContent() {
         <p style={{ fontSize: 14, color: CLAY, lineHeight: 1.7, marginBottom: 28 }}>{errorMsg}</p>
         <p style={{ fontSize: 13, color: INK_SOFT }}>
           Sign in to your account to manage email preferences, or{' '}
-          <a href="mailto:support@jobsesame.co.za" style={{ color: ACCENT }}>contact support</a>.
+          <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>contact support</a>.
         </p>
       </>
     );

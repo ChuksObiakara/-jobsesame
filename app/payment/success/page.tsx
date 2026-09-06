@@ -5,23 +5,38 @@ import { INK, INK_SOFT, INK_FAINT, PAPER, CARD, ACCENT, LINE, SANS } from '../..
 
 function PaymentContent() {
   const searchParams = useSearchParams();
-  const reference = searchParams.get('reference');
+  const reference = searchParams.get('order_id') || searchParams.get('checkout_id');
   const [status, setStatus] = useState<'loading' | 'success' | 'failed'>('loading');
 
   useEffect(() => {
-    if (!reference) { setStatus('failed'); return; }
-    fetch('/api/payment/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reference }),
-    })
-      .then(r => r.json())
-      .then(d => {
-        if (d.success) { setStatus('success'); }
-        else setStatus('failed');
-      })
-      .catch(() => setStatus('failed'));
-  }, [reference]);
+    let cancelled = false;
+    let attempts = 0;
+
+    // Lemon Squeezy confirms the subscription via webhook, which can land a
+    // few seconds after this redirect — poll briefly instead of a single check.
+    const check = () => {
+      attempts += 1;
+      fetch('/api/payment/verify', { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+          if (cancelled) return;
+          if (d.success) {
+            setStatus('success');
+          } else if (attempts >= 10) {
+            setStatus('failed');
+          } else {
+            setTimeout(check, 1500);
+          }
+        })
+        .catch(() => {
+          if (!cancelled && attempts < 10) setTimeout(check, 1500);
+          else if (!cancelled) setStatus('failed');
+        });
+    };
+
+    check();
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div style={{background:CARD,border:`1.5px solid ${ACCENT}`,borderRadius:8,padding:40,maxWidth:480,width:"100%",textAlign:"center"}}>

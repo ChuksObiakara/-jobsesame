@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, ACCENT, CLAY, SERIF } from '../lib/theme';
+import { downloadPdf } from '../lib/download-pdf-client';
 
 interface Props {
   cvData: any;
@@ -52,32 +53,18 @@ export default function CoverLetter({ cvData, userName, onClose }: Props) {
     }
   }
 
-  async function downloadPDF() {
-    const { default: jsPDF } = await import('jspdf');
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 20;
-    const maxWidth = pageWidth - margin * 2;
-
-    // Header
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(cvData.name || userName, margin, 20);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    const contactParts = [cvData.email, cvData.phone, cvData.location].filter(Boolean);
-    doc.text(contactParts.join('  |  '), margin, 27);
-
-    // Divider
-    doc.setDrawColor(180, 180, 180);
-    doc.line(margin, 31, pageWidth - margin, 31);
-
-    // Body
-    doc.setFontSize(11);
-    const lines = doc.splitTextToSize(coverLetterText, maxWidth);
-    doc.text(lines, margin, 40);
-
-    doc.save(`cover-letter-${jobTitle.replace(/\s+/g, '-').toLowerCase()}.pdf`);
+  function downloadPDF() {
+    downloadPdf(
+      'cover-letter',
+      {
+        name: cvData.name || userName,
+        email: cvData.email,
+        phone: cvData.phone,
+        location: cvData.location,
+        bodyText: coverLetterText,
+      },
+      `cover-letter-${jobTitle.replace(/\s+/g, '-').toLowerCase()}.pdf`,
+    );
   }
 
   function copyToClipboard() {

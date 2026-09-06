@@ -5,7 +5,7 @@ import { Resend } from 'resend';
 
 function buildReferralLink(userId: string): string {
   const referralCode = Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase();
-  const appUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://jobsesame.co.za';
+  const appUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://jobsesame.co';
   return `${appUrl}?ref=${referralCode}`;
 }
 
@@ -120,7 +120,7 @@ function buildEmailHtml(name: string, email: string, userId: string): string {
           <!-- CTA BUTTON -->
           <tr>
             <td style="background:#072E16;padding:32px 36px;text-align:center;">
-              <a href="https://jobsesame.co.za/dashboard"
+              <a href="https://jobsesame.co/dashboard"
                 style="display:inline-block;background:#C8E600;color:#052A14;font-size:15px;font-weight:900;padding:15px 40px;border-radius:99px;text-decoration:none;letter-spacing:-0.2px;">
                 Open your dashboard →
               </a>
@@ -187,9 +187,9 @@ function buildEmailHtml(name: string, email: string, userId: string): string {
               </p>
               <p style="margin:0;font-size:11px;color:#0D3A1A;">
                 © 2025 Jobsesame &nbsp;·&nbsp;
-                <a href="https://jobsesame.co.za/privacy" style="color:#1A5A2A;text-decoration:none;">Privacy Policy</a>
+                <a href="https://jobsesame.co/privacy" style="color:#1A5A2A;text-decoration:none;">Privacy Policy</a>
                 &nbsp;·&nbsp;
-                <a href="https://jobsesame.co.za/terms" style="color:#1A5A2A;text-decoration:none;">Terms of Service</a>
+                <a href="https://jobsesame.co/terms" style="color:#1A5A2A;text-decoration:none;">Terms of Service</a>
               </p>
             </td>
           </tr>
@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
 
     const fromAddress = process.env.RESEND_FROM_EMAIL
       ? `Jobsesame <${process.env.RESEND_FROM_EMAIL}>`
-      : 'Jobsesame <noreply@jobsesame.co.za>';
+      : 'Jobsesame <noreply@jobsesame.co>';
     const emailOpts = {
       to: email,
       subject: 'Welcome to Jobsesame — your 3 free applications are ready',

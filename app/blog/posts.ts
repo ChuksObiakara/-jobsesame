@@ -570,7 +570,7 @@ The UK has a large and welcoming South African community — particularly in Lon
 
 ## Start your UK job search today
 
-Jobsesame's UK platform is built for exactly this: South African professionals applying to UK roles. Upload your CV once and our AI rewrites it for every UK job in 30 seconds — matching British CV conventions, ATS keywords, and the specific language each employer is looking for. Browse live UK jobs and start applying at jobsesame.co.za/uk.`,
+Jobsesame's UK platform is built for exactly this: South African professionals applying to UK roles. Upload your CV once and our AI rewrites it for every UK job in 30 seconds — matching British CV conventions, ATS keywords, and the specific language each employer is looking for. Browse live UK jobs and start applying at jobsesame.co/uk.`,
   },
   {
     slug: 'south-african-cv-vs-uk-cv',
@@ -658,7 +658,7 @@ Adapting your CV to UK standards for every application is time-consuming. Jobses
 
 ## Start applying to UK jobs with the right CV
 
-Do not let a format mismatch cost you opportunities you are qualified for. Jobsesame's UK platform makes it straightforward to apply to UK jobs with a CV that meets British standards. Upload your CV once, browse live UK jobs, and let the AI handle the rewrite for every application at jobsesame.co.za/uk.`,
+Do not let a format mismatch cost you opportunities you are qualified for. Jobsesame's UK platform makes it straightforward to apply to UK jobs with a CV that meets British standards. Upload your CV once, browse live UK jobs, and let the AI handle the rewrite for every application at jobsesame.co/uk.`,
   },
   {
     slug: 'best-cities-in-the-uk-to-work-2025',
@@ -777,7 +777,7 @@ The best city depends on your industry, your lifestyle priorities, and your stag
 
 ## Find UK jobs across every city on Jobsesame
 
-Jobsesame's UK jobs platform lists live roles across every UK city. Our AI matches your CV to the roles that fit best and rewrites it for each application in 30 seconds — whether you are targeting London, Manchester, or Edinburgh. Start browsing at jobsesame.co.za/uk.`,
+Jobsesame's UK jobs platform lists live roles across every UK city. Our AI matches your CV to the roles that fit best and rewrites it for each application in 30 seconds — whether you are targeting London, Manchester, or Edinburgh. Start browsing at jobsesame.co/uk.`,
   },
   {
     slug: 'uk-skilled-worker-visa-guide-south-africans',
@@ -883,7 +883,7 @@ You cannot: claim most public funds (benefits), work for a different employer wi
 
 ## Find your UK job and start the process
 
-The Skilled Worker Visa application cannot begin until you have a job offer and a CoS. That means finding the right UK role is the first — and most important — step. Jobsesame's UK jobs platform lists live positions from employers across the UK. Our AI rewrites your CV to match UK standards and each specific job description, giving you the best chance of landing an offer. Start your UK job search at jobsesame.co.za/uk.`,
+The Skilled Worker Visa application cannot begin until you have a job offer and a CoS. That means finding the right UK role is the first — and most important — step. Jobsesame's UK jobs platform lists live positions from employers across the UK. Our AI rewrites your CV to match UK standards and each specific job description, giving you the best chance of landing an offer. Start your UK job search at jobsesame.co/uk.`,
   },
   {
     slug: 'average-uk-salaries-by-industry-2025',
@@ -1023,7 +1023,7 @@ UK employers generally expect negotiation. Research shows that most first offers
 
 ## UK salary intelligence on Jobsesame
 
-Jobsesame's UK platform provides live salary intelligence drawn from current UK job postings. When you browse UK jobs and apply, you can see real salary ranges for your target roles — not estimates from years-old surveys. Start exploring UK salaries and live job opportunities at jobsesame.co.za/uk.`,
+Jobsesame's UK platform provides live salary intelligence drawn from current UK job postings. When you browse UK jobs and apply, you can see real salary ranges for your target roles — not estimates from years-old surveys. Start exploring UK salaries and live job opportunities at jobsesame.co/uk.`,
   },
   {
     slug: 'how-to-write-a-uk-cover-letter',
@@ -1103,7 +1103,7 @@ UK cover letters do not include salary expectations unless the job posting speci
 
 ## Generating a British cover letter in 30 seconds
 
-Jobsesame's AI cover letter generator creates fully British-formatted cover letters automatically — tailored to the specific UK job you are applying for, in the correct structure, tone, and spelling conventions. It uses the job description and your CV to write a targeted letter you can send immediately. Browse UK jobs and generate your cover letter at jobsesame.co.za/uk.`,
+Jobsesame's AI cover letter generator creates fully British-formatted cover letters automatically — tailored to the specific UK job you are applying for, in the correct structure, tone, and spelling conventions. It uses the job description and your CV to write a targeted letter you can send immediately. Browse UK jobs and generate your cover letter at jobsesame.co/uk.`,
   },
   {
     slug: 'how-to-find-a-job-in-south-africa-2025',
@@ -1213,7 +1213,7 @@ I would welcome 30 minutes to walk you through the strategy I would bring to Cap
 
 ## Generate your cover letter in seconds
 
-Jobsesame's AI cover letter tool generates a fully personalised, industry-specific cover letter based on your CV and the job description. It takes 30 seconds and follows the exact three-paragraph structure that gets results. Try it free at jobsesame.co.za.`,
+Jobsesame's AI cover letter tool generates a fully personalised, industry-specific cover letter based on your CV and the job description. It takes 30 seconds and follows the exact three-paragraph structure that gets results. Try it free at jobsesame.co.`,
     status: 'published',
   },
   {

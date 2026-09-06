@@ -5,11 +5,11 @@ import { INK, INK_SOFT, LINE, PAPER, CARD, ACCENT, SERIF, SANS } from '../lib/th
 export const metadata: Metadata = {
   title: 'Terms of Service | Jobsesame',
   description: 'The terms and conditions for using Jobsesame’s AI CV rewriting and job search tools.',
-  alternates: { canonical: 'https://www.jobsesame.co.za/terms' },
+  alternates: { canonical: 'https://www.jobsesame.co/terms' },
   openGraph: {
     title: 'Terms of Service | Jobsesame',
     description: 'The terms and conditions for using Jobsesame’s AI CV rewriting and job search tools.',
-    url: 'https://www.jobsesame.co.za/terms',
+    url: 'https://www.jobsesame.co/terms',
     siteName: 'Jobsesame',
     locale: 'en_US',
     type: 'website',
@@ -60,8 +60,8 @@ export default function TermsPage() {
         </div>
 
         {section('1. Acceptance of Terms', <>
-          <p style={{ margin: '0 0 10px' }}>By creating an account or using the Jobsesame platform at jobsesame.co.za, you agree to be bound by these Terms of Service. If you do not agree, you may not use the platform.</p>
-          <p style={{ margin: 0 }}>These terms constitute a binding agreement between you and <strong style={{ color: INK }}>Jobsesame (Pty) Ltd</strong>. For questions, contact <a href="mailto:support@jobsesame.co.za" style={{ color: ACCENT }}>support@jobsesame.co.za</a>.</p>
+          <p style={{ margin: '0 0 10px' }}>By creating an account or using the Jobsesame platform at jobsesame.co, you agree to be bound by these Terms of Service. If you do not agree, you may not use the platform.</p>
+          <p style={{ margin: 0 }}>These terms constitute a binding agreement between you and <strong style={{ color: INK }}>Jobsesame (Pty) Ltd</strong>. For questions, contact <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a>.</p>
         </>)}
 
         {section('2. Description of Service', <>
@@ -94,7 +94,7 @@ export default function TermsPage() {
           <div style={{ background: 'rgba(63,93,82,0.07)', border: `1px solid rgba(63,93,82,0.15)`, borderRadius: 10, padding: '14px 18px', marginBottom: 14 }}>
             <strong style={{ color: ACCENT, fontSize: 13 }}>Cooling-off period (Consumer Protection Act s. 44)</strong>
             <p style={{ margin: '8px 0 0', fontSize: 13, color: INK_SOFT }}>
-              You have a <strong style={{ color: INK }}>5 business day cooling-off period</strong> from the date of any purchase. If you cancel within 5 business days, you are entitled to a full refund. To cancel, email <a href="mailto:billing@jobsesame.co.za" style={{ color: ACCENT }}>billing@jobsesame.co.za</a> with your order details.
+              You have a <strong style={{ color: INK }}>5 business day cooling-off period</strong> from the date of any purchase. If you cancel within 5 business days, you are entitled to a full refund. To cancel, email <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a> with your order details.
             </p>
           </div>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
@@ -108,7 +108,7 @@ export default function TermsPage() {
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {li(<><strong style={{ color: INK }}>30-day money-back guarantee</strong> — Pro subscribers may request a full refund within 30 days of their first subscription payment.</>)}
             {li(<><strong style={{ color: INK }}>5-day cooling-off period</strong> — all purchases may be fully refunded within 5 business days as required by the Consumer Protection Act.</>)}
-            {li(<>To request a refund, email <a href="mailto:billing@jobsesame.co.za" style={{ color: ACCENT }}>billing@jobsesame.co.za</a>. Refunds are processed within 10 business days via your original payment method.</>)}
+            {li(<>To request a refund, email <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a>. Refunds are processed within 10 business days via your original payment method.</>)}
             {li(<>See our <a href="/refund" style={{ color: ACCENT }}>full Refund Policy</a> for details.</>)}
           </ul>
         </>)}
@@ -130,7 +130,7 @@ export default function TermsPage() {
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {li('You own your CV data. By uploading it to Jobsesame, you grant us a limited licence to process it solely to provide the service.')}
             {li('We never share your CV with employers or recruiters without your explicit action.')}
-            {li('You may delete your CV data at any time from your dashboard or by emailing privacy@jobsesame.co.za.')}
+            {li('You may delete your CV data at any time from your dashboard or by emailing hello@jobsesame.co.')}
             {li('Upon account deletion, your CV data will be permanently deleted within 30 days.')}
           </ul>
         </>)}
@@ -167,7 +167,7 @@ export default function TermsPage() {
         </>)}
 
         {section('12. Governing Law', <>
-          <p style={{ margin: 0 }}>These Terms of Service are governed by the laws of the Republic of South Africa. Any disputes shall be subject to the exclusive jurisdiction of the South African courts. If you have a dispute with us, please first contact us at <a href="mailto:support@jobsesame.co.za" style={{ color: ACCENT }}>support@jobsesame.co.za</a> — we will make every reasonable effort to resolve it amicably.</p>
+          <p style={{ margin: 0 }}>These Terms of Service are governed by the laws of the Republic of South Africa. Any disputes shall be subject to the exclusive jurisdiction of the South African courts. If you have a dispute with us, please first contact us at <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a> — we will make every reasonable effort to resolve it amicably.</p>
         </>)}
 
         {section('13. Changes to Terms', <>
@@ -176,9 +176,9 @@ export default function TermsPage() {
 
         {section('14. Contact', <>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
-            {li(<>General support: <a href="mailto:support@jobsesame.co.za" style={{ color: ACCENT }}>support@jobsesame.co.za</a></>)}
-            {li(<>Billing and refunds: <a href="mailto:billing@jobsesame.co.za" style={{ color: ACCENT }}>billing@jobsesame.co.za</a></>)}
-            {li(<>Privacy: <a href="mailto:privacy@jobsesame.co.za" style={{ color: ACCENT }}>privacy@jobsesame.co.za</a></>)}
+            {li(<>General support: <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a></>)}
+            {li(<>Billing and refunds: <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a></>)}
+            {li(<>Privacy: <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a></>)}
           </ul>
         </>)}
 

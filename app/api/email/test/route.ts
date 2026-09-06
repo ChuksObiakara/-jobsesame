@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     RESEND_FROM_EMAIL: fromEnv || '(not set)',
     primaryFrom: fromEnv
       ? `Jobsesame <${fromEnv}>`
-      : 'Jobsesame <noreply@jobsesame.co.za>',
+      : 'Jobsesame <noreply@jobsesame.co>',
     fallbackFrom: 'Jobsesame <onboarding@resend.dev>',
     sentTo: testRecipient,
   };
@@ -36,12 +36,12 @@ export async function GET(req: NextRequest) {
 
   const primaryFrom = fromEnv
     ? `Jobsesame <${fromEnv}>`
-    : 'Jobsesame <noreply@jobsesame.co.za>';
+    : 'Jobsesame <noreply@jobsesame.co>';
 
   const sentAt = new Date().toISOString();
 
   const emailOpts = {
-    replyTo: 'support@jobsesame.co.za',
+    replyTo: 'hello@jobsesame.co',
     to: testRecipient,
     subject: `[TEST] Jobsesame email test — ${sentAt}`,
     html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#052A14;font-family:'Helvetica Neue',Arial,sans-serif;">
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 </body></html>`,
   };
 
-  // Try primary from address (noreply@jobsesame.co.za via RESEND_FROM_EMAIL)
+  // Try primary from address (noreply@jobsesame.co via RESEND_FROM_EMAIL)
   let { data, error } = await resend.emails.send({ from: primaryFrom, ...emailOpts });
   let usedFrom = primaryFrom;
   let fallbackUsed = false;
@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
       emailSent: !error,
       usedFallback: fallbackUsed,
       recommendation: fallbackUsed
-        ? `Domain ${fromEnv} not verified in Resend — verify it at resend.com/domains to send from noreply@jobsesame.co.za`
+        ? `Domain ${fromEnv} not verified in Resend — verify it at resend.com/domains to send from noreply@jobsesame.co`
         : 'All checks passed',
     },
   });

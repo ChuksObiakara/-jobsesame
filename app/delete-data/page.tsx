@@ -24,7 +24,7 @@ export default function DeleteDataPage() {
       if (!res.ok) throw new Error('Request failed');
       setSubmitted(true);
     } catch {
-      setError('Something went wrong. Please email privacy@jobsesame.co.za directly.');
+      setError('Something went wrong. Please email hello@jobsesame.co directly.');
     } finally {
       setLoading(false);
     }
@@ -134,7 +134,7 @@ export default function DeleteDataPage() {
 
         <p style={{ fontSize: 12, color: INK_FAINT, textAlign: 'center', marginTop: 20, lineHeight: 1.7 }}>
           Or email us directly at{' '}
-          <a href="mailto:privacy@jobsesame.co.za" style={{ color: ACCENT }}>privacy@jobsesame.co.za</a>
+          <a href="mailto:hello@jobsesame.co" style={{ color: ACCENT }}>hello@jobsesame.co</a>
           {' '}· <a href="/privacy" style={{ color: ACCENT }}>Privacy Policy</a>
         </p>
       </div>

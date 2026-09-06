@@ -14,18 +14,18 @@ const plusJakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "Jobsesame — AI CV Optimiser for Every Job Application",
   description: "Upload your CV once. Paste any job description and AI rewrites your CV in 30 seconds to pass ATS filters and get more interviews. Free for 3 rewrites.",
-  metadataBase: new URL("https://www.jobsesame.co.za"),
+  metadataBase: new URL("https://www.jobsesame.co"),
   alternates: {
-    canonical: "https://www.jobsesame.co.za",
+    canonical: "https://www.jobsesame.co",
   },
   openGraph: {
     title: "Jobsesame — AI CV Optimiser for Every Job Application",
     description: "Upload your CV once. Paste any job description and AI rewrites your CV in 30 seconds to pass ATS filters and get more interviews. Free for 3 rewrites.",
-    url: "https://www.jobsesame.co.za",
+    url: "https://www.jobsesame.co",
     siteName: "Jobsesame",
     images: [
       {
-        url: "https://www.jobsesame.co.za/og-image.png",
+        url: "https://www.jobsesame.co/og-image.png",
         width: 1200,
         height: 630,
         alt: "Jobsesame — AI CV Optimiser for Every Job Application",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Jobsesame — AI CV Optimiser for Every Job Application",
     description: "Upload your CV once. Paste any job description and AI rewrites your CV in 30 seconds to pass ATS filters and get more interviews. Free for 3 rewrites.",
-    images: ["https://www.jobsesame.co.za/og-image.png"],
+    images: ["https://www.jobsesame.co/og-image.png"],
   },
 };
 
@@ -47,18 +47,18 @@ const jsonLd = [
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'Jobsesame',
-    url: 'https://www.jobsesame.co.za',
-    logo: 'https://www.jobsesame.co.za/og-image.png',
+    url: 'https://www.jobsesame.co',
+    logo: 'https://www.jobsesame.co/og-image.png',
     sameAs: [],
   },
   {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'Jobsesame',
-    url: 'https://www.jobsesame.co.za',
+    url: 'https://www.jobsesame.co',
     potentialAction: {
       '@type': 'SearchAction',
-      target: 'https://www.jobsesame.co.za/blog?q={search_term_string}',
+      target: 'https://www.jobsesame.co/blog?q={search_term_string}',
       'query-input': 'required name=search_term_string',
     },
   },

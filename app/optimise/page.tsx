@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, SERIF, SANS } from '../lib/theme';
 import { captureClient } from '../lib/posthog-client';
 import { ANALYTICS_EVENTS } from '../lib/analytics-events';
+import { downloadPdf } from '../lib/download-pdf-client';
 
 interface CVExperience {
   title?: string;
@@ -97,124 +98,18 @@ export default function OptimisePage() {
     }
   };
 
-  const downloadPDF = async () => {
+  const downloadPDF = () => {
     if (!rewrittenCV) return;
     setDownloading(true);
     try {
-      const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageWidth = 210;
-      const margin = 20;
-      const contentWidth = pageWidth - (margin * 2);
-      let y = 20;
-
-      doc.setFillColor(28, 26, 22);
-      doc.rect(0, 0, 210, 28, 'F');
-      doc.setTextColor(250, 248, 243);
-      doc.setFontSize(18);
-      doc.setFont('helvetica', 'bold');
-      doc.text(rewrittenCV.name || '', margin, 13);
-      doc.setTextColor(200, 200, 195);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text(rewrittenCV.title || '', margin, 21);
-      y = 36;
-
-      doc.setTextColor(80, 80, 80);
-      doc.setFontSize(9);
-      const contactParts = [rewrittenCV.location, rewrittenCV.email, rewrittenCV.phone].filter(Boolean);
-      if (contactParts.length) doc.text(contactParts.join('  |  '), margin, y);
-      y += 8;
-
-      doc.setDrawColor(28, 26, 22);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 6;
-
-      const addSection = (title: string, content: () => void) => {
-        if (y > 265) { doc.addPage(); y = 20; }
-        doc.setFillColor(245, 243, 238);
-        doc.rect(margin, y - 4, contentWidth, 7, 'F');
-        doc.setTextColor(28, 26, 22);
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text(title.toUpperCase(), margin + 2, y + 1);
-        y += 7;
-        doc.setTextColor(51, 51, 51);
-        doc.setFont('helvetica', 'normal');
-        content();
-        y += 4;
-      };
-
-      if (rewrittenCV.summary) {
-        addSection('Professional Summary', () => {
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'italic');
-          const lines = doc.splitTextToSize(rewrittenCV.summary!, contentWidth);
-          doc.text(lines, margin, y);
-          y += lines.length * 5;
-        });
-      }
-
-      if (rewrittenCV.skills?.length) {
-        addSection('Skills', () => {
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'normal');
-          const lines = doc.splitTextToSize(rewrittenCV.skills!.join('  ·  '), contentWidth);
-          doc.text(lines, margin, y);
-          y += lines.length * 5;
-        });
-      }
-
-      if (rewrittenCV.experience?.length) {
-        addSection('Experience', () => {
-          rewrittenCV.experience!.forEach((exp) => {
-            if (y > 265) { doc.addPage(); y = 20; }
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(28, 26, 22);
-            doc.text(exp.title || '', margin, y);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(63, 93, 82);
-            doc.setFontSize(9);
-            doc.text(`${exp.company || ''}  |  ${exp.duration || ''}`, margin, y + 5);
-            y += 10;
-            doc.setTextColor(68, 68, 68);
-            exp.bullets?.forEach((bullet: string) => {
-              if (y > 265) { doc.addPage(); y = 20; }
-              const lines = doc.splitTextToSize(`• ${bullet}`, contentWidth - 4);
-              doc.text(lines, margin + 2, y);
-              y += lines.length * 4.5;
-            });
-            y += 3;
-          });
-        });
-      }
-
-      if (rewrittenCV.education) {
-        addSection('Education', () => {
-          doc.setFontSize(10);
-          doc.text(rewrittenCV.education!, margin, y);
-          y += 6;
-        });
-      }
-
-      if (rewrittenCV.languages?.length) {
-        addSection('Languages', () => {
-          doc.setFontSize(10);
-          doc.text(rewrittenCV.languages!.join('  |  '), margin, y);
-          y += 6;
-        });
-      }
-
       const fileName = `${(rewrittenCV.name || 'CV').replace(/\s+/g, '_')}_CV_for_${(jobCompany || jobTitle).replace(/\s+/g, '_')}.pdf`;
-      doc.save(fileName);
+      downloadPdf('cv', rewrittenCV, fileName);
       // Only the entry point is sent — never the filename (contains the name).
       captureClient(ANALYTICS_EVENTS.CV_DOWNLOADED, { source: 'optimise_page' });
     } catch {
       setError('PDF download failed. Please try again.');
     } finally {
-      setDownloading(false);
+      setTimeout(() => setDownloading(false), 600);
     }
   };
 

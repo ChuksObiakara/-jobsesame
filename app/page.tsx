@@ -147,6 +147,29 @@ export default function Home() {
     }
   };
 
+  // Low-score conversion prompt: when the free check comes back under 60%,
+  // name the specific weak categories (not just a generic score) so the
+  // sign-up CTA reads as "here's exactly what we fix" rather than a blanket pitch.
+  const FIX_COPY: Record<string, string> = {
+    Keywords: 'Match the keywords this ATS is scanning for',
+    'Impact & metrics': 'Rewrite weak bullet points with real numbers',
+    Structure: 'Fix formatting that confuses ATS parsers',
+    Completeness: 'Fill in the sections recruiters expect to see',
+  };
+  const isLowScore = cvAnalysisState === 'done' && cvAnalysisScores.overall < 60;
+  const weakFixes = isLowScore
+    ? (Object.entries({
+        Keywords: cvAnalysisScores.keywords,
+        'Impact & metrics': cvAnalysisScores.impact,
+        Structure: cvAnalysisScores.structure,
+        Completeness: cvAnalysisScores.completeness,
+      }) as [string, number][])
+        .sort((a, b) => a[1] - b[1])
+        .filter(([, val]) => val < 70)
+        .slice(0, 3)
+        .map(([label]) => FIX_COPY[label])
+    : [];
+
   const stats = [
     { n: '8/10', l: 'CVs never reach a human — filtered by ATS before anyone reads them' },
     { n: '90%+', l: 'Average ATS pass rate after a rewrite' },
@@ -342,10 +365,31 @@ export default function Home() {
                   </div>
                 )}
 
+                {isLowScore && weakFixes.length > 0 && (
+                  <div style={{ background: 'rgba(168,92,64,0.07)', border: `1.5px solid ${CLAY}`, borderRadius: 6, padding: '16px 18px', marginBottom: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <span style={{ fontSize: 15 }}>⚠️</span>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, color: INK }}>Most ATS systems would reject this CV</span>
+                    </div>
+                    <p style={{ fontSize: 12.5, color: INK_SOFT, lineHeight: 1.6, margin: '0 0 12px' }}>
+                      A score under 60% usually means automated screening filters this out before a person ever sees it. Sign up free and Jobsesame fixes it in about 30 seconds:
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                      {weakFixes.map(fix => (
+                        <div key={fix} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: INK, lineHeight: 1.5 }}>
+                          <span style={{ color: ACCENT, fontWeight: 700, flexShrink: 0 }}>✓</span> {fix}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <a href="/sign-up" style={{ display: 'block', background: ACCENT, color: PAPER, fontSize: 14, fontWeight: 600, padding: '14px 0', borderRadius: 3, textDecoration: 'none', textAlign: 'center' }}>
-                  Fix everything with AI — free
+                  {isLowScore ? 'Fix all of this now — free' : 'Fix everything with AI — free'}
                 </a>
-                <div style={{ textAlign: 'center', fontSize: 12, color: INK_FAINT, marginTop: 10 }}>No credit card &middot; 30 seconds</div>
+                <div style={{ textAlign: 'center', fontSize: 12, color: INK_FAINT, marginTop: 10 }}>
+                  {isLowScore ? 'No credit card · 3 free rewrites · unlimited with Pro' : 'No credit card · 30 seconds'}
+                </div>
               </div>
             )}
           </div>
@@ -499,7 +543,7 @@ export default function Home() {
         </div>
         <div className="stack-mobile" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 12 : 32, flexWrap: 'wrap', marginTop: 36, paddingTop: 28, borderTop: `1px solid ${LINE}` }}>
           {[
-            ['M9 12l2 2 4-4', 'Secure payment via Paystack'],
+            ['M9 12l2 2 4-4', 'Secure payment via Lemon Squeezy'],
             ['M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6z', '30-day money-back guarantee on Pro'],
             ['M6 6l12 12M6 18L18 6', 'Cancel anytime, no lock-in'],
           ].map(([path, label]) => (

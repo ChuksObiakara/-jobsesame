@@ -8,6 +8,7 @@ import { JOB_BOARD_ENABLED } from '../lib/flags';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF, SANS } from '../lib/theme';
 import { captureClient } from '../lib/posthog-client';
 import { ANALYTICS_EVENTS } from '../lib/analytics-events';
+import { downloadPdf } from '../lib/download-pdf-client';
 
 const SALARY_DATA: Record<string, { min: number; max: number }> = {
   'software engineer': { min: 480000, max: 720000 },
@@ -412,59 +413,11 @@ export default function Dashboard() {
     setCvOptimizing(false);
   };
 
-  const downloadOptimizedCV = async () => {
+  const downloadOptimizedCV = () => {
     if (!cvOptimizedResult || !cvOptimizeJob) return;
-    const { jsPDF } = await import('jspdf');
     const cv = cvOptimizedResult;
-    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-    const pageW = 210; const margin = 18; const contentW = pageW - margin * 2;
-    let y = 0;
-    doc.setFillColor(28, 26, 22); doc.rect(0, 0, pageW, 44, 'F');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(255, 255, 255);
-    doc.text(cv.name || '', margin, 17);
-    doc.setFontSize(12); doc.setTextColor(200, 200, 195);
-    doc.text(cv.title || '', margin, 27);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(210, 210, 205);
-    doc.text([cv.location, cv.email, cv.phone].filter(Boolean).join('   ·   '), margin, 37);
-    y = 54;
-    const sectionHdr = (t: string) => {
-      if (y > 268) { doc.addPage(); y = 18; }
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(28, 26, 22);
-      doc.text(t.toUpperCase(), margin, y); doc.setDrawColor(28, 26, 22);
-      doc.line(margin, y + 1.5, pageW - margin, y + 1.5); y += 7;
-    };
-    if (cv.summary) {
-      sectionHdr('Professional Summary');
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-      const lines = doc.splitTextToSize(cv.summary, contentW); doc.text(lines, margin, y);
-      y += (lines as string[]).length * 5.2 + 8;
-    }
-    if (cv.skills?.length) {
-      sectionHdr('Skills');
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-      const sl = doc.splitTextToSize((cv.skills as string[]).join('   ·   '), contentW); doc.text(sl, margin, y);
-      y += (sl as string[]).length * 5.2 + 8;
-    }
-    if (cv.experience?.length) {
-      sectionHdr('Experience');
-      cv.experience.forEach((exp: any) => {
-        if (y > 268) { doc.addPage(); y = 18; }
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(28, 26, 22);
-        doc.text(exp.title || '', margin, y); y += 5.5;
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(80, 80, 80);
-        doc.text(`${exp.company || ''}   ·   ${exp.duration || ''}`, margin, y); y += 5;
-        (exp.bullets || []).forEach((b: string) => {
-          if (y > 275) { doc.addPage(); y = 18; }
-          const bl = doc.splitTextToSize(`•  ${b}`, contentW - 4);
-          doc.setFontSize(9); doc.setTextColor(50, 50, 50); doc.text(bl, margin + 2, y);
-          y += (bl as string[]).length * 4.6;
-        });
-        y += 6;
-      });
-    }
-    if (cv.education) { sectionHdr('Education'); doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40); doc.text(cv.education, margin, y); y += 11; }
-    if (cv.languages?.length) { sectionHdr('Languages'); doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40); doc.text((cv.languages as string[]).join('   ·   '), margin, y); }
-    doc.save(`${(cv.name||'CV').replace(/\s+/g,'_')}_${(cvOptimizeJob.title||'job').replace(/\s+/g,'_')}_optimised.pdf`);
+    const fileName = `${(cv.name||'CV').replace(/\s+/g,'_')}_${(cvOptimizeJob.title||'job').replace(/\s+/g,'_')}_optimised.pdf`;
+    downloadPdf('cv', cv, fileName);
     captureClient(ANALYTICS_EVENTS.CV_DOWNLOADED, { source: 'dashboard_job' });
   };
 
@@ -484,123 +437,12 @@ export default function Dashboard() {
     finally { setRewriting(false); }
   };
 
-  const downloadCV = async () => {
-    const { jsPDF } = await import('jspdf');
+  const downloadCV = () => {
+    if (!rewrittenCV) return;
     const cv = rewrittenCV;
-    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-    const pageW = 210;
-    const margin = 18;
-    const contentW = pageW - margin * 2;
-    let y = 0;
-
-    // Header bar
-    doc.setFillColor(28, 26, 22);
-    doc.rect(0, 0, pageW, 44, 'F');
-
-    // Name — white
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    doc.setTextColor(255, 255, 255);
-    doc.text(cv.name || '', margin, 17);
-
-    // Title
-    doc.setFontSize(12);
-    doc.setTextColor(200, 200, 195);
-    doc.text(cv.title || '', margin, 27);
-
-    // Contact row
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(210, 210, 205);
-    const contact = [cv.location, cv.email, cv.phone].filter(Boolean).join('   ·   ');
-    doc.text(contact, margin, 37);
-
-    y = 54;
-
-    const sectionHeader = (title: string) => {
-      if (y > 268) { doc.addPage(); y = 18; }
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(28, 26, 22);
-      doc.text(title.toUpperCase(), margin, y);
-      doc.setDrawColor(28, 26, 22);
-      doc.line(margin, y + 1.5, pageW - margin, y + 1.5);
-      y += 7;
-    };
-
-    // Summary
-    if (cv.summary) {
-      sectionHeader('Professional Summary');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(40, 40, 40);
-      const lines = doc.splitTextToSize(cv.summary, contentW);
-      doc.text(lines, margin, y);
-      y += (lines as string[]).length * 5.2 + 8;
-    }
-
-    // Skills
-    if (cv.skills?.length) {
-      sectionHeader('Skills');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(40, 40, 40);
-      const skillLines = doc.splitTextToSize((cv.skills as string[]).join('   ·   '), contentW);
-      doc.text(skillLines, margin, y);
-      y += (skillLines as string[]).length * 5.2 + 8;
-    }
-
-    // Experience
-    if (cv.experience?.length) {
-      sectionHeader('Experience');
-      cv.experience.forEach((exp: any) => {
-        if (y > 268) { doc.addPage(); y = 18; }
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11);
-        doc.setTextColor(28, 26, 22);
-        doc.text(exp.title || '', margin, y);
-        y += 5.5;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(80, 80, 80);
-        doc.text(`${exp.company || ''}   ·   ${exp.duration || ''}`, margin, y);
-        y += 5;
-        (exp.bullets || []).forEach((b: string) => {
-          if (y > 275) { doc.addPage(); y = 18; }
-          doc.setFontSize(9);
-          doc.setTextColor(50, 50, 50);
-          const bLines = doc.splitTextToSize(`•  ${b}`, contentW - 4);
-          doc.text(bLines, margin + 2, y);
-          y += (bLines as string[]).length * 4.6;
-        });
-        y += 6;
-      });
-    }
-
-    // Education
-    if (cv.education) {
-      if (y > 262) { doc.addPage(); y = 18; }
-      sectionHeader('Education');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(40, 40, 40);
-      doc.text(cv.education, margin, y);
-      y += 11;
-    }
-
-    // Languages
-    if (cv.languages?.length) {
-      if (y > 268) { doc.addPage(); y = 18; }
-      sectionHeader('Languages');
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(40, 40, 40);
-      doc.text((cv.languages as string[]).join('   ·   '), margin, y);
-    }
-
     const safeName = (cv.name || 'CV').replace(/\s+/g, '_');
     const safeJob = (jobTitle || 'rewritten').replace(/\s+/g, '_');
-    doc.save(`${safeName}_${safeJob}.pdf`);
+    downloadPdf('cv', cv, `${safeName}_${safeJob}.pdf`);
     captureClient(ANALYTICS_EVENTS.CV_DOWNLOADED, { source: 'dashboard_tailor' });
   };
 
@@ -935,9 +777,10 @@ export default function Dashboard() {
         <div style={{display:"flex",alignItems:"center",gap:isMobile?6:10,overflowX:"auto"}}>
           <button style={navBtnStyle('overview')} onClick={()=>setActiveSection('overview')}>Dashboard</button>
           <button style={navBtnStyle('cv')} onClick={()=>setActiveSection('cv')}>My CV</button>
-          {!isMobile && <button style={navBtnStyle('referral')} onClick={()=>setActiveSection('referral')}>Free rewrites</button>}
-          {!isMobile && JOB_BOARD_ENABLED && <a href="/jobs" style={{fontSize:13,color:INK_SOFT,fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>Find Jobs</a>}
-          {!isMobile && <a href="/optimise" style={{fontSize:13,color:INK_SOFT,fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>CV Optimiser</a>}
+          <button style={navBtnStyle('referral')} onClick={()=>setActiveSection('referral')}>{isMobile ? 'Rewrites' : 'Free rewrites'}</button>
+          {JOB_BOARD_ENABLED && <a href="/jobs" style={{fontSize:isMobile?12:13,color:INK_SOFT,fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>{isMobile ? 'Jobs' : 'Find Jobs'}</a>}
+          {JOB_BOARD_ENABLED && <a href="/saved-jobs" style={{fontSize:isMobile?12:13,color:INK_SOFT,fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>{isMobile ? 'Saved' : 'Saved Jobs'}</a>}
+          <a href="/optimise" style={{fontSize:isMobile?12:13,color:INK_SOFT,fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}}>{isMobile ? 'Optimiser' : 'CV Optimiser'}</a>
           <a href="/account" style={{fontSize:isMobile?12:13,color:INK_SOFT,fontWeight:500,textDecoration:"none",padding:"8px 12px",whiteSpace:"nowrap"}} title="My Account">
             {isMobile ? '⚙' : 'My Account'}
           </a>
@@ -956,7 +799,7 @@ export default function Dashboard() {
               </h1>
               <p style={{fontSize:13,color:INK_FAINT}}>{today}</p>
             </div>
-            {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 22px",borderRadius:3,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
+            {JOB_BOARD_ENABLED && cvData && <a href="/jobs" style={{background:ACCENT,color:PAPER,fontSize:13,fontWeight:600,padding:"10px 22px",borderRadius:3,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0}}>
               Browse Jobs →
             </a>}
           </div>
@@ -1064,24 +907,26 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* D. AI Actions Row */}
-            <div>
-              <h2 style={{fontSize:15,fontWeight:600,marginBottom:12}}>AI actions</h2>
-              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
-                {[
-                  {title:"Tailor CV for a job",desc:"AI rewrites your CV for any role in 30 seconds",action:()=>setShowAiModal('tailor')},
-                  {title:"Generate cover letter",desc:"Personalised cover letter in seconds",action:()=>setShowAiModal('cover')},
-                  {title:"Optimise my CV",desc:"Full AI optimisation on the CV Optimiser tool",action:()=>window.location.href='/optimise'},
-                ].map(a=>(
-                  <button key={a.title} onClick={a.action} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:18,textAlign:"left",cursor:"pointer",transition:"border-color 0.15s"}}
-                    onMouseEnter={e=>(e.currentTarget.style.borderColor=ACCENT)}
-                    onMouseLeave={e=>(e.currentTarget.style.borderColor=LINE)}>
-                    <div style={{fontSize:13,fontWeight:600,marginBottom:4}}>{a.title}</div>
-                    <div style={{fontSize:11.5,color:INK_FAINT,lineHeight:1.5}}>{a.desc}</div>
-                  </button>
-                ))}
+            {/* D. AI Actions Row — only meaningful once there's a CV to act on */}
+            {cvData && (
+              <div>
+                <h2 style={{fontSize:15,fontWeight:600,marginBottom:12}}>AI actions</h2>
+                <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"repeat(3,1fr)",gap:10}}>
+                  {[
+                    {title:"Tailor CV for a job",desc:"AI rewrites your CV for any role in 30 seconds",action:()=>setShowAiModal('tailor')},
+                    {title:"Generate cover letter",desc:"Personalised cover letter in seconds",action:()=>setShowAiModal('cover')},
+                    {title:"Optimise my CV",desc:"Full AI optimisation on the CV Optimiser tool",action:()=>window.location.href='/optimise'},
+                  ].map(a=>(
+                    <button key={a.title} onClick={a.action} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:4,padding:18,textAlign:"left",cursor:"pointer",transition:"border-color 0.15s"}}
+                      onMouseEnter={e=>(e.currentTarget.style.borderColor=ACCENT)}
+                      onMouseLeave={e=>(e.currentTarget.style.borderColor=LINE)}>
+                      <div style={{fontSize:13,fontWeight:600,marginBottom:4}}>{a.title}</div>
+                      <div style={{fontSize:11.5,color:INK_FAINT,lineHeight:1.5}}>{a.desc}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* D. Recommended Jobs */}
             {JOB_BOARD_ENABLED && <div>
@@ -1162,24 +1007,6 @@ export default function Dashboard() {
                 </div>
               )}
             </div>}
-
-            {/* E. Quick Actions */}
-            <div>
-              <h2 style={{fontSize:15,fontWeight:600,marginBottom:12}}>Quick actions</h2>
-              <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                {[
-                  {label:"View all jobs",href:"/jobs"},
-                  {label:"Saved Jobs",href:"/saved-jobs"},
-                  {label:"Free rewrites",onClick:()=>setActiveSection('referral')},
-                  {label:"Edit CV",onClick:()=>setActiveSection('cv')},
-                  {label:"CV Optimiser",href:"/optimise"},
-                ].filter(a=>JOB_BOARD_ENABLED || (a.href!=="/jobs" && a.href!=="/saved-jobs")).map(a=>(
-                  a.href
-                    ? <a key={a.label} href={a.href} style={{background:CARD,border:`1px solid ${LINE}`,borderRadius:3,padding:"10px 18px",fontSize:13,color:INK_SOFT,fontWeight:600,textDecoration:"none"}}>{a.label}</a>
-                    : <button key={a.label} onClick={a.onClick} style={{background:CARD,borderRadius:3,padding:"10px 18px",fontSize:13,color:INK_SOFT,fontWeight:600,cursor:"pointer",border:`1px solid ${LINE}`} as React.CSSProperties}>{a.label}</button>
-                ))}
-              </div>
-            </div>
 
           </div>
         )}

@@ -212,7 +212,7 @@ export default function AdminPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <a href="https://jobsesame.co.za" target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#A8D8B0', textDecoration: 'none', fontWeight: 600 }}>🌐 Live site</a>
+          <a href="https://jobsesame.co" target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#A8D8B0', textDecoration: 'none', fontWeight: 600 }}>🌐 Live site</a>
           <a href="https://github.com/ChuksObiakara/-jobsesame" target="_blank" rel="noreferrer" style={{ fontSize: 12, color: '#A8D8B0', textDecoration: 'none', fontWeight: 600 }}>GitHub</a>
           <a href="/" style={{ fontSize: 12, color: '#5A9A6A', textDecoration: 'none' }}>← Back</a>
         </div>
@@ -277,7 +277,7 @@ export default function AdminPage() {
                 <button onClick={() => setTab('new-post')} style={{ ...btnPrimary, fontSize: 13, padding: '10px 22px' }}>
                   ✏️ Publish new post
                 </button>
-                <a href="https://jobsesame.co.za" target="_blank" rel="noreferrer" style={{ ...btnGhost, fontSize: 13, padding: '10px 22px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                <a href="https://jobsesame.co" target="_blank" rel="noreferrer" style={{ ...btnGhost, fontSize: 13, padding: '10px 22px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
                   🌐 View live site
                 </a>
                 <a href="https://github.com/ChuksObiakara/-jobsesame" target="_blank" rel="noreferrer" style={{ ...btnGhost, fontSize: 13, padding: '10px 22px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>

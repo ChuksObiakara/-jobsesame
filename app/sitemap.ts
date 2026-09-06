@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { POSTS } from './blog/posts';
 
-const BASE = 'https://www.jobsesame.co.za';
+const BASE = 'https://www.jobsesame.co';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/blog`,                lastModified: now, changeFrequency: 'weekly',  priority: 0.7 },
     { url: `${BASE}/about`,               lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE}/recruiters`,          lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE}/contact`,             lastModified: now, changeFrequency: 'monthly', priority: 0.4 },
     { url: `${BASE}/privacy`,             lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BASE}/terms`,               lastModified: now, changeFrequency: 'monthly', priority: 0.3 },
     { url: `${BASE}/refund`,              lastModified: now, changeFrequency: 'monthly', priority: 0.3 },

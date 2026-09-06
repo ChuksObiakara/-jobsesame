@@ -99,7 +99,7 @@ ${cvData.keywords_added?.length ? `
   <div style="font-size:10px;color:#5A7A00;">${cvData.keywords_added.join(' · ')}</div>
 </div>` : ''}
 
-<div class="footer">CV optimised by Jobsesame AI · jobsesame.co.za · Match score: ${cvData.match_score || 0}% · ATS score: ${cvData.ats_score || 0}%</div>
+<div class="footer">CV optimised by Jobsesame AI · jobsesame.co · Match score: ${cvData.match_score || 0}% · ATS score: ${cvData.ats_score || 0}%</div>
 </body>
 </html>`;
 

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Nav from '../components/Nav';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
+import { downloadPdf } from '../lib/download-pdf-client';
 
 // ── AI Search Assistant ───────────────────────────────────────────────────────
 const SA_SUGGESTIONS = [
@@ -306,83 +307,12 @@ export default function JobsPage() {
     setCvOptimizing(false);
   };
 
-  const downloadOptimizedCV = async () => {
+  const downloadOptimizedCV = () => {
     if (!cvOptimizedResult || !cvOptimizeJob) return;
-    const { jsPDF } = await import('jspdf');
     const cv = cvOptimizedResult;
-    const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-    const pageW = 210;
-    const margin = 18;
-    const contentW = pageW - margin * 2;
-    let y = 0;
-    doc.setFillColor(5, 42, 20);
-    doc.rect(0, 0, pageW, 44, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
-    doc.setTextColor(255, 255, 255);
-    doc.text(cv.name || '', margin, 17);
-    doc.setFontSize(12);
-    doc.setTextColor(200, 230, 0);
-    doc.text(cv.title || '', margin, 27);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(160, 210, 170);
-    doc.text([cv.location, cv.email, cv.phone].filter(Boolean).join('   ·   '), margin, 37);
-    y = 54;
-    const sectionHeader = (title: string) => {
-      if (y > 268) { doc.addPage(); y = 18; }
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(5, 42, 20);
-      doc.text(title.toUpperCase(), margin, y);
-      doc.setDrawColor(5, 42, 20); doc.line(margin, y + 1.5, pageW - margin, y + 1.5);
-      y += 7;
-    };
-    if (cv.summary) {
-      sectionHeader('Professional Summary');
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-      const lines = doc.splitTextToSize(cv.summary, contentW);
-      doc.text(lines, margin, y);
-      y += (lines as string[]).length * 5.2 + 8;
-    }
-    if (cv.skills?.length) {
-      sectionHeader('Skills');
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-      const skillLines = doc.splitTextToSize((cv.skills as string[]).join('   ·   '), contentW);
-      doc.text(skillLines, margin, y);
-      y += (skillLines as string[]).length * 5.2 + 8;
-    }
-    if (cv.experience?.length) {
-      sectionHeader('Experience');
-      cv.experience.forEach((exp: any) => {
-        if (y > 268) { doc.addPage(); y = 18; }
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(5, 42, 20);
-        doc.text(exp.title || '', margin, y); y += 5.5;
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(80, 80, 80);
-        doc.text(`${exp.company || ''}   ·   ${exp.duration || ''}`, margin, y); y += 5;
-        (exp.bullets || []).forEach((b: string) => {
-          if (y > 275) { doc.addPage(); y = 18; }
-          const bLines = doc.splitTextToSize(`•  ${b}`, contentW - 4);
-          doc.setFontSize(9); doc.setTextColor(50, 50, 50);
-          doc.text(bLines, margin + 2, y);
-          y += (bLines as string[]).length * 4.6;
-        });
-        y += 6;
-      });
-    }
-    if (cv.education) {
-      if (y > 262) { doc.addPage(); y = 18; }
-      sectionHeader('Education');
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-      doc.text(cv.education, margin, y); y += 11;
-    }
-    if (cv.languages?.length) {
-      if (y > 268) { doc.addPage(); y = 18; }
-      sectionHeader('Languages');
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(40, 40, 40);
-      doc.text((cv.languages as string[]).join('   ·   '), margin, y);
-    }
     const safeName = (cv.name || 'CV').replace(/\s+/g, '_');
     const safeJob = (cvOptimizeJob.title || 'job').replace(/\s+/g, '_');
-    doc.save(`${safeName}_${safeJob}_optimised.pdf`);
+    downloadPdf('cv', cv, `${safeName}_${safeJob}_optimised.pdf`);
   };
 
   const fetchJobs = async (tab = 'all', searchQuery = '', loc = '', pageNum = 1, append = false) => {
@@ -929,7 +859,7 @@ export default function JobsPage() {
             <a href="/optimise" style={{fontSize:12,color:"#5A9A6A",textDecoration:"none"}}>CV Optimiser</a>
             <a href="/privacy" style={{fontSize:12,color:"#5A9A6A",textDecoration:"none"}}>Privacy</a>
             <a href="/terms" style={{fontSize:12,color:"#5A9A6A",textDecoration:"none"}}>Terms</a>
-            <a href="mailto:support@jobsesame.co.za" style={{fontSize:12,color:"#5A9A6A",textDecoration:"none"}}>Contact</a>
+            <a href="mailto:hello@jobsesame.co" style={{fontSize:12,color:"#5A9A6A",textDecoration:"none"}}>Contact</a>
           </div>
           <span style={{fontSize:11,color:"#1A4A2A"}}>© 2025 Jobsesame</span>
         </div>
