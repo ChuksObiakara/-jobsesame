@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import { referralCodeFor } from '@/app/lib/referral-code';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ export async function POST() {
     const user = await currentUser();
     const email = user?.emailAddresses[0]?.emailAddress || '';
     const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
-    const referralCode = Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase();
+    const referralCode = referralCodeFor(userId);
     const { prisma } = await import('@/app/lib/prisma');
     const existing = await prisma.user.findUnique({ where: { clerkId: userId } });
     const dbUser = await prisma.user.upsert({
