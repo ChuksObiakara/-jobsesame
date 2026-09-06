@@ -9,3 +9,8 @@ export const CLAY = '#A85C40';
 export const AMBER = '#B08A3E';
 export const SERIF = "ui-serif, 'Iowan Old Style', Georgia, 'Times New Roman', serif";
 export const SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
+// Wordmark-only script font (the "jobsesame" logo everywhere it appears as a
+// link back to the homepage) — loaded via next/font/google in layout.tsx and
+// exposed as this CSS variable so every page can reference it without each
+// one importing the font separately.
+export const SCRIPT = "var(--font-parisienne), cursive";
