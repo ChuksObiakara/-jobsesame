@@ -37,7 +37,6 @@ export default function Footer({ theme = 'dark' }: Props) {
             <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
               <div style={{ fontFamily: SCRIPT, fontSize: 28, fontWeight: 400, color: LIGHT.ink, marginBottom: 14 }}>jobsesame</div>
               <p style={{ fontSize: 13, color: LIGHT.inkFaint, lineHeight: 1.8, maxWidth: 240, marginBottom: 14 }}>AI CV rewriting and ATS optimisation for job seekers who refuse to be filtered out.</p>
-              <p style={{ fontSize: 11, color: LIGHT.inkFaint, marginBottom: 4 }}>Jobsesame (Pty) Ltd &middot; South Africa</p>
               <a href="mailto:hello@jobsesame.co" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>hello@jobsesame.co</a>
             </div>
             {columns.map(col => (
@@ -53,7 +52,7 @@ export default function Footer({ theme = 'dark' }: Props) {
           </div>
           <div style={{ borderTop: `1px solid ${LIGHT.line}`, paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-              <span style={{ fontSize: 11, color: LIGHT.inkFaint }}>&copy; {year} Jobsesame (Pty) Ltd. All rights reserved.</span>
+              <span style={{ fontSize: 11, color: LIGHT.inkFaint }}>&copy; {year} Jobsesame Ltd. All rights reserved.</span>
               <div style={{ display: 'flex', gap: 16 }}>
                 <a href="https://twitter.com/jobsesame" target="_blank" rel="noopener noreferrer" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>Twitter / X</a>
                 <a href="https://linkedin.com/company/jobsesame" target="_blank" rel="noopener noreferrer" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>LinkedIn</a>
@@ -89,9 +88,7 @@ export default function Footer({ theme = 'dark' }: Props) {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
               <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>POPIA</span>
               <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>SSL Secured</span>
-              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 4, padding: '2px 7px', fontWeight: 600 }}>ZA Registered</span>
             </div>
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.1)', marginBottom: 5 }}>Jobsesame (Pty) Ltd · South Africa</p>
             <a href="mailto:hello@jobsesame.co" className="footer-link" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none', transition: 'color 0.15s' }}>hello@jobsesame.co</a>
           </div>
           {columns.map(col => (
@@ -107,7 +104,7 @@ export default function Footer({ theme = 'dark' }: Props) {
         </div>
         <div style={{ borderTop: DIVIDE, paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.12)' }}>© {year} Jobsesame (Pty) Ltd. All rights reserved.</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.12)' }}>© {year} Jobsesame Ltd. All rights reserved.</span>
             <div style={{ display: 'flex', gap: 16 }}>
               <a href="https://twitter.com/jobsesame" target="_blank" rel="noopener noreferrer" className="footer-social" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none', transition: 'color 0.15s' }}>Twitter / X</a>
               <a href="https://linkedin.com/company/jobsesame" target="_blank" rel="noopener noreferrer" className="footer-social" style={{ fontSize: 11, color: 'rgba(255,255,255,0.15)', textDecoration: 'none', transition: 'color 0.15s' }}>LinkedIn</a>
