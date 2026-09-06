@@ -8,17 +8,25 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       // Canonicalize on www — every page's metadata, the sitemap, and
-      // robots.txt already assume www.jobsesame.co.za is the canonical host.
+      // robots.txt already assume www.jobsesame.co is the canonical host.
       // Without this, both hosts served the same content with no redirect,
       // splitting SEO authority between two "different" URLs for every page.
       // /api/* is deliberately excluded: payment (Lemon Squeezy) and other
       // webhooks may be registered against a specific host, and POST
       // requests to a redirected URL are not reliably retried by every
       // webhook sender — only user-facing pages get canonicalized.
+      //
+      // This previously targeted host "jobsesame.co.za" — a domain no
+      // other file in the app references (everything else, and the site's
+      // actual production domain, is jobsesame.co) — so this rule never
+      // matched a real request. The bare-domain -> www redirect that
+      // visitors actually get comes entirely from Vercel's own domain
+      // settings; this app-level rule is now fixed to match the real
+      // domain so it also works as a fallback if that config ever changes.
       {
         source: '/:path((?!api/).*)',
-        has: [{ type: 'host', value: 'jobsesame.co.za' }],
-        destination: 'https://www.jobsesame.co.za/:path',
+        has: [{ type: 'host', value: 'jobsesame.co' }],
+        destination: 'https://www.jobsesame.co/:path',
         permanent: true,
       },
     ];
