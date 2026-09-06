@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
-import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, SERIF } from '../lib/theme';
+import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, SERIF, SCRIPT } from '../lib/theme';
 
 const DIVIDE = '1px solid rgba(255,255,255,0.05)';
 
@@ -35,7 +35,7 @@ export default function Footer({ theme = 'dark' }: Props) {
         <div style={{ maxWidth: 1120, margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1fr 1fr 1fr', gap: isMobile ? '32px 24px' : 40, marginBottom: 48 }}>
             <div style={{ gridColumn: isMobile ? '1 / -1' : 'auto' }}>
-              <div style={{ fontFamily: LIGHT.serif, fontSize: 18, fontWeight: 500, color: LIGHT.ink, marginBottom: 14 }}>jobsesame</div>
+              <div style={{ fontFamily: SCRIPT, fontSize: 28, fontWeight: 400, color: LIGHT.ink, marginBottom: 14 }}>jobsesame</div>
               <p style={{ fontSize: 13, color: LIGHT.inkFaint, lineHeight: 1.8, maxWidth: 240, marginBottom: 14 }}>AI CV rewriting and ATS optimisation for job seekers who refuse to be filtered out.</p>
               <p style={{ fontSize: 11, color: LIGHT.inkFaint, marginBottom: 4 }}>Jobsesame (Pty) Ltd &middot; South Africa</p>
               <a href="mailto:hello@jobsesame.co" className="footer-link-l" style={{ fontSize: 11, color: LIGHT.inkFaint, textDecoration: 'none' }}>hello@jobsesame.co</a>
@@ -83,7 +83,7 @@ export default function Footer({ theme = 'dark' }: Props) {
               <div style={{ width: 28, height: 28, background: '#C8E600', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="15" height="15" viewBox="0 0 22 22" fill="none"><circle cx="9" cy="9" r="5.5" stroke="#061A0C" strokeWidth="2.2" /><circle cx="9" cy="9" r="2.5" fill="#061A0C" opacity="0.4" /><line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#061A0C" strokeWidth="2.8" strokeLinecap="round" /></svg>
               </div>
-              <span style={{ fontSize: 16, fontWeight: 800 }}><span style={{ color: '#fff' }}>job</span><span style={{ color: '#C8E600' }}>sesame</span></span>
+              <span style={{ fontFamily: SCRIPT, fontSize: 26, fontWeight: 400 }}><span style={{ color: '#fff' }}>job</span><span style={{ color: '#C8E600' }}>sesame</span></span>
             </div>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.16)', lineHeight: 1.8, maxWidth: 220, marginBottom: 10 }}>AI-powered job applications for professionals who refuse to be ignored.</p>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>

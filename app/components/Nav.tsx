@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth, UserButton } from '@clerk/nextjs';
 import { usePathname } from 'next/navigation';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
-import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, ACCENT, SERIF } from '../lib/theme';
+import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, ACCENT, SERIF, SCRIPT } from '../lib/theme';
 
 interface Props {
   home?: boolean;
@@ -82,7 +82,7 @@ export default function Nav({ home, theme = 'dark' }: Props) {
           transition: 'background 0.2s',
         }}>
           <div style={{ maxWidth: 1120, margin: '0 auto', padding: '0 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 72 }}>
-            <a href="/" style={{ textDecoration: 'none', fontFamily: LIGHT.serif, fontSize: 19, fontWeight: 500, color: LIGHT.ink, letterSpacing: '-0.01em' }}>jobsesame</a>
+            <a href="/" style={{ textDecoration: 'none', fontFamily: SCRIPT, fontSize: 30, fontWeight: 400, color: LIGHT.ink }}>jobsesame</a>
 
             {!isMobile && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
@@ -170,7 +170,7 @@ export default function Nav({ home, theme = 'dark' }: Props) {
         transition: 'all 0.3s', gap: 12,
       }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', flexShrink: 0 }}>
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.5 }}>
+          <span style={{ fontFamily: SCRIPT, fontSize: 28, fontWeight: 400 }}>
             <span style={{ color: '#fff' }}>job</span><span style={{ color: '#C8E600' }}>sesame</span>
           </span>
         </a>
