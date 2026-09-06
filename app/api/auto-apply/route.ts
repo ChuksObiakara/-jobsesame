@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { auth } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendWithFallback } from '@/app/lib/email-from';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,9 +16,6 @@ export async function POST(req: NextRequest) {
 
     const { Resend } = await import('resend');
     const resend = new Resend(process.env.RESEND_API_KEY);
-    // Use Resend's shared test domain until jobsesame.co is verified in the Resend dashboard.
-    // Switch back to noreply@jobsesame.co once DNS records are confirmed.
-    const fromEmail = 'onboarding@resend.dev';
 
     const skillsList: string[] = cvData?.skills?.slice(0, 10) || [];
     const latestExp = cvData?.experience?.[0];
@@ -100,8 +98,8 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`;
 
-    const { data, error } = await resend.emails.send({
-      from: `Applications via Jobsesame <${fromEmail}>`,
+    const { data, error } = await sendWithFallback(resend, {
+      fromName: 'Applications via Jobsesame',
       replyTo: candidateEmail,
       to: employerEmail,
       subject: `Application for ${jobTitle} — ${candidateName}`,
@@ -110,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error('Resend error full response:', JSON.stringify(error, null, 2));
-      console.error('Resend from:', fromEmail, 'to:', employerEmail);
+      console.error('Resend to:', employerEmail);
       return NextResponse.json({ error: error.message || 'Email send failed', resendError: error }, { status: 500 });
     }
 
