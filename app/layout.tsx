@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from '@clerk/nextjs';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Plus_Jakarta_Sans, Parisienne } from 'next/font/google';
 import "./globals.css";
 import CookieConsent from "./components/CookieConsent";
 import PostHogProvider from "./components/PostHogProvider";
@@ -9,6 +9,14 @@ const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
+});
+
+// Wordmark-only script font for the "jobsesame" logo (see app/lib/theme.ts SCRIPT).
+const parisienne = Parisienne({
+  subsets: ['latin'],
+  weight: '400',
+  display: 'swap',
+  variable: '--font-parisienne',
 });
 
 export const metadata: Metadata = {
@@ -75,7 +83,7 @@ export default function RootLayout({
       signInFallbackRedirectUrl="/dashboard"
       signUpFallbackRedirectUrl="/onboarding"
     >
-      <html lang="en" className={plusJakarta.className}>
+      <html lang="en" className={`${plusJakarta.className} ${parisienne.variable}`}>
         <body>
           <script
             type="application/ld+json"
