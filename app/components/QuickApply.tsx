@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { downloadPdf } from '../lib/download-pdf-client';
+import { cvCacheKey, profileCacheKey, applicationsCacheKey, applyCountCacheKey } from '../lib/user-cache-keys';
 
 interface Job {
   id: string | number;
@@ -73,7 +74,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   const [savedProfile, setSavedProfile] = useState<any>(null);
   const [profileForm, setProfileForm] = useState({ name: '', email: '', phone: '', location: '', title: '' });
 
-  const applyCount = typeof window !== 'undefined' ? parseInt(localStorage.getItem('jobsesame_apply_count') || '0') : 0;
+  const applyCount = (typeof window !== 'undefined' && user?.id) ? parseInt(localStorage.getItem(applyCountCacheKey(user.id)) || '0') : 0;
   const FREE_LIMIT = 3;
   const isGreenhouse = isGreenhouseJob(job);
   const autoApply = isAutoApply(job.url, job.type);
@@ -88,8 +89,9 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   useEffect(() => {
     if (!isLoaded) return;
     if (!isSignedIn) { setStep('signin'); return; }
-    const cv = localStorage.getItem('jobsesame_cv_data');
-    const profile = localStorage.getItem('jobsesame_profile');
+    if (!user?.id) return;
+    const cv = localStorage.getItem(cvCacheKey(user.id));
+    const profile = localStorage.getItem(profileCacheKey(user.id));
     if (profile) setSavedProfile(JSON.parse(profile));
     if (cv) {
       const parsed = JSON.parse(cv);
@@ -100,7 +102,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
     }
   // startRewrite changes identity on every render; this effect should fire once when auth state resolves
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, user?.id]);
 
   const calcScore = (cvD: any): number => {
     const skills: string[] = cvD?.skills || [];
@@ -143,10 +145,10 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
         setRewritePhase(REWRITE_PHASES.length);
         const newScore = calcScore(data.rewrittenCV);
         setRewrittenMatchPct(newScore);
-        localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.rewrittenCV));
+        if (user?.id) localStorage.setItem(cvCacheKey(user.id), JSON.stringify(data.rewrittenCV));
         setRewrittenCV(data.rewrittenCV);
         await new Promise(r => setTimeout(r, 700));
-        const profile = localStorage.getItem('jobsesame_profile');
+        const profile = user?.id ? localStorage.getItem(profileCacheKey(user.id)) : null;
         if (!profile) {
           setProfileForm({
             name: data.rewrittenCV.name || cv.name || '',
@@ -181,7 +183,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       const response = await fetch('/api/cv', { method: 'POST', body: formData });
       const data = await response.json();
       if (data.success) {
-        localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.cvData));
+        if (user?.id) localStorage.setItem(cvCacheKey(user.id), JSON.stringify(data.cvData));
         setSavedCvData(data.cvData);
         setUploading(false);
         startRewrite(data.cvData);
@@ -196,7 +198,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   };
 
   const handleSaveProfile = () => {
-    localStorage.setItem('jobsesame_profile', JSON.stringify(profileForm));
+    if (user?.id) localStorage.setItem(profileCacheKey(user.id), JSON.stringify(profileForm));
     setSavedProfile(profileForm);
     setStep('result');
   };
@@ -209,9 +211,10 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
   };
 
   const logApplication = (status: string) => {
-    const currentCount = parseInt(localStorage.getItem('jobsesame_apply_count') || '0');
-    localStorage.setItem('jobsesame_apply_count', String(currentCount + 1));
-    const applications = JSON.parse(localStorage.getItem('jobsesame_applications') || '[]');
+    if (!user?.id) return;
+    const currentCount = parseInt(localStorage.getItem(applyCountCacheKey(user.id)) || '0');
+    localStorage.setItem(applyCountCacheKey(user.id), String(currentCount + 1));
+    const applications = JSON.parse(localStorage.getItem(applicationsCacheKey(user.id)) || '[]');
     applications.push({
       id: Date.now().toString(),
       jobTitle: job.title,
@@ -221,7 +224,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
       status,
       jobUrl: job.url,
     });
-    localStorage.setItem('jobsesame_applications', JSON.stringify(applications));
+    localStorage.setItem(applicationsCacheKey(user.id), JSON.stringify(applications));
     // Save to database
     fetch('/api/user/applications', {
       method: 'POST',
@@ -404,7 +407,7 @@ export default function QuickApply({ job, onClose, currency = 'USD' }: QuickAppl
                   <div style={{fontSize:13,fontWeight:700,color:'#C8E600',marginBottom:2}}>✓ Using your saved CV</div>
                   <div style={{fontSize:12,color:'#5A9A6A'}}>{savedCvData.name}{savedCvData.title ? ` · ${savedCvData.title}` : ''}</div>
                 </div>
-                <button onClick={() => { localStorage.removeItem('jobsesame_cv_data'); setSavedCvData(null); }} style={{background:'transparent',border:'1px solid #1A5A2A',borderRadius:99,color:'#5A9A6A',fontSize:12,padding:'6px 14px',cursor:'pointer',whiteSpace:'nowrap'}}>
+                <button onClick={() => { if (user?.id) localStorage.removeItem(cvCacheKey(user.id)); setSavedCvData(null); }} style={{background:'transparent',border:'1px solid #1A5A2A',borderRadius:99,color:'#5A9A6A',fontSize:12,padding:'6px 14px',cursor:'pointer',whiteSpace:'nowrap'}}>
                   Use different CV
                 </button>
               </div>
