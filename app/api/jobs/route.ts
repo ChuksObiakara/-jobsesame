@@ -299,7 +299,7 @@ export async function GET(request: NextRequest) {
         fetchGreenhouse(),
         fetchLever(),
       ]);
-      const museJobs = (museData.results || []).map(mapMuseJob);
+      const museJobs: any[] = (museData.results || []).map(mapMuseJob);
       // Adzuna and JSearch already filtered server-side by `query`; Greenhouse,
       // Lever and this unfiltered Muse feed did not, so they need it applied here.
       const ghMatched = ghJobs.filter(j => matchesQuery(j.title, query));
