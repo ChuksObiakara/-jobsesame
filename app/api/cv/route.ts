@@ -3,6 +3,7 @@ import { createMessage } from '@/app/lib/anthropic-retry';
 import { auth } from '@clerk/nextjs/server';
 import { extractText, getDocumentProxy } from 'unpdf';
 import { referralCodeFor } from '@/app/lib/referral-code';
+import { toCvRecord } from '@/app/lib/cv-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,10 +90,16 @@ export async function POST(request: NextRequest) {
           update: {},
           create: { clerkId: userId, email: cvData.email || '', credits: 3, referralCode: referralCodeFor(userId) },
         });
+        // toCvRecord maps the Claude extraction's snake_case field names
+        // (experience_years) to the Prisma schema's camelCase columns
+        // (experienceYears) and drops fields the schema doesn't have
+        // (job_search_keywords) — spreading cvData directly threw
+        // "Unknown argument" and silently discarded every CV save.
+        const cvRecord = toCvRecord(cvData);
         await prisma.cV.upsert({
           where: { userId: user.id },
-          update: { ...cvData, skills: cvData.skills || [], languages: cvData.languages || [], experience: cvData.experience || [] },
-          create: { userId: user.id, ...cvData, skills: cvData.skills || [], languages: cvData.languages || [], experience: cvData.experience || [] },
+          update: cvRecord,
+          create: { userId: user.id, ...cvRecord },
         });
       } catch (e) { console.log('CV save to DB skipped:', e); }
     }
