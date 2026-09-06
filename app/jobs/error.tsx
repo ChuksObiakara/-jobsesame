@@ -11,7 +11,7 @@ export default function JobsError({ error, reset }: { error: Error; reset: () =>
               <line x1="13.5" y1="13.5" x2="20" y2="20" stroke="#052A14" strokeWidth="2.8" strokeLinecap="round" />
             </svg>
           </div>
-          <span style={{ fontSize: 20, fontWeight: 800 }}>
+          <span style={{ fontFamily: "var(--font-parisienne), cursive", fontSize: 28, fontWeight: 400 }}>
             <span style={{ color: '#FFFFFF' }}>job</span>
             <span style={{ color: '#C8E600' }}>sesame</span>
           </span>

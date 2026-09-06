@@ -850,7 +850,7 @@ export default function JobsPage() {
       {/* FOOTER */}
       <footer style={{background:"#052A14",borderTop:"1px solid #0D4A20",padding:"32px 24px 20px"}}>
         <div style={{maxWidth:900,margin:"0 auto",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16}}>
-          <span style={{fontSize:13,fontWeight:800}}>
+          <span style={{fontFamily:"var(--font-parisienne), cursive",fontSize:22,fontWeight:400}}>
             <span style={{color:"#FFFFFF"}}>job</span>
             <span style={{color:"#C8E600"}}>sesame</span>
           </span>
