@@ -257,6 +257,19 @@ export default function Dashboard() {
       .catch((err) => console.error('[dashboard] geo-detect failed:', err));
   }, [cvData?.location]);
 
+  // Send the "Welcome to Jobsesame" signup email the first time a signed-in
+  // user lands here. sendWelcomeEmailOnce() itself was already written
+  // (it posts to /api/welcome-email and de-dupes via localStorage) but was
+  // never actually called from anywhere, so no new signup was ever getting it.
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+    sendWelcomeEmailOnce();
+  // sendWelcomeEmailOnce is defined in component scope; adding it to deps
+  // causes re-runs on every render. user?.id keeps this from re-firing when
+  // Clerk hands back a new object reference for the same logical user.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, user?.id]);
+
   // Trigger job-matches email 24h after signup
   useEffect(() => {
     if (!isSignedIn || !user) return;
