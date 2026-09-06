@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
       // robots.txt already assume www.jobsesame.co.za is the canonical host.
       // Without this, both hosts served the same content with no redirect,
       // splitting SEO authority between two "different" URLs for every page.
-      // /api/* is deliberately excluded: payment (Paystack) and other
+      // /api/* is deliberately excluded: payment (Lemon Squeezy) and other
       // webhooks may be registered against a specific host, and POST
       // requests to a redirected URL are not reliably retried by every
       // webhook sender — only user-facing pages get canonicalized.
