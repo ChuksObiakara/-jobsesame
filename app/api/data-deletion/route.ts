@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendWithFallback } from '@/app/lib/email-from';
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,8 +36,7 @@ export async function POST(req: NextRequest) {
 </table></td></tr></table>
 </body></html>`;
 
-    const { error } = await resend.emails.send({
-      from: 'Jobsesame <onboarding@resend.dev>',
+    const { error } = await sendWithFallback(resend, {
       replyTo: email,
       to: 'hello@jobsesame.co',
       subject: `Data deletion request from ${email}`,
