@@ -452,7 +452,28 @@ export default function Dashboard() {
       if (data.success) {
         setCvData(data.cvData);
         if (user?.id) localStorage.setItem(cvCacheKey(user.id), JSON.stringify(data.cvData));
-        fetch('/api/user/cv', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cvData: data.cvData }) }).catch((err) => console.error('[dashboard] cv save failed:', err));
+        // Save to the database in the background so the ATS-score reveal below
+        // isn't held up by this round trip — but this used to be fully
+        // fire-and-forget with only a console.error on network failure, which
+        // meant an actual save failure (e.g. a 500 from the server) was never
+        // seen by anyone: fetch() only rejects on network errors, not on
+        // error status codes, so nothing ever checked whether the save
+        // actually succeeded. Since the database is the source of truth on
+        // every later page load, a silently-failed save meant the CV the
+        // person just uploaded could vanish the next time they opened the
+        // dashboard. Now this is awaited, checked, retried once, and only
+        // then does it surface a visible error if it still didn't save.
+        (async () => {
+          const trySave = () => fetch('/api/user/cv', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cvData: data.cvData }),
+          }).then(r => r.ok).catch(() => false);
+          if (await trySave()) return;
+          if (await trySave()) return;
+          console.error('[dashboard] cv save failed after retry');
+          setError('Your CV was analysed, but saving it failed. Please try uploading again so it isn’t lost.');
+        })();
         const shockScore = (() => {
           let s = 30;
           if (data.cvData.summary) s += 10;
