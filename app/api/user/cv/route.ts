@@ -1,5 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import { referralCodeFor } from '@/app/lib/referral-code';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     // referralCode/clerkId — which silently discarded every CV upload for a
     // new account that uploaded quickly after landing on the dashboard,
     // since the client only logs this failure and never surfaces it.
-    const referralCode = Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase();
+    const referralCode = referralCodeFor(userId);
     const user = await prisma.user.upsert({
       where: { clerkId: userId },
       update: {},
