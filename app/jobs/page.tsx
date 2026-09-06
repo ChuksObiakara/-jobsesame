@@ -1,8 +1,10 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
 import Nav from '../components/Nav';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
 import { downloadPdf } from '../lib/download-pdf-client';
+import { cvCacheKey } from '../lib/user-cache-keys';
 
 // ── AI Search Assistant ───────────────────────────────────────────────────────
 const SA_SUGGESTIONS = [
@@ -199,6 +201,7 @@ interface Job {
 }
 
 export default function JobsPage() {
+  const { user } = useUser();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState('');
@@ -275,11 +278,12 @@ export default function JobsPage() {
   }, []);
 
   useEffect(() => {
+    if (!user?.id) return;
     try {
-      const stored = localStorage.getItem('jobsesame_cv_data');
+      const stored = localStorage.getItem(cvCacheKey(user.id));
       if (stored) setCvData(JSON.parse(stored));
     } catch (err) { console.error('[jobs] cv parse failed:', err); }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     fetch('/api/credits').then(r => r.json()).then(d => {
