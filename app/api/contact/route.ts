@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
+import { sendWithFallback } from '@/app/lib/email-from';
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 function checkRateLimit(key: string, max: number): boolean {
@@ -46,9 +47,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Something went wrong on our end. Please email hello@jobsesame.co directly.' }, { status: 500 });
     }
 
-    const fromEnv = process.env.RESEND_FROM_EMAIL;
-    const primaryFrom = fromEnv ? `Jobsesame <${fromEnv}>` : 'Jobsesame <noreply@jobsesame.co>';
-
     const { Resend } = await import('resend');
     const resend = new Resend(apiKey);
 
@@ -77,10 +75,7 @@ export async function POST(req: NextRequest) {
 </body></html>`,
     };
 
-    let { error } = await resend.emails.send({ from: primaryFrom, ...emailOpts });
-    if (error && primaryFrom !== 'Jobsesame <onboarding@resend.dev>') {
-      ({ error } = await resend.emails.send({ from: 'Jobsesame <onboarding@resend.dev>', ...emailOpts }));
-    }
+    const { error } = await sendWithFallback(resend, emailOpts);
 
     if (error) {
       console.error('Contact form send error:', error.message);
