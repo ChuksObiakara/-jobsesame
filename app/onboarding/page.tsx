@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, SERIF, SANS, SCRIPT } from '../lib/theme';
+import { cvCacheKey, profileCacheKey } from '../lib/user-cache-keys';
 
 interface CvData {
   name?: string;
@@ -107,7 +108,7 @@ export default function OnboardingPage() {
       const data = await res.json();
       if (data.success) {
         setCvData(data.cvData);
-        localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.cvData));
+        if (user?.id) localStorage.setItem(cvCacheKey(user.id), JSON.stringify(data.cvData));
         setTimeout(() => setStep(2), 600);
       } else {
         setUploadError(data.error || 'Failed to process CV. Please try again.');
@@ -132,7 +133,7 @@ export default function OnboardingPage() {
 
   const handleComplete = async () => {
     const fullProfile = { ...profile, cvData, completedAt: new Date().toISOString() };
-    localStorage.setItem('jobsesame_profile', JSON.stringify(fullProfile));
+    if (user?.id) localStorage.setItem(profileCacheKey(user.id), JSON.stringify(fullProfile));
     localStorage.setItem('jobsesame_onboarding_complete', 'true');
     // Persist user and CV to DB (fire-and-forget — don't block navigation)
     fetch('/api/user/sync', { method: 'POST' }).catch((err) => console.error('[onboarding] sync failed:', err));
