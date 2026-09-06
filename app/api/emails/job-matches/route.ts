@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { sendWithFallback } from '@/app/lib/email-from';
 
 export async function POST(req: NextRequest) {
   const { userId: clerkUserId } = await auth();
@@ -125,9 +126,7 @@ export async function POST(req: NextRequest) {
 </table></td></tr></table>
 </body></html>`;
 
-    const fromAddress = `Jobsesame <${process.env.EMAIL_FROM || 'onboarding@resend.dev'}>`;
-    const { error } = await resend.emails.send({
-      from: fromAddress,
+    const { error } = await sendWithFallback(resend, {
       replyTo: 'hello@jobsesame.co',
       to: email,
       subject,
