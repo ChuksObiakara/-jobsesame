@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { referralCodeFor } from '@/app/lib/referral-code';
+import { toCvRecord } from '@/app/lib/cv-data';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,10 +40,17 @@ export async function POST(request: Request) {
       update: {},
       create: { clerkId: userId, email: cvData.email || '', credits: 3, referralCode },
     });
+    // toCvRecord maps the extraction's snake_case field names
+    // (experience_years) to the Prisma schema's camelCase columns
+    // (experienceYears) and drops fields the schema doesn't have
+    // (job_search_keywords) — spreading cvData directly threw "Unknown
+    // argument" on every save, a second bug that was masked by the
+    // referralCode collision above until that was fixed.
+    const cvRecord = toCvRecord(cvData);
     const cv = await prisma.cV.upsert({
       where: { userId: user.id },
-      update: { ...cvData, skills: cvData.skills || [], languages: cvData.languages || [], experience: cvData.experience || [] },
-      create: { userId: user.id, ...cvData, skills: cvData.skills || [], languages: cvData.languages || [], experience: cvData.experience || [] },
+      update: cvRecord,
+      create: { userId: user.id, ...cvRecord },
     });
     return NextResponse.json({ success: true, cv });
   } catch (error: any) {
