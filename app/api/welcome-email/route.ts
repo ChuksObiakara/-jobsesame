@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { Resend } from 'resend';
 import { referralCodeFor } from '@/app/lib/referral-code';
+import { sendWithFallback } from '@/app/lib/email-from';
 
 function buildReferralLink(userId: string): string {
   const referralCode = referralCodeFor(userId);
@@ -221,24 +222,11 @@ export async function POST(req: NextRequest) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const fromAddress = process.env.RESEND_FROM_EMAIL
-      ? `Jobsesame <${process.env.RESEND_FROM_EMAIL}>`
-      : 'Jobsesame <noreply@jobsesame.co>';
-    const emailOpts = {
+    const { data, error } = await sendWithFallback(resend, {
       to: email,
       subject: 'Welcome to Jobsesame — your 3 free applications are ready',
       html: buildEmailHtml(name || email.split('@')[0], email, userId),
-    };
-
-    let { data, error } = await resend.emails.send({ from: fromAddress, ...emailOpts });
-
-    // Domain not yet verified — retry with Resend shared domain fallback
-    if (error && fromAddress !== 'Jobsesame <onboarding@resend.dev>') {
-      ({ data, error } = await resend.emails.send({
-        from: 'Jobsesame <onboarding@resend.dev>',
-        ...emailOpts,
-      }));
-    }
+    });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
