@@ -1,12 +1,12 @@
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, SERIF, SANS } from '../lib/theme';
+import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, SERIF, SANS, SCRIPT } from '../lib/theme';
 
 function Nav() {
   return (
     <nav style={{ background: CARD, padding: '0 24px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${LINE}`, position: 'sticky', top: 0, zIndex: 100 }}>
-      <a href="/" style={{ textDecoration: 'none', fontFamily: SERIF, fontSize: 18, fontWeight: 500, color: INK }}>jobsesame</a>
+      <a href="/" style={{ textDecoration: 'none', fontFamily: SCRIPT, fontSize: 28, fontWeight: 400, color: INK }}>jobsesame</a>
     </nav>
   );
 }
