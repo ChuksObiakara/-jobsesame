@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createMessage } from '@/app/lib/anthropic-retry';
 import { auth } from '@clerk/nextjs/server';
 import { extractText, getDocumentProxy } from 'unpdf';
+import { referralCodeFor } from '@/app/lib/referral-code';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,11 +78,17 @@ export async function POST(request: NextRequest) {
     if (userId) {
       try {
         const { prisma } = await import('@/app/lib/prisma');
-        let user = await prisma.user.findUnique({ where: { clerkId: userId } });
-        if (!user) {
-          const referralCode = Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase();
-          user = await prisma.user.create({ data: { clerkId: userId, email: cvData.email || '', credits: 3, referralCode } });
-        }
+        // upsert, not findUnique + conditional create — race-safe against
+        // /api/user/sync, which the dashboard fires on every mount without
+        // awaiting it. See app/lib/referral-code.ts for why referralCode
+        // also had to change: the old generator collided across almost all
+        // users, so this create kept failing on a unique-constraint error
+        // and silently dropping the CV save.
+        const user = await prisma.user.upsert({
+          where: { clerkId: userId },
+          update: {},
+          create: { clerkId: userId, email: cvData.email || '', credits: 3, referralCode: referralCodeFor(userId) },
+        });
         await prisma.cV.upsert({
           where: { userId: user.id },
           update: { ...cvData, skills: cvData.skills || [], languages: cvData.languages || [], experience: cvData.experience || [] },
