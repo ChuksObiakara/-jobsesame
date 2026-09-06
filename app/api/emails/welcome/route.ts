@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { referralCodeFor } from '@/app/lib/referral-code';
 
 export async function POST(req: NextRequest) {
   const { userId: clerkUserId } = await auth();
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jobsesame.co';
     const unsubToken = Buffer.from(JSON.stringify({ userId: userId || '', email, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64url');
     const unsubUrl = `${appUrl}/unsubscribe?token=${unsubToken}`;
-    const referralCode = userId ? Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase() : 'SHARE';
+    const referralCode = userId ? referralCodeFor(userId) : 'SHARE';
     const referralLink = `${appUrl}?ref=${referralCode}`;
     const scoreColor = score >= 75 ? '#22C55E' : score >= 60 ? '#F59E0B' : '#EF4444';
     const scoreLabel = score >= 75 ? 'Your CV is performing well' : score >= 60 ? 'Your CV needs improvement to compete' : '⚠️ Your CV is failing automated screening';
