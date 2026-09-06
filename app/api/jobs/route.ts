@@ -165,6 +165,21 @@ function isOnTarget(jobLocation: string, targetCities: string[]): boolean {
   return targetCities.some(city => loc.includes(city.toLowerCase().split(',')[0]));
 }
 
+// Greenhouse, Lever and the unfiltered Muse feed return jobs with no regard
+// for the requested role at all — Greenhouse/Lever ignore `query` entirely
+// (they just return every open role at a fixed list of companies), so
+// without this filter a "Project Manager" search could surface a random
+// "Software Engineer" or "Data Scientist" listing purely because it came
+// from one of those sources. This keeps only jobs whose title actually
+// contains a meaningful word from the applicant's search query.
+function matchesQuery(title: string, query: string): boolean {
+  if (!query) return true;
+  const t = (title || '').toLowerCase();
+  const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  if (words.length === 0) return true;
+  return words.some(w => t.includes(w));
+}
+
 const GH_BOARDS = [
   { token: 'anthropic',   name: 'Anthropic' },
   { token: 'airbnb',      name: 'Airbnb' },
@@ -285,7 +300,12 @@ export async function GET(request: NextRequest) {
         fetchLever(),
       ]);
       const museJobs = (museData.results || []).map(mapMuseJob);
-      const jobs = dedupe([...ghJobs, ...lvrJobs, ...adzunaZA, ...museJobs, ...jsearchJobs]).slice(0, 150);
+      // Adzuna and JSearch already filtered server-side by `query`; Greenhouse,
+      // Lever and this unfiltered Muse feed did not, so they need it applied here.
+      const ghMatched = ghJobs.filter(j => matchesQuery(j.title, query));
+      const lvrMatched = lvrJobs.filter(j => matchesQuery(j.title, query));
+      const museMatched = museJobs.filter(j => matchesQuery(j.title, query));
+      const jobs = dedupe([...ghMatched, ...lvrMatched, ...adzunaZA, ...museMatched, ...jsearchJobs]).slice(0, 150);
       return NextResponse.json({ jobs, total: jobs.length, source: 'Multi-source' });
     } catch (error) {
       return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
@@ -302,7 +322,8 @@ export async function GET(request: NextRequest) {
         { headers: { Accept: 'application/json' }, next: { revalidate: 3600 } }
       );
       const data = await res.json();
-      return NextResponse.json({ jobs: (data.results || []).map(mapMuseJob), total: data.total || 0, source: 'The Muse' });
+      const jobs = (data.results || []).map(mapMuseJob).filter((j: any) => matchesQuery(j.title, query));
+      return NextResponse.json({ jobs, total: jobs.length, source: 'The Muse' });
     } catch {
       return NextResponse.json({ jobs: [], total: 0, error: 'Failed to fetch jobs' });
     }
@@ -323,7 +344,10 @@ export async function GET(request: NextRequest) {
       adzunaCountry ? fetchAdzunaPages(adzunaCountry, [1, 2], query) : Promise.resolve([]),
     ]);
 
-    const allRaw = pageResults.flat().map(mapMuseJob);
+    // fetchMusePage only filters by city, not by role — without this, Muse
+    // results here are every job in that city regardless of what the
+    // applicant is searching for.
+    const allRaw = pageResults.flat().map(mapMuseJob).filter(j => matchesQuery(j.title, query));
     const onTarget = allRaw.filter(j => isOnTarget(j.location, cities));
     const remote   = allRaw.filter(j => !isOnTarget(j.location, cities));
 
@@ -331,7 +355,7 @@ export async function GET(request: NextRequest) {
 
     if (onTarget.length < 10) {
       const page2 = await fetchMusePage(cities[0], 2);
-      const page2Mapped = page2.map(mapMuseJob);
+      const page2Mapped = page2.map(mapMuseJob).filter(j => matchesQuery(j.title, query));
       const page2OnTarget = page2Mapped.filter(j => isOnTarget(j.location, cities));
       const page2Remote   = page2Mapped.filter(j => !isOnTarget(j.location, cities));
       combined = [...onTarget, ...page2OnTarget, ...remote, ...page2Remote];
