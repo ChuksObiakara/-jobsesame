@@ -126,6 +126,14 @@ export default function Dashboard() {
   }, [isLoaded, isSignedIn, router]);
 
   useEffect(() => {
+    // Clerk's `user` object reference can change across re-renders for the same
+    // logical user (e.g. as Clerk hydrates/refreshes its internal cache), which
+    // re-runs this effect and kicks off duplicate fetches. If those overlapping
+    // requests resolve out of order, the *last one to finish* used to win via
+    // setCvData/setApplications — not the last one to start — so the dashboard
+    // could show stale data that flip-flopped on every reload. `cancelled` below
+    // ensures only the most recent effect run is allowed to commit its results.
+    let cancelled = false;
     if (isSignedIn && user) {
       // Defer referral link — non-critical, load after main content
       setTimeout(() => generateReferralLink(), 2000);
@@ -133,6 +141,7 @@ export default function Dashboard() {
       fetch('/api/user/sync', { method: 'POST' }).catch((err) => console.error('[dashboard] sync failed:', err));
       // Fetch credits from database
       fetch('/api/credits').then(r => r.json()).then(d => {
+        if (cancelled) return;
         if (typeof d.credits === 'number') setCredits(d.credits);
         if (typeof d.isPro === 'boolean') setIsPro(d.isPro);
       }).catch((err) => console.error('[dashboard] credits fetch failed:', err));
@@ -140,6 +149,7 @@ export default function Dashboard() {
       fetch('/api/user/applications')
         .then(r => r.json())
         .then(d => {
+          if (cancelled) return;
           const mapped = (d.applications || []).map((a: any) => ({
             id: a.id, jobTitle: a.jobTitle, company: a.company,
             location: a.location || '', dateApplied: a.appliedAt, status: a.status, jobUrl: a.jobUrl,
@@ -148,11 +158,14 @@ export default function Dashboard() {
           localStorage.setItem('jobsesame_applications', JSON.stringify(mapped));
         })
         .catch(() => {
+          if (cancelled) return;
           const stored = localStorage.getItem('jobsesame_applications');
           if (stored) try { setApplications(JSON.parse(stored)); } catch (err) { console.error('[dashboard] applications parse failed:', err); }
         });
-      // Fetch CV from database — DB is primary source, localStorage is cache
+      // Fetch CV from database — DB is the single source of truth; localStorage
+      // is only ever a placeholder to avoid a blank flash before this resolves.
       fetch('/api/user/cv').then(r => r.json()).then(d => {
+        if (cancelled) return;
         if (d.cv) {
           const cv = { ...d.cv, experience_years: d.cv.experienceYears };
           setCvData(cv);
@@ -160,15 +173,21 @@ export default function Dashboard() {
         }
       }).catch((err) => console.error('[dashboard] cv fetch failed:', err));
     }
-  // generateReferralLink is defined in component scope; adding it to deps causes re-runs on every render
+    return () => { cancelled = true; };
+  // generateReferralLink is defined in component scope; adding it to deps causes re-runs on every render.
+  // user?.id (not `user`) keeps this from re-firing when Clerk hands back a new
+  // object reference for the same logical user.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn, user]);
+  }, [isSignedIn, user?.id]);
 
   useEffect(() => {
+    // Placeholder only, so the dashboard isn't blank while the DB fetch above is
+    // in flight — the effect above always overwrites this with the DB's value
+    // once it resolves, since the DB is the single source of truth for cvData.
     const storedCv = localStorage.getItem('jobsesame_cv_data');
-    if (storedCv) setCvData(JSON.parse(storedCv));
+    if (storedCv) try { setCvData(JSON.parse(storedCv)); } catch (err) { console.error('[dashboard] cached CV parse failed:', err); }
     const storedProfile = localStorage.getItem('jobsesame_profile');
-    if (storedProfile) setProfile(JSON.parse(storedProfile));
+    if (storedProfile) try { setProfile(JSON.parse(storedProfile)); } catch (err) { console.error('[dashboard] cached profile parse failed:', err); }
   }, []);
 
   useEffect(() => {
