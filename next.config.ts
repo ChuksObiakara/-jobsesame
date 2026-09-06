@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs/config';
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: false },
   images: {
@@ -36,4 +37,14 @@ const nextConfig: NextConfig = {
     ];
   },
 };
-export default nextConfig;
+
+// withSentryConfig only uploads source maps (for readable stack traces)
+// when SENTRY_AUTH_TOKEN/SENTRY_ORG/SENTRY_PROJECT are set — until those
+// exist it just skips that step and builds normally, so this is safe to
+// ship ahead of the Sentry project being created.
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: true,
+  widenClientFileUpload: true,
+});
