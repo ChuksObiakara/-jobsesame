@@ -3,7 +3,7 @@ import { useUser, UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
-import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF, SANS } from '../lib/theme';
+import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF, SANS, SCRIPT } from '../lib/theme';
 
 export default function AccountPage() {
   const { user, isLoaded, isSignedIn } = useUser();
@@ -107,7 +107,7 @@ export default function AccountPage() {
 
       {/* NAV */}
       <nav style={{ background: CARD, padding: '0 20px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${LINE}`, position: 'sticky', top: 0, zIndex: 100 }}>
-        <a href="/" style={{ textDecoration: 'none', fontFamily: SERIF, fontSize: 18, fontWeight: 500, color: INK }}>jobsesame</a>
+        <a href="/" style={{ textDecoration: 'none', fontFamily: SCRIPT, fontSize: 28, fontWeight: 400, color: INK }}>jobsesame</a>
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 10 }}>
           <a href="/dashboard" style={{ fontSize: isMobile ? 12 : 13, color: INK_SOFT, fontWeight: 500, textDecoration: 'none', padding: '8px 12px', whiteSpace: 'nowrap' }}>Dashboard</a>
           {!isMobile && JOB_BOARD_ENABLED && <a href="/jobs" style={{ fontSize: 13, color: INK_SOFT, fontWeight: 500, textDecoration: 'none', padding: '8px 12px', whiteSpace: 'nowrap' }}>Find Jobs</a>}
