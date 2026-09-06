@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { referralCodeFor } from '@/app/lib/referral-code';
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -9,7 +10,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const referralCode = Buffer.from(userId).toString('base64').slice(0, 8).toUpperCase();
+    const referralCode = referralCodeFor(userId);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const referralLink = `${appUrl}?ref=${referralCode}`;
 
