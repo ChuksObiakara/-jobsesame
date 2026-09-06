@@ -9,6 +9,41 @@ import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF
 import { captureClient } from '../lib/posthog-client';
 import { ANALYTICS_EVENTS } from '../lib/analytics-events';
 import { downloadPdf } from '../lib/download-pdf-client';
+import { cvCacheKey, applicationsCacheKey, profileCacheKey } from '../lib/user-cache-keys';
+
+// Maps a free-text location string (as typed/extracted on the applicant's own
+// CV) to a currency. This is deliberately checked *before* IP geolocation —
+// IP reflects whatever network the browser happens to be on right now, not
+// the CV holder's own stated location, so it's the wrong signal whenever the
+// two disagree (VPN, travelling, testing from a different country, etc).
+function currencyFromLocation(location?: string | null): 'ZAR' | 'GBP' | 'USD' | null {
+  if (!location) return null;
+  const l = location.toLowerCase();
+  if (/south africa|johannesburg|cape town|durban|pretoria|\bza\b/.test(l)) return 'ZAR';
+  if (/united kingdom|england|scotland|wales|london|manchester|edinburgh|\buk\b/.test(l)) return 'GBP';
+  if (/united states|\busa\b|new york|san francisco|austin,? tx|seattle|chicago|\bus\b/.test(l)) return 'USD';
+  return null;
+}
+
+// Maps that same free-text CV location to one of the location strings the
+// /api/jobs route recognises (see LOCATION_MAP in app/api/jobs/route.ts), so
+// recommended jobs are scoped to where the applicant actually is instead of
+// always running the unscoped, location-blind query.
+function jobLocationFromCv(location?: string | null): string {
+  if (!location) return '';
+  const l = location.toLowerCase();
+  if (/south africa|johannesburg|cape town|durban|pretoria/.test(l)) return 'South Africa';
+  if (/nigeria|lagos|abuja/.test(l)) return 'Nigeria';
+  if (/kenya|nairobi/.test(l)) return 'Kenya';
+  if (/united kingdom|england|scotland|wales|london|manchester|edinburgh|\buk\b/.test(l)) return 'United Kingdom';
+  if (/united states|\busa\b|new york|san francisco|austin|seattle|chicago|\bus\b/.test(l)) return 'United States';
+  if (/canada|toronto|vancouver|montreal|ontario|quebec/.test(l)) return 'Canada';
+  if (/india|mumbai|bengaluru|bangalore|hyderabad|pune/.test(l)) return 'India';
+  if (/singapore/.test(l)) return 'Singapore';
+  if (/dubai|united arab emirates|\buae\b/.test(l)) return 'Dubai';
+  if (/australia|sydney|melbourne|brisbane/.test(l)) return 'Australia';
+  return '';
+}
 
 const SALARY_DATA: Record<string, { min: number; max: number }> = {
   'software engineer': { min: 480000, max: 720000 },
@@ -155,21 +190,29 @@ export default function Dashboard() {
             location: a.location || '', dateApplied: a.appliedAt, status: a.status, jobUrl: a.jobUrl,
           }));
           setApplications(mapped);
-          localStorage.setItem('jobsesame_applications', JSON.stringify(mapped));
+          localStorage.setItem(applicationsCacheKey(user.id), JSON.stringify(mapped));
         })
         .catch(() => {
           if (cancelled) return;
-          const stored = localStorage.getItem('jobsesame_applications');
+          const stored = localStorage.getItem(applicationsCacheKey(user.id));
           if (stored) try { setApplications(JSON.parse(stored)); } catch (err) { console.error('[dashboard] applications parse failed:', err); }
         });
       // Fetch CV from database — DB is the single source of truth; localStorage
       // is only ever a placeholder to avoid a blank flash before this resolves.
+      // IMPORTANT: this must also handle the "no CV yet" case explicitly —
+      // otherwise a brand-new account that has never uploaded a CV keeps
+      // showing whatever placeholder was cached (e.g. from a previous
+      // account that signed into this same browser) forever, since nothing
+      // ever clears it.
       fetch('/api/user/cv').then(r => r.json()).then(d => {
         if (cancelled) return;
         if (d.cv) {
           const cv = { ...d.cv, experience_years: d.cv.experienceYears };
           setCvData(cv);
-          localStorage.setItem('jobsesame_cv_data', JSON.stringify(cv));
+          localStorage.setItem(cvCacheKey(user.id), JSON.stringify(cv));
+        } else {
+          setCvData(null);
+          localStorage.removeItem(cvCacheKey(user.id));
         }
       }).catch((err) => console.error('[dashboard] cv fetch failed:', err));
     }
@@ -184,13 +227,27 @@ export default function Dashboard() {
     // Placeholder only, so the dashboard isn't blank while the DB fetch above is
     // in flight — the effect above always overwrites this with the DB's value
     // once it resolves, since the DB is the single source of truth for cvData.
-    const storedCv = localStorage.getItem('jobsesame_cv_data');
+    //
+    // This must wait for Clerk to resolve `user.id` and read a key namespaced
+    // to that id. Reading a global, unscoped key here (the previous
+    // behaviour) meant a brand-new account signing in on a browser that had
+    // previously been used for a different account would briefly — and if
+    // the new account has no CV yet, permanently — see that other account's
+    // cached CV/profile.
+    if (!user?.id) return;
+    const storedCv = localStorage.getItem(cvCacheKey(user.id));
     if (storedCv) try { setCvData(JSON.parse(storedCv)); } catch (err) { console.error('[dashboard] cached CV parse failed:', err); }
-    const storedProfile = localStorage.getItem('jobsesame_profile');
+    const storedProfile = localStorage.getItem(profileCacheKey(user.id));
     if (storedProfile) try { setProfile(JSON.parse(storedProfile)); } catch (err) { console.error('[dashboard] cached profile parse failed:', err); }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
+    // The applicant's own CV is the source of truth for currency — it's
+    // *their* stated location, not whatever network this browser happens to
+    // be on. Only fall back to IP geolocation when the CV has no usable
+    // location (e.g. no CV uploaded yet).
+    const fromCv = currencyFromLocation(cvData?.location);
+    if (fromCv) { setCurrency(fromCv); return; }
     fetch('https://ipapi.co/json/')
       .then(r => r.json())
       .then(data => {
@@ -198,7 +255,7 @@ export default function Dashboard() {
         else if (data.country_code === 'GB') setCurrency('GBP');
       })
       .catch((err) => console.error('[dashboard] geo-detect failed:', err));
-  }, []);
+  }, [cvData?.location]);
 
   // Trigger job-matches email 24h after signup
   useEffect(() => {
@@ -241,8 +298,13 @@ export default function Dashboard() {
       setJobQueryTitle(titleQuery);
       const topSkills = (cvData?.skills || []).slice(0, 3).join(' ');
       const fullQuery = topSkills ? `${titleQuery} ${topSkills}` : titleQuery;
+      // Scope recommended jobs to the location on the applicant's own
+      // uploaded CV, rather than always running the unscoped, location-blind
+      // query. Falls back to '' (today's broad multi-source behaviour) when
+      // the CV has no recognisable location.
+      const jobLocation = jobLocationFromCv(cvData?.location);
       setLoadingJobs(true);
-      fetch(`/api/jobs?query=${encodeURIComponent(fullQuery)}&location=`)
+      fetch(`/api/jobs?query=${encodeURIComponent(fullQuery)}&location=${encodeURIComponent(jobLocation)}`)
         .then(r => r.json())
         .then(data => setRecommendedJobs((data.jobs || []).slice(0, 6)))
         .catch((err) => console.error('[dashboard] recommended jobs failed:', err))
@@ -376,7 +438,7 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.success) {
         setCvData(data.cvData);
-        localStorage.setItem('jobsesame_cv_data', JSON.stringify(data.cvData));
+        if (user?.id) localStorage.setItem(cvCacheKey(user.id), JSON.stringify(data.cvData));
         fetch('/api/user/cv', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cvData: data.cvData }) }).catch((err) => console.error('[dashboard] cv save failed:', err));
         const shockScore = (() => {
           let s = 30;
@@ -1149,7 +1211,7 @@ export default function Dashboard() {
                       <div style={{fontSize:12,color:INK_FAINT,marginTop:2}}>{cvData.location}</div>
                     </div>
                     <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                      <button onClick={()=>{setCvData(null);localStorage.removeItem('jobsesame_cv_data');}} style={{background:"transparent",color:INK_SOFT,fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>Upload new CV</button>
+                      <button onClick={()=>{setCvData(null); if (user?.id) localStorage.removeItem(cvCacheKey(user.id));}} style={{background:"transparent",color:INK_SOFT,fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:3,border:`1px solid ${LINE}`,cursor:"pointer"}}>Upload new CV</button>
                       {JOB_BOARD_ENABLED && <a href="/jobs" style={{background:ACCENT,color:PAPER,fontSize:12,fontWeight:600,padding:"7px 16px",borderRadius:3,textDecoration:"none",display:"inline-block"}}>Find matching jobs</a>}
                     </div>
                   </div>
