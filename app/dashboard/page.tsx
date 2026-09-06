@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import QuickApply, { isAutoApply } from '../components/QuickApply';
 import CoverLetter from '../components/CoverLetter';
 import { JOB_BOARD_ENABLED } from '../lib/flags';
-import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF, SANS } from '../lib/theme';
+import { INK, INK_SOFT, INK_FAINT, LINE, PAPER, CARD, ACCENT, CLAY, AMBER, SERIF, SANS, SCRIPT } from '../lib/theme';
 import { captureClient } from '../lib/posthog-client';
 import { ANALYTICS_EVENTS } from '../lib/analytics-events';
 import { downloadPdf } from '../lib/download-pdf-client';
@@ -792,7 +792,7 @@ export default function Dashboard() {
 
       {/* NAV */}
       <nav style={{background:CARD,padding:"0 20px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${LINE}`,position:"sticky",top:0,zIndex:100}}>
-        <a href="/" style={{textDecoration:"none",fontFamily:SERIF,fontSize:18,fontWeight:500,color:INK}}>jobsesame</a>
+        <a href="/" style={{textDecoration:"none",fontFamily:SCRIPT,fontSize:28,fontWeight:400,color:INK}}>jobsesame</a>
         <div style={{display:"flex",alignItems:"center",gap:isMobile?6:10,overflowX:"auto"}}>
           <button style={navBtnStyle('overview')} onClick={()=>setActiveSection('overview')}>Dashboard</button>
           <button style={navBtnStyle('cv')} onClick={()=>setActiveSection('cv')}>My CV</button>
