@@ -887,9 +887,14 @@ export default function Dashboard() {
       )}
 
       {/* NAV */}
-      <nav style={{background:CARD,padding:"0 20px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${LINE}`,position:"sticky",top:0,zIndex:100}}>
-        <a href="/" style={{textDecoration:"none",fontFamily:SCRIPT,fontSize:28,fontWeight:400,color:INK}}>jobsesame</a>
-        <div style={{display:"flex",alignItems:"center",gap:isMobile?6:10,overflowX:"auto"}}>
+      {/* gap + flexShrink:0 on the logo + minWidth:0 on the tabs strip keep the
+          logo from being squeezed up against the first tab on narrow mobile
+          viewports — without them, space-between alone doesn't guarantee any
+          minimum spacing once the (horizontally-scrolling) tabs strip's
+          natural content width exceeds the room left after the logo. */}
+      <nav style={{background:CARD,padding:"0 20px",height:64,display:"flex",alignItems:"center",justifyContent:"space-between",gap:isMobile?12:20,borderBottom:`1px solid ${LINE}`,position:"sticky",top:0,zIndex:100}}>
+        <a href="/" style={{textDecoration:"none",fontFamily:SCRIPT,fontSize:28,fontWeight:400,color:INK,flexShrink:0}}>jobsesame</a>
+        <div style={{display:"flex",alignItems:"center",gap:isMobile?6:10,overflowX:"auto",minWidth:0}}>
           <button style={navBtnStyle('overview')} onClick={()=>setActiveSection('overview')}>Dashboard</button>
           <button style={navBtnStyle('cv')} onClick={()=>setActiveSection('cv')}>My CV</button>
           <button style={navBtnStyle('referral')} onClick={()=>setActiveSection('referral')}>{isMobile ? 'Rewrites' : 'Free rewrites'}</button>
