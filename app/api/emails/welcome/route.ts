@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { referralCodeFor } from '@/app/lib/referral-code';
+import { sendWithFallback } from '@/app/lib/email-from';
 
 export async function POST(req: NextRequest) {
   const { userId: clerkUserId } = await auth();
@@ -122,9 +123,7 @@ ${weakHtml ? `<tr><td style="background:#0D3A1A;padding:28px 36px;">
 </table></td></tr></table>
 </body></html>`;
 
-    const fromAddress = `Jobsesame <${process.env.EMAIL_FROM || 'onboarding@resend.dev'}>`;
-    const { error } = await resend.emails.send({
-      from: fromAddress,
+    const { error } = await sendWithFallback(resend, {
       replyTo: 'hello@jobsesame.co',
       to: email,
       subject: 'Your CV score is ready — here is what we found',
