@@ -365,11 +365,24 @@ export default function Dashboard() {
   const matchedSalary = useMemo(() => {
     if (!cvData?.title) return null;
     const title = cvData.title.toLowerCase();
+    // Exact-phrase pass first. Titles that share a word (e.g. "Project
+    // Manager" and "Product Manager" both contain "manager") must not match
+    // each other just because one word overlaps — that previously made
+    // "Project Manager" show Product Manager's salary band, since 'product
+    // manager' happens to come first in SALARY_DATA and "manager" alone
+    // satisfied the old single-word check.
     for (const [key, val] of Object.entries(SALARY_DATA)) {
       if (key === 'default') continue;
-      if (title.includes(key) || key.split(' ').some(w => w.length > 3 && title.includes(w))) {
-        return { role: key, ...val };
-      }
+      if (title.includes(key)) return { role: key, ...val };
+    }
+    // Fall back to requiring every word in the key (not just one) to appear
+    // in the title, so a partial title like "Senior Accountant" still
+    // matches "accountant" without letting a single generic word like
+    // "manager" match the wrong role.
+    for (const [key, val] of Object.entries(SALARY_DATA)) {
+      if (key === 'default') continue;
+      const keyWords = key.split(' ');
+      if (keyWords.every(w => title.includes(w))) return { role: key, ...val };
     }
     return { role: cvData.title.toLowerCase(), ...SALARY_DATA['default'] };
   }, [cvData]);
